@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.mali.nbeta.NbetaApp
+import com.mali.nbeta.R
 import com.mali.nbeta.ui.settings.SettingsActivity
 import kotlinx.coroutines.launch
 
@@ -23,9 +24,9 @@ class RedditAuthActivity : ComponentActivity() {
             val message = try {
                 val name = graph.reddit.completeSignIn(uri)
                 graph.scope.launch { graph.feed.refresh() }
-                "Signed in to Reddit as $name"
+                getString(R.string.reddit_signed_in_toast, name)
             } catch (e: Exception) {
-                e.message ?: "Reddit sign-in failed"
+                e.message ?: getString(R.string.reddit_sign_in_failed)
             }
             Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
             startActivity(

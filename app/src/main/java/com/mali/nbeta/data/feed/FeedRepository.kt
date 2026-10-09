@@ -3,6 +3,7 @@ package com.mali.nbeta.data.feed
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.Immutable
+import com.mali.nbeta.R
 import com.mali.nbeta.data.FeedOrder
 import com.mali.nbeta.data.FeedSource
 import com.mali.nbeta.data.JsonStore
@@ -76,7 +77,7 @@ sealed interface FeedFilter {
 }
 
 class FeedRepository(
-    context: Context,
+    private val context: Context,
     private val scope: CoroutineScope,
     private val settings: SettingsRepository,
     httpProvider: () -> OkHttpClient,
@@ -163,7 +164,7 @@ class FeedRepository(
         http.newCall(req).execute().use { resp ->
             if (!resp.isSuccessful) {
                 if (resp.code == 429 && reddit.listingPath(src.url) != null) {
-                    throw IllegalStateException("Reddit is rate-limiting. Sign in under Feed › Reddit.")
+                    throw IllegalStateException(context.getString(R.string.feed_error_rate_limited))
                 }
                 throw IllegalStateException("HTTP ${resp.code}")
             }
@@ -353,7 +354,7 @@ class FeedRepository(
         val base = URI(url).let { "${it.scheme}://${it.host}" }
         val guesses = listOf("/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/index.xml", "/feed/").map { base + it }
         for (c in (candidates + guesses).distinct()) tryFeed(c)?.let { return@withContext it }
-        throw IllegalStateException("No feed found at $input")
+        throw IllegalStateException(context.getString(R.string.feed_error_no_feed, input))
     }
 
     private fun tryFeed(url: String): FeedSource? = try {

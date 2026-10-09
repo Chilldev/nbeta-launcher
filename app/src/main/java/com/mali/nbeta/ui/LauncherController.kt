@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.mali.nbeta.AppGraph
+import com.mali.nbeta.R
 import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
 import com.mali.nbeta.data.Layout
@@ -91,9 +92,9 @@ class LauncherController(
             val r = bounds?.rect()
             activity.startActivity(intent, launchOptions(view, r))
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(activity, "No app can handle this", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, R.string.home_no_app, Toast.LENGTH_SHORT).show()
         } catch (e: SecurityException) {
-            Toast.makeText(activity, "Not allowed: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.home_not_allowed, e.message), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -148,7 +149,7 @@ class LauncherController(
         when {
             s.dockItems.any { it.stableKey == item.stableKey } -> Layout.normalize(Layout.remove(s, item))
             s.dockItems.size >= MAX_DOCK -> {
-                Toast.makeText(activity, "The dock holds $MAX_DOCK apps", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, activity.resources.getQuantityString(R.plurals.home_dock_full, MAX_DOCK, MAX_DOCK), Toast.LENGTH_SHORT).show()
                 s
             }
             else -> Layout.move(s, item, Container.Dock, s.dockItems.size)
@@ -166,7 +167,7 @@ class LauncherController(
 
     fun hide(app: AppEntry) {
         graph.settings.update { s -> s.copy(hiddenApps = s.hiddenApps + app.key) }
-        Toast.makeText(activity, "${app.label} hidden. Unhide it in Settings › App drawer.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(activity, activity.getString(R.string.home_app_hidden, app.label), Toast.LENGTH_SHORT).show()
     }
 
     fun rename(app: AppEntry, label: String?) = graph.settings.update { s ->
@@ -216,7 +217,7 @@ class WidgetFlow(private val c: LauncherController, private val launchBind: (Int
             try {
                 repo.host.startAppWidgetConfigureActivityForResult(c.activity, pendingId, 0, REQUEST_CONFIGURE, null)
             } catch (e: Exception) {
-                Toast.makeText(c.activity, "This widget can't be set up", Toast.LENGTH_SHORT).show()
+                Toast.makeText(c.activity, R.string.widget_cant_set_up, Toast.LENGTH_SHORT).show()
                 cancel()
             }
         } else {
@@ -228,7 +229,7 @@ class WidgetFlow(private val c: LauncherController, private val launchBind: (Int
         try {
             repo.host.startAppWidgetConfigureActivityForResult(c.activity, id, 0, REQUEST_RECONFIGURE, null)
         } catch (_: Exception) {
-            Toast.makeText(c.activity, "Can't reconfigure this widget", Toast.LENGTH_SHORT).show()
+            Toast.makeText(c.activity, R.string.widget_cant_reconfigure, Toast.LENGTH_SHORT).show()
         }
     }
 

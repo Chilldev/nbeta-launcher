@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mali.nbeta.data.apps.AppEntry
 import com.mali.nbeta.data.apps.AppShortcut
+import com.mali.nbeta.R
 
 @Composable
 fun rememberAppIcon(app: AppEntry): ImageBitmap? {
@@ -146,6 +148,7 @@ fun Tile(
     val currentDrag by rememberUpdatedState(dragItem)
     val currentClick by rememberUpdatedState(onClick)
     val currentLong by rememberUpdatedState(onLongClick)
+    val optionsLabel = stringResource(R.string.common_options)
     Column(
         modifier
             .graphicsLayer { alpha = if (hidden) 0f else 1f }
@@ -164,7 +167,7 @@ fun Tile(
             )
             .semantics(mergeDescendants = true) {
                 onClick(label = null) { currentClick(bounds); true }
-                onLongClick(label = "Options") { currentLong(bounds); true }
+                onLongClick(label = optionsLabel) { currentLong(bounds); true }
             }
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

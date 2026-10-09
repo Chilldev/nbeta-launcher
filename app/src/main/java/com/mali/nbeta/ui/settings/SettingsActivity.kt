@@ -5,11 +5,14 @@ import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
+import androidx.annotation.StringRes
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -69,12 +72,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mali.nbeta.AppGraph
 import com.mali.nbeta.BuildConfig
 import com.mali.nbeta.NbetaApp
+import com.mali.nbeta.R
 import com.mali.nbeta.data.DefaultFeeds
 import com.mali.nbeta.data.DoubleTapAction
 import com.mali.nbeta.data.DrawerSort
@@ -129,9 +138,10 @@ class SettingsActivity : ComponentActivity() {
     }
 }
 
-enum class Page(val title: String) {
-    Root("Nbeta settings"), Appearance("Appearance"), Home("Home screen"), Drawer("App drawer"), Icons("Icons"),
-    Gestures("Gestures"), Search("Search"), Feed("Feed"), Weather("Weather & glance"), Hidden("Hidden apps"), Backup("Backup & restore"),
+enum class Page(@StringRes val title: Int) {
+    Root(R.string.settings), Appearance(R.string.settings_appearance), Home(R.string.settings_home), Drawer(R.string.settings_drawer),
+    Icons(R.string.settings_icons), Gestures(R.string.settings_gestures), Search(R.string.common_search), Feed(R.string.settings_feed),
+    Weather(R.string.settings_weather), Hidden(R.string.settings_hidden_apps), Backup(R.string.settings_backup),
 }
 
 @Composable
@@ -147,7 +157,7 @@ private fun SettingsApp(graph: AppGraph, s: LauncherSettings, requested: Pair<Pa
     val go: (Page) -> Unit = { stack = stack + it }
     val set: ((LauncherSettings) -> LauncherSettings) -> Unit = { graph.settings.update(it) }
 
-    SettingsScaffold(page.title, if (page == Page.Root) null else back) {
+    SettingsScaffold(stringResource(page.title), if (page == Page.Root) null else back) {
         when (page) {
             Page.Root -> root(go)
             Page.Appearance -> appearance(s, set)
@@ -166,16 +176,21 @@ private fun SettingsApp(graph: AppGraph, s: LauncherSettings, requested: Pair<Pa
 
 private fun androidx.compose.foundation.lazy.LazyListScope.root(go: (Page) -> Unit) {
     item { DefaultLauncherBanner() }
-    item { ClickPref("Appearance", "Theme, colours, wallpaper dimming", Icons.Default.Face) { go(Page.Appearance) } }
-    item { ClickPref("Home screen", "Grid, dock, search bar, at-a-glance", Icons.Default.Home) { go(Page.Home) } }
-    item { ClickPref("App drawer", "Columns, sorting, keyboard, hidden apps", Icons.AutoMirrored.Filled.List) { go(Page.Drawer) } }
-    item { ClickPref("Icons", "Shape, icon packs, themed icons, dots", Icons.Default.AccountBox) { go(Page.Icons) } }
-    item { ClickPref("Gestures", "Swipe down, double-tap", Icons.Default.ThumbUp) { go(Page.Gestures) } }
-    item { ClickPref("Search", "Contacts, calculator, shortcuts, web", Icons.Default.Search) { go(Page.Search) } }
-    item { ClickPref("Feed", "Sources, refresh, reading", Icons.Default.DateRange) { go(Page.Feed) } }
-    item { ClickPref("Weather & glance", "Location, units", Icons.Default.LocationOn) { go(Page.Weather) } }
-    item { ClickPref("Backup & restore", "Export or import your setup", Icons.Default.Build) { go(Page.Backup) } }
-    item { ClickPref("About", "Nbeta ${BuildConfig.VERSION_NAME}", Icons.Default.Info) {} }
+    item { PageLink(Page.Appearance, R.string.settings_appearance_summary, Icons.Default.Face, go) }
+    item { PageLink(Page.Home, R.string.settings_home_summary, Icons.Default.Home, go) }
+    item { PageLink(Page.Drawer, R.string.settings_drawer_summary, Icons.AutoMirrored.Filled.List, go) }
+    item { PageLink(Page.Icons, R.string.settings_icons_summary, Icons.Default.AccountBox, go) }
+    item { PageLink(Page.Gestures, R.string.settings_gestures_summary, Icons.Default.ThumbUp, go) }
+    item { PageLink(Page.Search, R.string.settings_search_summary, Icons.Default.Search, go) }
+    item { PageLink(Page.Feed, R.string.settings_feed_summary, Icons.Default.DateRange, go) }
+    item { PageLink(Page.Weather, R.string.settings_weather_summary, Icons.Default.LocationOn, go) }
+    item { PageLink(Page.Backup, R.string.settings_backup_summary, Icons.Default.Build, go) }
+    item { ClickPref(stringResource(R.string.settings_about), stringResource(R.string.settings_about_summary, BuildConfig.VERSION_NAME), Icons.Default.Info) {} }
+}
+
+@Composable
+private fun PageLink(page: Page, @StringRes summary: Int, icon: ImageVector, go: (Page) -> Unit) {
+    ClickPref(stringResource(page.title), stringResource(summary), icon) { go(page) }
 }
 
 @Composable
@@ -195,9 +210,9 @@ private fun DefaultLauncherBanner() {
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(20.dp),
     ) {
-        Text("Make Nbeta your home app", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(stringResource(R.string.settings_default_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
         Text(
-            "Shortcuts, work profile controls and pinning need Nbeta to be the default home app.",
+            stringResource(R.string.settings_default_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
@@ -206,68 +221,81 @@ private fun DefaultLauncherBanner() {
             val rm = context.getSystemService(RoleManager::class.java)
             if (rm != null && rm.isRoleAvailable(RoleManager.ROLE_HOME)) request.launch(rm.createRequestRoleIntent(RoleManager.ROLE_HOME))
             else context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
-        }) { Text("Set as default") }
+        }) { Text(stringResource(R.string.settings_default_action)) }
     }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.appearance(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
-    item { ChoicePref("Theme", ThemeMode.entries, s.themeMode, { it.name }) { v -> set { it.copy(themeMode = v) } } }
+    item { ChoicePref(stringResource(R.string.settings_theme), ThemeMode.entries, s.themeMode, { stringResource(it.label) }) { v -> set { it.copy(themeMode = v) } } }
     if (Build.VERSION.SDK_INT >= 31) item {
-        SwitchPref("Wallpaper colours", "Use Material You colours from your wallpaper", s.dynamicColor) { v -> set { it.copy(dynamicColor = v) } }
+        SwitchPref(stringResource(R.string.settings_wallpaper_colours), stringResource(R.string.settings_wallpaper_colours_summary), s.dynamicColor) { v -> set { it.copy(dynamicColor = v) } }
     }
     item {
-        ChoicePref("Text on wallpaper", TextOnWallpaper.entries, s.textOnWallpaper, {
-            when (it) { TextOnWallpaper.Auto -> "Automatic (from wallpaper)"; TextOnWallpaper.Light -> "Light"; TextOnWallpaper.Dark -> "Dark" }
-        }) { v -> set { it.copy(textOnWallpaper = v) } }
+        ChoicePref(stringResource(R.string.settings_text_on_wallpaper), TextOnWallpaper.entries, s.textOnWallpaper, { stringResource(it.label) }) { v ->
+            set { it.copy(textOnWallpaper = v) }
+        }
     }
-    item { SliderPref("Dim wallpaper", s.wallpaperDim, 0f..0.6f, 11, { "${(it * 100).roundToInt()}%" }) { v -> set { it.copy(wallpaperDim = v) } } }
-    item { SliderPref("Drawer opacity", s.drawerOpacity, 0.6f..1f, 7, { "${(it * 100).roundToInt()}%" }) { v -> set { it.copy(drawerOpacity = v) } } }
+    item { SliderPref(stringResource(R.string.settings_dim_wallpaper), s.wallpaperDim, 0f..0.6f, 11, { percent(it) }) { v -> set { it.copy(wallpaperDim = v) } } }
+    item { SliderPref(stringResource(R.string.settings_drawer_opacity), s.drawerOpacity, 0.6f..1f, 7, { percent(it) }) { v -> set { it.copy(drawerOpacity = v) } } }
+    if (Build.VERSION.SDK_INT >= 33) item { LanguagePref() }
+}
+
+@Composable
+private fun percent(fraction: Float) = stringResource(R.string.settings_percent, (fraction * 100).roundToInt())
+
+/** Per-app language (Android 13+): the system picker lists the locales from the generated locale config. */
+@RequiresApi(33)
+@Composable
+private fun LanguagePref() {
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    ClickPref(stringResource(R.string.settings_language), locale.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) }) {
+        runCatching { context.startActivity(Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.parse("package:${context.packageName}"))) }
+    }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.home(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
-    item { SliderPref("Columns", s.homeColumns.toFloat(), 3f..6f, 2, { it.roundToInt().toString() }) { v -> set { it.copy(homeColumns = v.roundToInt()) } } }
-    item { SliderPref("Icon size", s.iconSizeDp.toFloat(), 44f..72f, 6, { "${it.roundToInt()} dp" }) { v -> set { it.copy(iconSizeDp = v.roundToInt()) } } }
-    item { SwitchPref("Labels on home screen", null, s.homeLabels) { v -> set { it.copy(homeLabels = v) } } }
-    item { SwitchPref("Dock", "A row of favourites above the navigation bar", s.showDock) { v -> set { it.copy(showDock = v) } } }
-    item { SwitchPref("Search bar", null, s.showHomeSearch) { v -> set { it.copy(showHomeSearch = v) } } }
-    item { SectionHeader("At a glance") }
-    item { SwitchPref("Clock", null, s.glanceClock) { v -> set { it.copy(glanceClock = v) } } }
-    item { SwitchPref("Weather", null, s.glanceWeather) { v -> set { it.copy(glanceWeather = v) } } }
-    item { SwitchPref("Next calendar event", null, s.glanceCalendar) { v -> set { it.copy(glanceCalendar = v) } } }
-    item { SwitchPref("Next alarm", null, s.glanceAlarm) { v -> set { it.copy(glanceAlarm = v) } } }
-    item { SectionHeader("Layout") }
+    item { SliderPref(stringResource(R.string.settings_columns), s.homeColumns.toFloat(), 3f..6f, 2, { stringResource(R.string.settings_number, it.roundToInt()) }) { v -> set { it.copy(homeColumns = v.roundToInt()) } } }
+    item { SliderPref(stringResource(R.string.settings_icon_size), s.iconSizeDp.toFloat(), 44f..72f, 6, { stringResource(R.string.settings_dp, it.roundToInt()) }) { v -> set { it.copy(iconSizeDp = v.roundToInt()) } } }
+    item { SwitchPref(stringResource(R.string.settings_home_labels), null, s.homeLabels) { v -> set { it.copy(homeLabels = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_dock), stringResource(R.string.settings_dock_summary), s.showDock) { v -> set { it.copy(showDock = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_search_bar), null, s.showHomeSearch) { v -> set { it.copy(showHomeSearch = v) } } }
+    item { SectionHeader(stringResource(R.string.settings_at_a_glance)) }
+    item { SwitchPref(stringResource(R.string.settings_clock), null, s.glanceClock) { v -> set { it.copy(glanceClock = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_glance_weather), null, s.glanceWeather) { v -> set { it.copy(glanceWeather = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_next_event), null, s.glanceCalendar) { v -> set { it.copy(glanceCalendar = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_next_alarm), null, s.glanceAlarm) { v -> set { it.copy(glanceAlarm = v) } } }
+    item { SectionHeader(stringResource(R.string.settings_layout)) }
     item {
-        ClickPref("Reset home layout", "Restore the default dock and favourites") {
+        ClickPref(stringResource(R.string.settings_reset_layout), stringResource(R.string.settings_reset_layout_summary)) {
             set { it.copy(homeItems = emptyList(), pages = emptyList(), dockItems = emptyList(), layoutInitialized = false) }
         }
     }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.drawer(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, go: (Page) -> Unit) {
-    item { SliderPref("Columns", s.drawerColumns.toFloat(), 3f..7f, 3, { it.roundToInt().toString() }) { v -> set { it.copy(drawerColumns = v.roundToInt()) } } }
-    item { SwitchPref("Labels", null, s.drawerLabels) { v -> set { it.copy(drawerLabels = v) } } }
-    item { ChoicePref("Sort apps", DrawerSort.entries, s.drawerSort, { if (it == DrawerSort.Alphabetical) "A to Z" else "Most used" }) { v -> set { it.copy(drawerSort = v) } } }
-    item { SwitchPref("Open keyboard automatically", "Start typing as soon as the drawer opens", s.autoKeyboard) { v -> set { it.copy(autoKeyboard = v) } } }
-    item { SwitchPref("Suggested apps row", "Your most used apps, learnt on device", s.showSuggestions) { v -> set { it.copy(showSuggestions = v) } } }
-    item { ClickPref("Hidden apps", "${s.hiddenApps.size} hidden", Icons.Default.Lock) { go(Page.Hidden) } }
+    item { SliderPref(stringResource(R.string.settings_columns), s.drawerColumns.toFloat(), 3f..7f, 3, { stringResource(R.string.settings_number, it.roundToInt()) }) { v -> set { it.copy(drawerColumns = v.roundToInt()) } } }
+    item { SwitchPref(stringResource(R.string.settings_labels), null, s.drawerLabels) { v -> set { it.copy(drawerLabels = v) } } }
+    item { ChoicePref(stringResource(R.string.settings_sort), DrawerSort.entries, s.drawerSort, { stringResource(it.label) }) { v -> set { it.copy(drawerSort = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_auto_keyboard), stringResource(R.string.settings_auto_keyboard_summary), s.autoKeyboard) { v -> set { it.copy(autoKeyboard = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_suggestions_row), stringResource(R.string.settings_suggestions_row_summary), s.showSuggestions) { v -> set { it.copy(showSuggestions = v) } } }
+    item { ClickPref(stringResource(R.string.settings_hidden_apps), pluralStringResource(R.plurals.settings_hidden_count, s.hiddenApps.size, s.hiddenApps.size), Icons.Default.Lock) { go(Page.Hidden) } }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.icons(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {
     item {
-        ChoicePref("Icon shape", IconShape.entries, s.iconShape, {
-            when (it) { IconShape.System -> "System default"; IconShape.RoundedSquare -> "Rounded square"; else -> it.name }
-        }) { v -> set { it.copy(iconShape = v) } }
+        ChoicePref(stringResource(R.string.settings_icon_shape), IconShape.entries, s.iconShape, { stringResource(it.label) }) { v -> set { it.copy(iconShape = v) } }
     }
     item { IconPackPref(s, set) }
     if (Build.VERSION.SDK_INT >= 33) item {
-        SwitchPref("Themed icons", "Tint icons that support it with your wallpaper colours", s.themedIcons) { v -> set { it.copy(themedIcons = v) } }
+        SwitchPref(stringResource(R.string.settings_themed_icons), stringResource(R.string.settings_themed_icons_summary), s.themedIcons) { v -> set { it.copy(themedIcons = v) } }
     }
     item { NotificationDotsPref(s, set) }
     item {
         val context = LocalContext.current
-        ClickPref("Clear icon cache", "Re-render every icon") {
+        ClickPref(stringResource(R.string.settings_clear_icon_cache), stringResource(R.string.settings_clear_icon_cache_summary)) {
             graph.icons.clearAll()
-            Toast.makeText(context, "Icons will be redrawn", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.settings_icons_redrawn, Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -276,8 +304,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.icons(s: LauncherSett
 private fun IconPackPref(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
     val context = LocalContext.current
     val packs by produceState(emptyList<Pair<String, String>>()) { value = withContext(Dispatchers.IO) { IconPack.installed(context) } }
-    val options = listOf<Pair<String?, String>>(null to "System icons") + packs
-    ChoicePref("Icon pack", options, options.firstOrNull { it.first == s.iconPack } ?: options.first(), { if (packs.isEmpty() && it.first == null) "System icons (no packs installed)" else it.second }) { v ->
+    val options = listOf<Pair<String?, String>>(null to stringResource(R.string.settings_icon_pack_system)) + packs
+    val selected = options.firstOrNull { it.first == s.iconPack } ?: options.first()
+    ChoicePref(stringResource(R.string.settings_icon_pack), options, selected, { if (packs.isEmpty() && it.first == null) stringResource(R.string.settings_icon_pack_none) else it.second }) { v ->
         set { it.copy(iconPack = v.first) }
     }
 }
@@ -287,8 +316,8 @@ private fun NotificationDotsPref(s: LauncherSettings, set: ((LauncherSettings) -
     val context = LocalContext.current
     val granted = remember { NotificationDotsService.isEnabled(context) }
     SwitchPref(
-        "Notification dots",
-        if (granted) "Show a dot on apps with notifications" else "Needs notification access — tap to grant",
+        stringResource(R.string.settings_dots),
+        stringResource(if (granted) R.string.settings_dots_on else R.string.settings_dots_needs_access),
         s.notificationDots && granted,
     ) { v ->
         if (v && !granted) {
@@ -303,31 +332,29 @@ private fun NotificationDotsPref(s: LauncherSettings, set: ((LauncherSettings) -
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.gestures(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
-    item { ClickPref("Swipe up", "Open the app drawer") {} }
+    item { ClickPref(stringResource(R.string.settings_swipe_up), stringResource(R.string.settings_swipe_up_summary)) {} }
     item {
-        ChoicePref("Swipe down", SwipeDownAction.entries, s.swipeDown, {
-            when (it) { SwipeDownAction.Notifications -> "Notifications"; SwipeDownAction.QuickSettings -> "Quick settings"; SwipeDownAction.Search -> "Search"; SwipeDownAction.None -> "Nothing" }
-        }) { v -> set { it.copy(swipeDown = v) } }
+        ChoicePref(stringResource(R.string.settings_swipe_down), SwipeDownAction.entries, s.swipeDown, { stringResource(it.label) }) { v -> set { it.copy(swipeDown = v) } }
     }
     item {
-        ChoicePref("Double-tap", DoubleTapAction.entries, s.doubleTap, { if (it == DoubleTapAction.LockScreen) "Lock screen" else "Nothing" }) { v -> set { it.copy(doubleTap = v) } }
+        ChoicePref(stringResource(R.string.settings_double_tap), DoubleTapAction.entries, s.doubleTap, { stringResource(it.label) }) { v -> set { it.copy(doubleTap = v) } }
     }
     item {
         val context = LocalContext.current
         val on = GestureAccessibilityService.instance != null
-        ClickPref("Lock-screen permission", if (on) "Enabled" else "Double-tap to lock needs the “Nbeta gestures” accessibility service") {
+        ClickPref(stringResource(R.string.settings_lock_permission), stringResource(if (on) R.string.settings_enabled else R.string.settings_lock_permission_needed)) {
             context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
     }
-    item { ClickPref("Swipe right", "Open the feed") {} }
+    item { ClickPref(stringResource(R.string.settings_swipe_to_feed), stringResource(R.string.settings_swipe_to_feed_summary)) {} }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.search(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
     item { ContactsPref(s, set) }
-    item { SwitchPref("Calculator", "Type 12*7 or sqrt(2)", s.searchCalculator) { v -> set { it.copy(searchCalculator = v) } } }
-    item { SwitchPref("App shortcuts", "Find actions like “New message” or “Scan QR”", s.searchShortcuts) { v -> set { it.copy(searchShortcuts = v) } } }
-    item { SwitchPref("System settings", "Jump to Wi‑Fi, Bluetooth, Battery…", s.searchSettings) { v -> set { it.copy(searchSettings = v) } } }
-    item { ChoicePref("Web search", WebEngine.entries, s.webEngine, { it.label }) { v -> set { it.copy(webEngine = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_calculator), stringResource(R.string.settings_calculator_summary), s.searchCalculator) { v -> set { it.copy(searchCalculator = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_app_shortcuts), stringResource(R.string.settings_app_shortcuts_summary), s.searchShortcuts) { v -> set { it.copy(searchShortcuts = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_system_settings), stringResource(R.string.settings_system_settings_summary), s.searchSettings) { v -> set { it.copy(searchSettings = v) } } }
+    item { ChoicePref(stringResource(R.string.settings_web_search), WebEngine.entries, s.webEngine, { it.label }) { v -> set { it.copy(webEngine = v) } } }
 }
 
 @Composable
@@ -335,15 +362,19 @@ private fun ContactsPref(s: LauncherSettings, set: ((LauncherSettings) -> Launch
     val context = LocalContext.current
     var granted by remember { mutableStateOf(context.checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) }
     val req = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
-    SwitchPref("Contacts", if (granted) "Call or message from search" else "Tap to allow contact access", s.searchContacts && granted) { v ->
+    SwitchPref(
+        stringResource(R.string.common_contacts),
+        stringResource(if (granted) R.string.settings_contacts_on else R.string.settings_contacts_off),
+        s.searchContacts && granted,
+    ) { v ->
         if (v && !granted) req.launch(Manifest.permission.READ_CONTACTS)
         set { it.copy(searchContacts = v) }
     }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {
-    item { SwitchPref("Feed page", "Swipe right from home for your feed", s.feedEnabled) { v -> set { it.copy(feedEnabled = v) } } }
-    item { SectionHeader("Sources") }
+    item { SwitchPref(stringResource(R.string.settings_feed_page), stringResource(R.string.settings_feed_page_summary), s.feedEnabled) { v -> set { it.copy(feedEnabled = v) } } }
+    item { SectionHeader(stringResource(R.string.settings_sources)) }
     item { AddSourceRow(graph) }
     items(s.feedSources, key = { it.id }) { src ->
         val cache by graph.feed.cache.collectAsStateWithLifecycle()
@@ -352,9 +383,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
         ClickPref(
             src.title,
             when {
-                st?.error != null -> "Error: ${st.error}"
-                muted -> "Shown less in “For you” · tap to restore"
-                st != null -> "${st.count} stories · ${src.url}"
+                st?.error != null -> stringResource(R.string.settings_source_error, st.error)
+                muted -> stringResource(R.string.settings_source_muted)
+                st != null -> pluralStringResource(R.plurals.settings_source_stories, st.count, st.count, src.url)
                 else -> src.url
             },
             trailing = {
@@ -364,12 +395,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
                         IconButton(onClick = { set { it.copy(alertSources = if (alerting) it.alertSources - src.id else it.alertSources + src.id) } }) {
                             Icon(
                                 Icons.Default.Notifications,
-                                if (alerting) "Stop alerts from ${src.title}" else "Alert me about ${src.title}",
+                                stringResource(if (alerting) R.string.settings_stop_alerts else R.string.settings_start_alerts, src.title),
                                 tint = if (alerting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             )
                         }
                     }
-                    IconButton(onClick = { set { it.copy(feedSources = it.feedSources.filterNot { f -> f.id == src.id }) } }) { Icon(Icons.Default.Delete, "Remove") }
+                    IconButton(onClick = { set { it.copy(feedSources = it.feedSources.filterNot { f -> f.id == src.id }) } }) { Icon(Icons.Default.Delete, stringResource(R.string.common_remove)) }
                     Switch(src.enabled, { v -> set { it.copy(feedSources = it.feedSources.map { f -> if (f.id == src.id) f.copy(enabled = v) else f }) } })
                 }
             },
@@ -378,7 +409,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
     item { RedditSection(s, set, graph) }
     val suggestions = DefaultFeeds.catalog.filter { c -> s.feedSources.none { it.url == c.url } }
     if (suggestions.isNotEmpty()) {
-        item { SectionHeader("Suggestions") }
+        item { SectionHeader(stringResource(R.string.settings_suggestions)) }
         items(suggestions, key = { "sug" + it.id }) { c ->
             ClickPref(c.title, c.siteUrl, Icons.Default.Add) {
                 set { it.copy(feedSources = it.feedSources + c) }
@@ -386,72 +417,73 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
             }
         }
     }
-    item { SectionHeader("Reading") }
-    item { ChoicePref("Default order", FeedOrder.entries, s.feedOrder, { if (it == FeedOrder.ForYou) "For you (learns what you open)" else "Latest first" }) { v -> set { it.copy(feedOrder = v) } } }
-    item { ChoicePref("Open stories in", LinkOpener.entries, s.linkOpener, {
-        when (it) {
-            LinkOpener.Reader -> "Reader view (clean text, falls back to a browser tab)"
-            LinkOpener.CustomTab -> "In-app browser tab"
-            LinkOpener.Browser -> "Browser app"
-        }
-    }) { v -> set { it.copy(linkOpener = v) } } }
-    item { SwitchPref("Fetch article images", "For stories whose feed has no picture", s.feedFetchImages) { v -> set { it.copy(feedFetchImages = v) } } }
-    item { SectionHeader("Muted keywords") }
+    item { SectionHeader(stringResource(R.string.settings_reading)) }
+    item { ChoicePref(stringResource(R.string.settings_default_order), FeedOrder.entries, s.feedOrder, { stringResource(it.label) }) { v -> set { it.copy(feedOrder = v) } } }
+    item { ChoicePref(stringResource(R.string.settings_open_in), LinkOpener.entries, s.linkOpener, { stringResource(it.label) }) { v -> set { it.copy(linkOpener = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_fetch_images), stringResource(R.string.settings_fetch_images_summary), s.feedFetchImages) { v -> set { it.copy(feedFetchImages = v) } } }
+    item { SectionHeader(stringResource(R.string.settings_muted_keywords)) }
     item {
         KeywordListPref(
-            "Hide stories mentioning…",
-            "e.g. a team, a celebrity, a spoiler",
+            stringResource(R.string.settings_hide_mentioning),
+            stringResource(R.string.settings_hide_mentioning_hint),
             s.mutedKeywords,
         ) { list -> set { it.copy(mutedKeywords = list) } }
     }
-    item { SectionHeader("Breaking news alerts") }
+    item { SectionHeader(stringResource(R.string.settings_breaking_news)) }
     item { NewsAlertsPref(s, set) }
     if (s.newsAlerts) {
-        item { ClickPref("Alert sources", "Tap the bell next to a source above · ${s.alertSources.size} selected") {} }
+        item { ClickPref(stringResource(R.string.settings_alert_sources), pluralStringResource(R.plurals.settings_alert_sources_summary, s.alertSources.size, s.alertSources.size)) {} }
         item {
             val context = LocalContext.current
-            ClickPref("Check now", "Fetch feeds and alert about anything new that matches") {
+            ClickPref(stringResource(R.string.settings_check_now), stringResource(R.string.settings_check_now_summary)) {
                 graph.scope.launch {
                     graph.feed.refresh(notify = true)
-                    Toast.makeText(context, "Checked for new stories", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.settings_checked, Toast.LENGTH_SHORT).show()
                 }
             }
         }
         item {
-            KeywordListPref("Alert me about…", "Notify for any source that mentions these", s.alertKeywords) { list -> set { it.copy(alertKeywords = list) } }
+            KeywordListPref(stringResource(R.string.settings_alert_me_about), stringResource(R.string.settings_alert_me_about_hint), s.alertKeywords) { list -> set { it.copy(alertKeywords = list) } }
         }
     }
-    item { SectionHeader("Background refresh") }
+    item { SectionHeader(stringResource(R.string.settings_background_refresh)) }
     item {
-        ChoicePref("Refresh every", listOf(0, 1, 2, 4, 8, 12), s.feedRefreshHours, { if (it == 0) "Only when opened" else "$it hour" + if (it > 1) "s" else "" }) { v ->
+        ChoicePref(
+            stringResource(R.string.settings_refresh_every),
+            listOf(0, 1, 2, 4, 8, 12),
+            s.feedRefreshHours,
+            { if (it == 0) stringResource(R.string.settings_refresh_manual) else pluralStringResource(R.plurals.settings_refresh_hours, it, it) },
+        ) { v ->
             set { it.copy(feedRefreshHours = v) }
         }
     }
-    item { SwitchPref("Wi‑Fi only", null, s.feedWifiOnly) { v -> set { it.copy(feedWifiOnly = v) } } }
-    item { SectionHeader("OPML") }
+    item { SwitchPref(stringResource(R.string.settings_wifi_only), null, s.feedWifiOnly) { v -> set { it.copy(feedWifiOnly = v) } } }
+    item { SectionHeader(stringResource(R.string.settings_opml)) }
     item { OpmlPrefs(s, set, graph) }
-    item { ClickPref("Clear stories", "Keeps saved stories") { graph.feed.clear() } }
+    item { ClickPref(stringResource(R.string.settings_clear_stories), stringResource(R.string.settings_clear_stories_summary)) { graph.feed.clear() } }
 }
 
 @Composable
 private fun AddSourceRow(graph: AppGraph) {
     var open by remember { mutableStateOf(false) }
-    ClickPref("Add a source", "Website, feed URL, YouTube channel or subreddit", Icons.Default.Add) { open = true }
+    ClickPref(stringResource(R.string.settings_add_source), stringResource(R.string.settings_add_source_summary), Icons.Default.Add) { open = true }
     if (!open) return
     var text by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val alreadyAdded = stringResource(R.string.settings_already_added)
+    val notFound = stringResource(R.string.settings_no_feed_found)
     AlertDialog(
         onDismissRequest = { if (!busy) open = false },
-        title = { Text("Add source") },
+        title = { Text(stringResource(R.string.settings_add_source_title)) },
         text = {
             Column {
-                OutlinedTextField(text, { text = it; error = null }, singleLine = true, label = { Text("e.g. theverge.com") }, isError = error != null, supportingText = { error?.let { Text(it) } })
+                OutlinedTextField(text, { text = it; error = null }, singleLine = true, label = { Text(stringResource(R.string.settings_add_source_hint)) }, isError = error != null, supportingText = { error?.let { Text(it) } })
                 if (busy) Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                     Spacer(Modifier.width(12.dp))
-                    Text("Looking for a feed…")
+                    Text(stringResource(R.string.settings_looking_for_feed))
                 }
             }
         },
@@ -462,27 +494,28 @@ private fun AddSourceRow(graph: AppGraph) {
                     try {
                         val src = graph.feed.discover(text)
                         if (graph.settings.value.feedSources.any { it.url == src.url }) {
-                            error = "Already added"
+                            error = alreadyAdded
                         } else {
                             graph.settings.update { it.copy(feedSources = it.feedSources + src) }
                             graph.scope.launch { graph.feed.refresh(src.id) }
                             open = false
                         }
                     } catch (e: Exception) {
-                        error = e.message ?: "Couldn't find a feed"
+                        error = e.message ?: notFound
                     } finally {
                         busy = false
                     }
                 }
-            }) { Text("Add") }
+            }) { Text(stringResource(R.string.common_add)) }
         },
-        dismissButton = { TextButton(onClick = { open = false }, enabled = !busy) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = { open = false }, enabled = !busy) { Text(stringResource(R.string.common_cancel)) } },
     )
 }
 
 @Composable
 private fun OpmlPrefs(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/x-opml")) { uri ->
         if (uri != null) scope.launch(Dispatchers.IO) {
@@ -493,20 +526,20 @@ private fun OpmlPrefs(s: LauncherSettings, set: ((LauncherSettings) -> LauncherS
         if (uri != null) scope.launch {
             val found = withContext(Dispatchers.IO) { runCatching { context.contentResolver.openInputStream(uri)?.use { Opml.import(it) } }.getOrNull().orEmpty() }
             set { st -> st.copy(feedSources = st.feedSources + found.filter { f -> st.feedSources.none { it.url == f.url } }) }
-            Toast.makeText(context, "Imported ${found.size} feeds", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, resources.getQuantityString(R.plurals.settings_imported_feeds, found.size, found.size), Toast.LENGTH_SHORT).show()
             graph.scope.launch { graph.feed.refresh() }
         }
     }
     Column {
-        ClickPref("Import OPML", "From another reader") { import.launch(arrayOf("*/*")) }
-        ClickPref("Export OPML", "${s.feedSources.size} sources") { export.launch("nbeta-feeds.opml") }
+        ClickPref(stringResource(R.string.settings_import_opml), stringResource(R.string.settings_import_opml_summary)) { import.launch(arrayOf("*/*")) }
+        ClickPref(stringResource(R.string.settings_export_opml), pluralStringResource(R.plurals.settings_source_count, s.feedSources.size, s.feedSources.size)) { export.launch("nbeta-feeds.opml") }
     }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.weather(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {
-    item { ChoicePref("Units", TempUnit.entries, s.tempUnit, { if (it == TempUnit.Celsius) "Celsius" else "Fahrenheit" }) { v -> set { it.copy(tempUnit = v) } } }
+    item { ChoicePref(stringResource(R.string.settings_units), TempUnit.entries, s.tempUnit, { stringResource(it.label) }) { v -> set { it.copy(tempUnit = v) } } }
     item { WeatherLocationPref(s, set, graph) }
-    item { ClickPref("Weather data", "Open-Meteo (no account, no tracking)") {} }
+    item { ClickPref(stringResource(R.string.settings_weather_data), stringResource(R.string.settings_weather_data_summary)) {} }
 }
 
 @Composable
@@ -514,15 +547,15 @@ private fun WeatherLocationPref(s: LauncherSettings, set: ((LauncherSettings) ->
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
     val req = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) graph.glance.refresh(forceWeather = true) }
-    ClickPref("Location", s.weatherCity ?: "Device location") { open = true }
+    ClickPref(stringResource(R.string.common_location), s.weatherCity ?: stringResource(R.string.settings_device_location)) { open = true }
     if (!open) return
     var city by remember { mutableStateOf(s.weatherCity.orEmpty()) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     AlertDialog(
         onDismissRequest = { open = false },
-        title = { Text("Weather location") },
-        text = { OutlinedTextField(city, { city = it }, singleLine = true, label = { Text("City") }) },
+        title = { Text(stringResource(R.string.settings_weather_location)) },
+        text = { OutlinedTextField(city, { city = it }, singleLine = true, label = { Text(stringResource(R.string.settings_city)) }) },
         confirmButton = {
             TextButton(enabled = city.isNotBlank() && !busy, onClick = {
                 busy = true
@@ -530,27 +563,27 @@ private fun WeatherLocationPref(s: LauncherSettings, set: ((LauncherSettings) ->
                     val r = graph.glance.geocode(city)
                     busy = false
                     if (r == null) {
-                        Toast.makeText(context, "City not found", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.settings_city_not_found, Toast.LENGTH_SHORT).show()
                     } else {
                         set { it.copy(weatherCity = r.first, weatherLat = r.second, weatherLon = r.third) }
                         graph.glance.refresh(forceWeather = true)
                         open = false
                     }
                 }
-            }) { Text("Use city") }
+            }) { Text(stringResource(R.string.settings_use_city)) }
         },
         dismissButton = {
             TextButton(onClick = {
                 set { it.copy(weatherCity = null, weatherLat = null, weatherLon = null) }
                 req.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                 open = false
-            }) { Text("Use device location") }
+            }) { Text(stringResource(R.string.settings_use_device_location)) }
         },
     )
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.hidden(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {
-    item { Text("Hidden apps stay installed but no longer appear in the drawer or in search.", Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    item { Text(stringResource(R.string.settings_hidden_explainer), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     items(graph.apps.apps.value, key = { it.key }) { app ->
         val hidden = app.key in s.hiddenApps
         ClickPref(app.label, app.packageName, trailing = { Checkbox(hidden, null) }) {
@@ -578,26 +611,26 @@ private fun BackupPrefs(graph: AppGraph) {
             val ok = withContext(Dispatchers.IO) {
                 runCatching { context.contentResolver.openInputStream(uri)?.use { graph.settings.import(it.readBytes().decodeToString()) } }.isSuccess
             }
-            Toast.makeText(context, if (ok) "Settings restored" else "That file isn't an Nbeta backup", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (ok) R.string.settings_restored else R.string.settings_not_a_backup, Toast.LENGTH_SHORT).show()
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        ClickPref("Export settings", "Layout, sources, hidden apps and preferences") { export.launch("nbeta-backup.json") }
-        ClickPref("Import settings") { import.launch(arrayOf("application/json", "*/*")) }
-        ClickPref("Reset everything", "Back to defaults") { confirmReset = true }
+        ClickPref(stringResource(R.string.settings_export), stringResource(R.string.settings_export_summary)) { export.launch("nbeta-backup.json") }
+        ClickPref(stringResource(R.string.settings_import)) { import.launch(arrayOf("application/json", "*/*")) }
+        ClickPref(stringResource(R.string.settings_reset_everything), stringResource(R.string.settings_reset_everything_summary)) { confirmReset = true }
     }
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
-            title = { Text("Reset all settings?") },
-            text = { Text("Your home layout, feed sources and preferences will return to their defaults.") },
+            title = { Text(stringResource(R.string.settings_reset_confirm_title)) },
+            text = { Text(stringResource(R.string.settings_reset_confirm_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     graph.settings.import("{}")
                     confirmReset = false
-                }) { Text("Reset") }
+                }) { Text(stringResource(R.string.common_reset)) }
             },
-            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 }
@@ -611,56 +644,61 @@ private fun RedditSection(s: LauncherSettings, set: ((LauncherSettings) -> Launc
     val clientId = s.redditClientId?.takeIf { it.isNotBlank() }
     val signIn: (String) -> Unit = { id ->
         runCatching { CustomTabsIntent.Builder().build().launchUrl(context, graph.reddit.authorizeUri(id)) }
-            .onFailure { Toast.makeText(context, "No browser available", Toast.LENGTH_SHORT).show() }
+            .onFailure { Toast.makeText(context, R.string.reddit_no_browser, Toast.LENGTH_SHORT).show() }
     }
 
     Column {
-        SectionHeader("Reddit")
+        SectionHeader(stringResource(R.string.reddit_section))
         val current = session
         if (current != null) {
-            ClickPref("Signed in as u/${current.username ?: "…"}", "Reddit sources load through the official API (100 requests/min)", Icons.Default.AccountBox) {}
+            ClickPref(
+                stringResource(R.string.reddit_signed_in_as, current.username ?: "…"),
+                stringResource(R.string.reddit_signed_in_summary),
+                Icons.Default.AccountBox,
+            ) {}
             val hasHome = s.feedSources.any { graph.reddit.listingPath(it.url)?.startsWith("/best") == true }
             if (!hasHome) {
-                ClickPref("Add your Reddit home feed", "Posts from the communities you follow", Icons.Default.Add) {
+                val homeTitle = stringResource(R.string.reddit_home_title)
+                ClickPref(stringResource(R.string.reddit_add_home), stringResource(R.string.reddit_add_home_summary), Icons.Default.Add) {
                     val url = RedditClient.HOME_FEED_URL
-                    val src = FeedSource(com.mali.nbeta.data.feed.FeedParser.hash(url), url, "Reddit home", "https://www.reddit.com")
+                    val src = FeedSource(com.mali.nbeta.data.feed.FeedParser.hash(url), url, homeTitle, "https://www.reddit.com")
                     set { it.copy(feedSources = it.feedSources + src) }
                     graph.scope.launch { graph.feed.refresh(src.id) }
                 }
             }
-            ClickPref("Sign out of Reddit", "Revokes Nbeta's access token") { scope.launch { graph.reddit.signOut() } }
+            ClickPref(stringResource(R.string.reddit_sign_out), stringResource(R.string.reddit_sign_out_summary)) { scope.launch { graph.reddit.signOut() } }
         } else {
             ClickPref(
-                "Sign in with Reddit",
-                if (clientId == null) "Stops subreddit feeds being rate-limited. One-time setup needed." else "Using client ID ${clientId.take(6)}…",
+                stringResource(R.string.reddit_sign_in),
+                if (clientId == null) stringResource(R.string.reddit_sign_in_setup) else stringResource(R.string.reddit_using_client, clientId.take(6)),
                 Icons.Default.AccountBox,
             ) { if (clientId == null) setup = true else signIn(clientId) }
-            if (clientId != null) ClickPref("Change Reddit client ID") { setup = true }
+            if (clientId != null) ClickPref(stringResource(R.string.reddit_change_client)) { setup = true }
         }
     }
 
     if (setup) {
         var text by remember { mutableStateOf(clientId.orEmpty()) }
-        val open: (String) -> Unit = { url -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))) } }
+        val open: (String) -> Unit = { url -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
         AlertDialog(
             onDismissRequest = { setup = false },
-            title = { Text("Connect Reddit") },
+            title = { Text(stringResource(R.string.reddit_connect_title)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Reddit approves API access per app, so this is a one-time setup with your own Reddit app.", style = MaterialTheme.typography.bodyMedium)
-                    Text("1. Request API access. Describe Nbeta as a personal, non-commercial feed reader.", style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = { open(RedditClient.ACCESS_REQUEST_URL) }) { Text("Open access request form") }
-                    Text("2. Once approved, create an app: type “installed app”, redirect URI below.", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.reddit_setup_intro), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.reddit_setup_step1), style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = { open(RedditClient.ACCESS_REQUEST_URL) }) { Text(stringResource(R.string.reddit_open_access_form)) }
+                    Text(stringResource(R.string.reddit_setup_step2), style = MaterialTheme.typography.bodyMedium)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(RedditClient.REDIRECT_URI, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
                         TextButton(onClick = {
                             context.getSystemService(android.content.ClipboardManager::class.java)
                                 .setPrimaryClip(android.content.ClipData.newPlainText("Redirect URI", RedditClient.REDIRECT_URI))
-                        }) { Text("Copy") }
+                        }) { Text(stringResource(R.string.common_copy)) }
                     }
-                    TextButton(onClick = { open(RedditClient.APPS_URL) }) { Text("Open reddit.com/prefs/apps") }
-                    Text("3. Paste the client ID (the short code under the app's name).", style = MaterialTheme.typography.bodyMedium)
-                    OutlinedTextField(text, { text = it.trim() }, singleLine = true, label = { Text("Client ID") })
+                    TextButton(onClick = { open(RedditClient.APPS_URL) }) { Text(stringResource(R.string.reddit_open_prefs)) }
+                    Text(stringResource(R.string.reddit_setup_step3), style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(text, { text = it.trim() }, singleLine = true, label = { Text(stringResource(R.string.reddit_client_id)) })
                 }
             },
             confirmButton = {
@@ -668,9 +706,9 @@ private fun RedditSection(s: LauncherSettings, set: ((LauncherSettings) -> Launc
                     set { it.copy(redditClientId = text) }
                     setup = false
                     signIn(text)
-                }) { Text("Save & sign in") }
+                }) { Text(stringResource(R.string.reddit_save_sign_in)) }
             },
-            dismissButton = { TextButton(onClick = { setup = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { setup = false }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 }
@@ -690,10 +728,10 @@ private fun KeywordListPref(title: String, hint: String, keywords: List<String>,
                     selected = false,
                     onClick = { onChange(keywords - k) },
                     label = { Text(k) },
-                    trailingIcon = { Icon(Icons.Default.Close, "Remove $k", Modifier.size(16.dp)) },
+                    trailingIcon = { Icon(Icons.Default.Close, stringResource(R.string.settings_remove_keyword, k), Modifier.size(16.dp)) },
                 )
             }
-            androidx.compose.material3.AssistChip(onClick = { adding = true }, label = { Text("Add") }, leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(16.dp)) })
+            androidx.compose.material3.AssistChip(onClick = { adding = true }, label = { Text(stringResource(R.string.common_add)) }, leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(16.dp)) })
         }
     }
     if (adding) {
@@ -707,9 +745,9 @@ private fun KeywordListPref(title: String, hint: String, keywords: List<String>,
                     val k = text.trim()
                     if (keywords.none { it.equals(k, ignoreCase = true) }) onChange(keywords + k)
                     adding = false
-                }) { Text("Add") }
+                }) { Text(stringResource(R.string.common_add)) }
             },
-            dismissButton = { TextButton(onClick = { adding = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { adding = false }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 }
@@ -719,11 +757,11 @@ private fun NewsAlertsPref(s: LauncherSettings, set: ((LauncherSettings) -> Laun
     val context = LocalContext.current
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) set { it.copy(newsAlerts = true) }
-        else Toast.makeText(context, "Notifications are off for Nbeta", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(context, R.string.settings_notifications_off, Toast.LENGTH_SHORT).show()
     }
     SwitchPref(
-        "Breaking news alerts",
-        if (s.feedRefreshHours == 0) "Needs background refresh (below) to be on" else "Checked during background refresh · max 3 per check",
+        stringResource(R.string.settings_breaking_news),
+        stringResource(if (s.feedRefreshHours == 0) R.string.settings_alerts_need_refresh else R.string.settings_alerts_summary),
         s.newsAlerts,
     ) { on ->
         if (on && Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -733,3 +771,74 @@ private fun NewsAlertsPref(s: LauncherSettings, set: ((LauncherSettings) -> Laun
         }
     }
 }
+
+@get:StringRes
+private val ThemeMode.label
+    get() = when (this) {
+        ThemeMode.System -> R.string.settings_theme_system
+        ThemeMode.Light -> R.string.settings_light
+        ThemeMode.Dark -> R.string.settings_dark
+    }
+
+@get:StringRes
+private val TextOnWallpaper.label
+    get() = when (this) {
+        TextOnWallpaper.Auto -> R.string.settings_text_auto
+        TextOnWallpaper.Light -> R.string.settings_light
+        TextOnWallpaper.Dark -> R.string.settings_dark
+    }
+
+@get:StringRes
+private val DrawerSort.label
+    get() = when (this) {
+        DrawerSort.Alphabetical -> R.string.settings_sort_az
+        DrawerSort.MostUsed -> R.string.settings_sort_most_used
+    }
+
+@get:StringRes
+private val IconShape.label
+    get() = when (this) {
+        IconShape.System -> R.string.settings_shape_system
+        IconShape.Circle -> R.string.settings_shape_circle
+        IconShape.Squircle -> R.string.settings_shape_squircle
+        IconShape.RoundedSquare -> R.string.settings_shape_rounded_square
+        IconShape.Teardrop -> R.string.settings_shape_teardrop
+    }
+
+@get:StringRes
+private val SwipeDownAction.label
+    get() = when (this) {
+        SwipeDownAction.Notifications -> R.string.common_notifications
+        SwipeDownAction.QuickSettings -> R.string.settings_quick_settings
+        SwipeDownAction.Search -> R.string.common_search
+        SwipeDownAction.None -> R.string.settings_nothing
+    }
+
+@get:StringRes
+private val DoubleTapAction.label
+    get() = when (this) {
+        DoubleTapAction.LockScreen -> R.string.settings_lock_screen
+        DoubleTapAction.None -> R.string.settings_nothing
+    }
+
+@get:StringRes
+private val FeedOrder.label
+    get() = when (this) {
+        FeedOrder.ForYou -> R.string.settings_order_for_you
+        FeedOrder.Latest -> R.string.settings_order_latest
+    }
+
+@get:StringRes
+private val LinkOpener.label
+    get() = when (this) {
+        LinkOpener.Reader -> R.string.settings_open_reader
+        LinkOpener.CustomTab -> R.string.settings_open_custom_tab
+        LinkOpener.Browser -> R.string.settings_open_browser
+    }
+
+@get:StringRes
+private val TempUnit.label
+    get() = when (this) {
+        TempUnit.Celsius -> R.string.settings_celsius
+        TempUnit.Fahrenheit -> R.string.settings_fahrenheit
+    }

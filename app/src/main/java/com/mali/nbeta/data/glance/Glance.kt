@@ -11,6 +11,7 @@ import android.location.LocationManager
 import android.provider.CalendarContract
 import android.util.Log
 import androidx.compose.runtime.Immutable
+import com.mali.nbeta.R
 import com.mali.nbeta.data.JsonStore
 import com.mali.nbeta.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
@@ -58,18 +59,18 @@ data class CalEvent(
 )
 
 object WeatherCodes {
-    /** WMO weather interpretation codes, as used by Open-Meteo. */
-    fun describe(code: Int, day: Boolean): Pair<String, String> = when (code) {
-        0 -> (if (day) "☀️" else "🌙") to "Clear"
-        1 -> (if (day) "🌤️" else "🌙") to "Mostly clear"
-        2 -> "⛅" to "Partly cloudy"
-        3 -> "☁️" to "Cloudy"
-        45, 48 -> "🌫️" to "Fog"
-        51, 53, 55, 56, 57 -> "🌦️" to "Drizzle"
-        61, 63, 65, 66, 67, 80, 81, 82 -> "🌧️" to "Rain"
-        71, 73, 75, 77, 85, 86 -> "🌨️" to "Snow"
-        95, 96, 99 -> "⛈️" to "Thunderstorm"
-        else -> "🌡️" to ""
+    /** WMO weather interpretation codes, as used by Open-Meteo: an emoji and a description string resource (null when unknown). */
+    fun describe(code: Int, day: Boolean): Pair<String, Int?> = when (code) {
+        0 -> (if (day) "☀️" else "🌙") to R.string.weather_clear
+        1 -> (if (day) "🌤️" else "🌙") to R.string.weather_mostly_clear
+        2 -> "⛅" to R.string.weather_partly_cloudy
+        3 -> "☁️" to R.string.weather_cloudy
+        45, 48 -> "🌫️" to R.string.weather_fog
+        51, 53, 55, 56, 57 -> "🌦️" to R.string.weather_drizzle
+        61, 63, 65, 66, 67, 80, 81, 82 -> "🌧️" to R.string.weather_rain
+        71, 73, 75, 77, 85, 86 -> "🌨️" to R.string.weather_snow
+        95, 96, 99 -> "⛈️" to R.string.weather_thunderstorm
+        else -> "🌡️" to null
     }
 }
 
@@ -192,7 +193,7 @@ class GlanceRepository(
                         e -= tz.getOffset(e)
                     }
                     if (e <= now) continue
-                    out += CalEvent(c.getLong(0), c.getString(1)?.takeIf { it.isNotBlank() } ?: "(No title)", b, e, allDay, c.getInt(5), c.getString(6)?.takeIf { it.isNotBlank() })
+                    out += CalEvent(c.getLong(0), c.getString(1)?.takeIf { it.isNotBlank() } ?: context.getString(R.string.glance_no_title), b, e, allDay, c.getInt(5), c.getString(6)?.takeIf { it.isNotBlank() })
                 }
             }
         } catch (e: Exception) {

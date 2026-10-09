@@ -77,6 +77,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Velocity
@@ -84,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mali.nbeta.data.DrawerSort
+import com.mali.nbeta.R
 import com.mali.nbeta.data.LauncherSettings
 import com.mali.nbeta.data.apps.AppEntry
 import com.mali.nbeta.data.apps.ProfileKind
@@ -229,7 +231,7 @@ private fun SearchField(c: LauncherController, focus: FocusRequester) {
         Spacer(Modifier.width(12.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (c.query.isEmpty()) {
-                Text("Search", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.common_search), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
             }
             BasicTextField(
                 value = c.query,
@@ -248,11 +250,11 @@ private fun SearchField(c: LauncherController, focus: FocusRequester) {
             )
         }
         if (c.query.isNotEmpty()) {
-            IconButton(onClick = { c.query = "" }) { Icon(Icons.Default.Clear, "Clear") }
+            IconButton(onClick = { c.query = "" }) { Icon(Icons.Default.Clear, stringResource(R.string.common_clear)) }
         } else {
             IconButton(onClick = {
                 c.start(Intent(context, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }) { Icon(Icons.Default.Settings, "Launcher settings", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }) { Icon(Icons.Default.Settings, stringResource(R.string.common_launcher_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -295,8 +297,8 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
     Column(Modifier.fillMaxSize()) {
         if (workProfile != null) {
             PrimaryTabRow(selectedTabIndex = tab, containerColor = androidx.compose.ui.graphics.Color.Transparent) {
-                Tab(tab == 0, onClick = { tab = 0 }, text = { Text("Personal") })
-                Tab(tab == 1, onClick = { tab = 1 }, text = { Text("Work") })
+                Tab(tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.drawer_personal)) })
+                Tab(tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.drawer_work)) })
             }
         }
         val onClick: (AppEntry, com.mali.nbeta.ui.common.BoundsHolder) -> Unit = { app, b -> c.launch(app, b) }
@@ -326,7 +328,7 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
                 }
                 if (tab == 1 && workProfile?.quiet == true) {
                     item(key = "work-paused", span = { GridItemSpan(maxLineSpan) }) {
-                        ProfileBanner("Work apps are paused", "Resume") { c.graph.apps.setQuietMode(workProfile, false) }
+                        ProfileBanner(stringResource(R.string.drawer_work_paused), stringResource(R.string.drawer_resume)) { c.graph.apps.setQuietMode(workProfile, false) }
                     }
                 }
                 val paused = tab == 1 && workProfile?.quiet == true
@@ -339,7 +341,7 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
                 if (tab == 1 && workProfile != null && !workProfile.quiet) {
                     item(key = "work-pause", span = { GridItemSpan(maxLineSpan) }) {
                         Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                            FilledTonalButton(onClick = { c.graph.apps.setQuietMode(workProfile, true) }) { Text("Pause work apps") }
+                            FilledTonalButton(onClick = { c.graph.apps.setQuietMode(workProfile, true) }) { Text(stringResource(R.string.drawer_pause_work)) }
                         }
                     }
                 }
@@ -384,10 +386,10 @@ private fun PrivateHeader(locked: Boolean, onToggle: () -> Unit) {
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Private", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.drawer_private), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
         Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(8.dp))
-        Text(if (locked) "Unlock" else "Lock", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+        Text(stringResource(if (locked) R.string.drawer_unlock else R.string.drawer_lock), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
     }
 }
 

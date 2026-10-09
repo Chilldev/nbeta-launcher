@@ -58,12 +58,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.mali.nbeta.R
 import com.mali.nbeta.data.FeedOrder
 import com.mali.nbeta.data.FeedSource
 import com.mali.nbeta.data.LinkOpener
@@ -85,7 +89,6 @@ import kotlinx.coroutines.withContext
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @Composable
 fun FeedPage(c: LauncherController, active: Boolean) {
@@ -162,15 +165,15 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                 }
                 if (settings.feedSources.none { it.enabled }) {
                     item(key = "empty") {
-                        EmptyState("Your feed has no sources yet.", "Add sources") {
+                        EmptyState(stringResource(R.string.feed_empty_no_sources), stringResource(R.string.feed_add_sources)) {
                             c.start(Intent(c.activity, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_PAGE, "feed").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
                     }
                 } else if (items.isEmpty() && cache.items.isEmpty()) {
                     if (refreshing) items(3, key = { "sk$it" }) { SkeletonCard() }
-                    else item(key = "empty") { EmptyState("Couldn't load stories. Check your connection.", "Try again") { scope.launch { feed.refresh() } } }
+                    else item(key = "empty") { EmptyState(stringResource(R.string.feed_load_failed), stringResource(R.string.feed_try_again)) { scope.launch { feed.refresh() } } }
                 } else if (items.isEmpty()) {
-                    item(key = "none") { EmptyState(if (filter == FeedFilter.Saved) "Nothing saved yet. Tap ♡ on a story to keep it." else "You're all caught up.", null) {} }
+                    item(key = "none") { EmptyState(stringResource(if (filter == FeedFilter.Saved) R.string.feed_nothing_saved else R.string.feed_caught_up), null) {} }
                 }
                 items(items, key = { it.id }, contentType = { if (it.imageUrl != null) "hero" else "compact" }) { item ->
                     LaunchedEffect(item.id) { feed.requestImage(item) }
@@ -210,25 +213,27 @@ private fun FeedHeader(c: LauncherController, cache: FeedCache, refreshing: Bool
     var menu by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("Today", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.common_today), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
             val updated = when {
-                cache.lastRefresh == 0L -> "Not updated yet"
-                now - cache.lastRefresh < 60_000 -> "Updated just now"
-                else -> "Updated " + DateUtils.getRelativeTimeSpanString(cache.lastRefresh, now, DateUtils.MINUTE_IN_MILLIS)
+                cache.lastRefresh == 0L -> stringResource(R.string.feed_not_updated)
+                now - cache.lastRefresh < 60_000 -> stringResource(R.string.feed_updated_now)
+                else -> stringResource(R.string.feed_updated, DateUtils.getRelativeTimeSpanString(cache.lastRefresh, now, DateUtils.MINUTE_IN_MILLIS))
             }
+            val locale = LocalConfiguration.current.locales[0]
             Text(
-                SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date(now)) + " · " + if (refreshing) "Updating…" else updated,
+                SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEMMMMd"), locale).format(Date(now)) + " · " +
+                    if (refreshing) stringResource(R.string.feed_updating) else updated,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, "Refresh") }
+        IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, stringResource(R.string.feed_refresh)) }
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "More") }
+            IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.common_more)) }
             DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(text = { Text("Mark all as read") }, onClick = { menu = false; c.graph.feed.markAllRead() })
-                DropdownMenuItem(text = { Text("Add widget here") }, onClick = { menu = false; c.widgetPicker = WidgetPlacement.Feed })
-                DropdownMenuItem(text = { Text("Feed settings") }, leadingIcon = { Icon(Icons.Default.Settings, null) }, onClick = {
+                DropdownMenuItem(text = { Text(stringResource(R.string.feed_mark_all_read)) }, onClick = { menu = false; c.graph.feed.markAllRead() })
+                DropdownMenuItem(text = { Text(stringResource(R.string.feed_add_widget_here)) }, onClick = { menu = false; c.widgetPicker = WidgetPlacement.Feed })
+                DropdownMenuItem(text = { Text(stringResource(R.string.feed_settings)) }, leadingIcon = { Icon(Icons.Default.Settings, null) }, onClick = {
                     menu = false
                     c.start(Intent(c.activity, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_PAGE, "feed").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 })
@@ -261,13 +266,15 @@ private fun TodayCard(c: LauncherController) {
     ) {
         if (w != null && settings.glanceWeather) {
             val (emoji, desc) = WeatherCodes.describe(w.code, w.isDay)
+            val descText = desc?.let { stringResource(it) }.orEmpty()
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(emoji, fontSize = 34.sp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("${formatTemp(w.tempC, settings.tempUnit)} $desc", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("${formatTemp(w.tempC, settings.tempUnit)} $descText", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     Text(
-                        "H ${formatTemp(w.highC, settings.tempUnit)} · L ${formatTemp(w.lowC, settings.tempUnit)}" + (w.place?.let { " · $it" } ?: ""),
+                        stringResource(R.string.feed_weather_high_low, formatTemp(w.highC, settings.tempUnit), formatTemp(w.lowC, settings.tempUnit)) +
+                            (w.place?.let { " · $it" } ?: ""),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                     )
@@ -277,7 +284,8 @@ private fun TodayCard(c: LauncherController) {
         if (events.isNotEmpty() && settings.glanceCalendar) {
             if (w != null) Spacer(Modifier.height(14.dp))
             val is24 = android.text.format.DateFormat.is24HourFormat(context)
-            val fmt = SimpleDateFormat(if (is24) "HH:mm" else "h:mm a", Locale.getDefault())
+            val fmt = SimpleDateFormat(if (is24) "HH:mm" else "h:mm a", LocalConfiguration.current.locales[0])
+            val allDay = stringResource(R.string.feed_all_day)
             events.take(3).forEach { e ->
                 Row(
                     Modifier
@@ -295,7 +303,7 @@ private fun TodayCard(c: LauncherController) {
                     Column {
                         Text(e.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Text(
-                            if (e.allDay) "All day" else fmt.format(Date(e.begin)) + " – " + fmt.format(Date(e.end)) + (e.location?.let { " · $it" } ?: ""),
+                            if (e.allDay) allDay else fmt.format(Date(e.begin)) + " – " + fmt.format(Date(e.end)) + (e.location?.let { " · $it" } ?: ""),
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
@@ -306,8 +314,8 @@ private fun TodayCard(c: LauncherController) {
         }
         if (needCalendar || needLocation) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                if (needLocation) AssistChip(onClick = { locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }, label = { Text("Show weather") })
-                if (needCalendar) AssistChip(onClick = { calendarPermission.launch(Manifest.permission.READ_CALENDAR) }, label = { Text("Show calendar") })
+                if (needLocation) AssistChip(onClick = { locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION) }, label = { Text(stringResource(R.string.feed_show_weather)) })
+                if (needCalendar) AssistChip(onClick = { calendarPermission.launch(Manifest.permission.READ_CALENDAR) }, label = { Text(stringResource(R.string.feed_show_calendar)) })
             }
         }
     }
@@ -323,13 +331,13 @@ private fun FilterRow(
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 4.dp)) {
         item {
-            FilterChip(filter == FeedFilter.All && order == FeedOrder.ForYou, onClick = { onFilter(FeedFilter.All); onOrder(FeedOrder.ForYou) }, label = { Text("For you") })
+            FilterChip(filter == FeedFilter.All && order == FeedOrder.ForYou, onClick = { onFilter(FeedFilter.All); onOrder(FeedOrder.ForYou) }, label = { Text(stringResource(R.string.feed_for_you)) })
         }
         item {
-            FilterChip(filter == FeedFilter.All && order == FeedOrder.Latest, onClick = { onFilter(FeedFilter.All); onOrder(FeedOrder.Latest) }, label = { Text("Latest") })
+            FilterChip(filter == FeedFilter.All && order == FeedOrder.Latest, onClick = { onFilter(FeedFilter.All); onOrder(FeedOrder.Latest) }, label = { Text(stringResource(R.string.feed_latest)) })
         }
-        item { FilterChip(filter == FeedFilter.Unread, onClick = { onFilter(FeedFilter.Unread) }, label = { Text("Unread") }) }
-        item { FilterChip(filter == FeedFilter.Saved, onClick = { onFilter(FeedFilter.Saved) }, label = { Text("Saved") }) }
+        item { FilterChip(filter == FeedFilter.Unread, onClick = { onFilter(FeedFilter.Unread) }, label = { Text(stringResource(R.string.feed_unread)) }) }
+        item { FilterChip(filter == FeedFilter.Saved, onClick = { onFilter(FeedFilter.Saved) }, label = { Text(stringResource(R.string.feed_saved)) }) }
         items(sources.filter { it.enabled }, key = { it.id }) { s ->
             val selected = filter is FeedFilter.Source && filter.id == s.id
             FilterChip(selected, onClick = { onFilter(if (selected) FeedFilter.All else FeedFilter.Source(s.id)) }, label = { Text(s.title, maxLines = 1) })
@@ -401,22 +409,22 @@ private fun FeedCard(
             IconButton(onClick = onSave) {
                 Icon(
                     if (saved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    if (saved) "Unsave" else "Save",
+                    stringResource(if (saved) R.string.feed_unsave else R.string.common_save),
                     tint = if (saved) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp),
                 )
             }
             var menu by remember { mutableStateOf(false) }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "More", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.common_more), Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text("Share") }, onClick = { menu = false; onShare() })
-                    DropdownMenuItem(text = { Text("Open in browser") }, onClick = { menu = false; onBrowser() })
-                    DropdownMenuItem(text = { Text("Hide this story") }, onClick = { menu = false; onHide() })
-                    DropdownMenuItem(text = { Text("Mute a keyword…") }, onClick = { menu = false; onMuteKeyword() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.common_share)) }, onClick = { menu = false; onShare() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.feed_open_in_browser)) }, onClick = { menu = false; onBrowser() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.feed_hide_story)) }, onClick = { menu = false; onHide() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.feed_mute_keyword_menu)) }, onClick = { menu = false; onMuteKeyword() })
                     source?.let { s ->
-                        DropdownMenuItem(text = { Text("More from ${s.title}") }, onClick = { menu = false; onOnlySource() })
-                        DropdownMenuItem(text = { Text("Fewer from ${s.title}") }, onClick = { menu = false; onMute() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.feed_more_from, s.title)) }, onClick = { menu = false; onOnlySource() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.feed_fewer_from, s.title)) }, onClick = { menu = false; onMute() })
                     }
                 }
             }
@@ -455,18 +463,18 @@ private fun MuteKeywordDialog(item: FeedItem, onDismiss: () -> Unit, onMute: (St
     }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Mute a keyword") },
+        title = { Text(stringResource(R.string.feed_mute_keyword_title)) },
         text = {
             Column {
-                Text("Stories mentioning it will be hidden from your feed.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.feed_mute_keyword_body), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     suggestions.forEach { w -> AssistChip(onClick = { text = w }, label = { Text(w) }) }
                 }
-                androidx.compose.material3.OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Keyword") })
+                androidx.compose.material3.OutlinedTextField(text, { text = it }, singleLine = true, label = { Text(stringResource(R.string.feed_keyword)) })
             }
         },
-        confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onMute(text.trim()); onDismiss() }) { Text("Mute") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onMute(text.trim()); onDismiss() }) { Text(stringResource(R.string.feed_mute)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }

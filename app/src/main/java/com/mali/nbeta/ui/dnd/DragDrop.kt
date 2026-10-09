@@ -48,6 +48,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -56,6 +57,7 @@ import com.mali.nbeta.data.HomeItem
 import com.mali.nbeta.data.Layout
 import com.mali.nbeta.data.apps.AppEntry
 import com.mali.nbeta.data.stableKey
+import com.mali.nbeta.R
 import com.mali.nbeta.ui.LauncherController
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
@@ -201,7 +203,7 @@ class DragDrop(private val c: LauncherController) {
         val settings = c.graph.settings
         when (t) {
             is DropTarget.Insert -> settings.update { Layout.move(it, d.item, t.container, t.index) }
-            is DropTarget.Merge -> settings.update { Layout.merge(it, d.item, t.target) }
+            is DropTarget.Merge -> settings.update { Layout.merge(it, d.item, t.target, c.activity.getString(R.string.home_folder_default_name)) }
             DropTarget.Remove -> if (d.origin != null) c.removeItem(d.item)
             DropTarget.AppInfo -> d.app?.let { c.graph.apps.openAppInfo(it) }
             DropTarget.Uninstall -> d.app?.let { c.graph.apps.uninstall(it) }
@@ -305,10 +307,10 @@ fun DragOverlay(dnd: DragDrop, iconSize: Dp) {
             Modifier.fillMaxWidth().statusBarsPadding().padding(top = 12.dp, start = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         ) {
-            if (d.origin != null) ActionTarget(dnd, DropTarget.Remove, Icons.Default.Close, "Remove")
+            if (d.origin != null) ActionTarget(dnd, DropTarget.Remove, Icons.Default.Close, stringResource(R.string.common_remove))
             if (d.app != null) {
-                ActionTarget(dnd, DropTarget.AppInfo, Icons.Default.Info, "App info")
-                ActionTarget(dnd, DropTarget.Uninstall, Icons.Default.Delete, "Uninstall")
+                ActionTarget(dnd, DropTarget.AppInfo, Icons.Default.Info, stringResource(R.string.common_app_info))
+                ActionTarget(dnd, DropTarget.Uninstall, Icons.Default.Delete, stringResource(R.string.common_uninstall))
             }
         }
         val size = iconSize * 1.12f

@@ -39,8 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mali.nbeta.data.apps.AppEntry
+import com.mali.nbeta.R
 import com.mali.nbeta.data.apps.IconPack
 import com.mali.nbeta.data.search.TextFold
 import com.mali.nbeta.ui.LauncherController
@@ -82,16 +84,16 @@ fun IconPickerSheet(c: LauncherController, app: AppEntry) {
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     Text(app.label, style = MaterialTheme.typography.titleLarge)
-                    Text("Choose an icon", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.menu_choose_icon), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (app.key in graph.settings.value.iconOverrides) {
-                    androidx.compose.material3.TextButton(onClick = { choose(null) }) { Text("Reset") }
+                    androidx.compose.material3.TextButton(onClick = { choose(null) }) { Text(stringResource(R.string.common_reset)) }
                 }
             }
             Spacer(Modifier.height(12.dp))
             if (packs.isEmpty()) {
                 Text(
-                    "No icon packs installed. Install one from the Play Store (search “icon pack”), then come back here to pick icons app by app.",
+                    stringResource(R.string.menu_no_icon_packs),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 24.dp),
                 )
@@ -100,7 +102,7 @@ fun IconPickerSheet(c: LauncherController, app: AppEntry) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(packs, key = { it.first }) { (p, label) -> FilterChip(p == pkg, onClick = { selected = p }, label = { Text(label) }) }
             }
-            OutlinedTextField(query, { query = it }, singleLine = true, label = { Text("Search icons") }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+            OutlinedTextField(query, { query = it }, singleLine = true, label = { Text(stringResource(R.string.menu_search_icons)) }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(64.dp),
                 contentPadding = PaddingValues(bottom = 16.dp),

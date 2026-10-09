@@ -8,7 +8,9 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.util.Patterns
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+import com.mali.nbeta.R
 import com.mali.nbeta.data.SettingsRepository
 import com.mali.nbeta.data.apps.AppEntry
 import com.mali.nbeta.data.apps.AppRepository
@@ -30,23 +32,15 @@ import java.net.URLEncoder
 data class ContactHit(val id: Long, val lookupKey: String, val name: String, val photo: String?, val phone: String?)
 
 @Immutable
-data class SettingHit(val label: String, val action: String)
+data class SettingHit(@StringRes val label: Int, val action: String)
 
 @Immutable
 sealed interface WebHit {
-    val title: String
+    data class Url(val url: String) : WebHit
 
-    data class Url(val url: String) : WebHit {
-        override val title get() = url
-    }
+    data class Search(val query: String, val engine: String, val url: String) : WebHit
 
-    data class Search(val query: String, val engine: String, val url: String) : WebHit {
-        override val title get() = "Search $engine for “$query”"
-    }
-
-    data class Store(val query: String) : WebHit {
-        override val title get() = "Search Play Store for “$query”"
-    }
+    data class Store(val query: String) : WebHit
 }
 
 @Immutable
@@ -83,7 +77,15 @@ class SearchEngine(
         .flowOn(Dispatchers.Default)
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
-    private val settingsIndex by lazy { SYSTEM_SETTINGS.map { it to Searchable(it.label) } }
+    // Labels are matched in the current language, so the index is rebuilt when the locale changes.
+    @Volatile
+    private var settingsIndex: Pair<java.util.Locale, List<Pair<SettingHit, Searchable>>>? = null
+
+    private fun settingsIndex(): List<Pair<SettingHit, Searchable>> {
+        val locale = context.resources.configuration.locales[0]
+        settingsIndex?.let { (l, index) -> if (l == locale) return index }
+        return SYSTEM_SETTINGS.map { it to Searchable(context.getString(it.label)) }.also { settingsIndex = locale to it }
+    }
 
     suspend fun search(raw: String): SearchResults = coroutineScope {
         val query = raw.trim()
@@ -104,7 +106,7 @@ class SearchEngine(
         } else emptyList()
 
         val settingHits = if (cfg.searchSettings && q.length >= 3) {
-            settingsIndex.mapNotNull { (h, s) -> Matcher.score(q, s).takeIf { it >= 600 }?.let { h to it } }
+            settingsIndex().mapNotNull { (h, s) -> Matcher.score(q, s).takeIf { it >= 600 }?.let { h to it } }
                 .sortedByDescending { it.second }.take(3).map { it.first }
         } else emptyList()
 
@@ -175,38 +177,38 @@ class SearchEngine(
 
     companion object {
         val SYSTEM_SETTINGS = listOf(
-            SettingHit("Wi‑Fi", Settings.ACTION_WIFI_SETTINGS),
-            SettingHit("Bluetooth", Settings.ACTION_BLUETOOTH_SETTINGS),
-            SettingHit("Mobile network", Settings.ACTION_DATA_ROAMING_SETTINGS),
-            SettingHit("Network & internet", Settings.ACTION_WIRELESS_SETTINGS),
-            SettingHit("Hotspot & tethering", "android.settings.TETHER_SETTINGS"),
-            SettingHit("Airplane mode", Settings.ACTION_AIRPLANE_MODE_SETTINGS),
-            SettingHit("Display & brightness", Settings.ACTION_DISPLAY_SETTINGS),
-            SettingHit("Wallpaper", Intent.ACTION_SET_WALLPAPER),
-            SettingHit("Sound & vibration", Settings.ACTION_SOUND_SETTINGS),
-            SettingHit("Battery", Intent.ACTION_POWER_USAGE_SUMMARY),
-            SettingHit("Apps", Settings.ACTION_APPLICATION_SETTINGS),
-            SettingHit("Default apps", Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
-            SettingHit("Notifications", "android.settings.ALL_APPS_NOTIFICATION_SETTINGS"),
-            SettingHit("Storage", Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
-            SettingHit("Location", Settings.ACTION_LOCATION_SOURCE_SETTINGS),
-            SettingHit("Security & privacy", Settings.ACTION_SECURITY_SETTINGS),
-            SettingHit("Privacy", Settings.ACTION_PRIVACY_SETTINGS),
-            SettingHit("Accessibility", Settings.ACTION_ACCESSIBILITY_SETTINGS),
-            SettingHit("Date & time", Settings.ACTION_DATE_SETTINGS),
-            SettingHit("Language & input", Settings.ACTION_LOCALE_SETTINGS),
-            SettingHit("Keyboard", Settings.ACTION_INPUT_METHOD_SETTINGS),
-            SettingHit("Developer options", Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
-            SettingHit("About phone", Settings.ACTION_DEVICE_INFO_SETTINGS),
-            SettingHit("NFC", Settings.ACTION_NFC_SETTINGS),
-            SettingHit("Cast", Settings.ACTION_CAST_SETTINGS),
-            SettingHit("Data usage", Settings.ACTION_DATA_USAGE_SETTINGS),
-            SettingHit("VPN", Settings.ACTION_VPN_SETTINGS),
-            SettingHit("Do not disturb", Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS),
-            SettingHit("Night light", Settings.ACTION_NIGHT_DISPLAY_SETTINGS),
-            SettingHit("Users", "android.settings.USER_SETTINGS"),
-            SettingHit("Accounts", Settings.ACTION_SYNC_SETTINGS),
-            SettingHit("System update", "android.settings.SYSTEM_UPDATE_SETTINGS"),
+            SettingHit(R.string.search_setting_wifi, Settings.ACTION_WIFI_SETTINGS),
+            SettingHit(R.string.search_setting_bluetooth, Settings.ACTION_BLUETOOTH_SETTINGS),
+            SettingHit(R.string.search_setting_mobile_network, Settings.ACTION_DATA_ROAMING_SETTINGS),
+            SettingHit(R.string.search_setting_network, Settings.ACTION_WIRELESS_SETTINGS),
+            SettingHit(R.string.search_setting_hotspot, "android.settings.TETHER_SETTINGS"),
+            SettingHit(R.string.search_setting_airplane, Settings.ACTION_AIRPLANE_MODE_SETTINGS),
+            SettingHit(R.string.search_setting_display, Settings.ACTION_DISPLAY_SETTINGS),
+            SettingHit(R.string.common_wallpaper, Intent.ACTION_SET_WALLPAPER),
+            SettingHit(R.string.search_setting_sound, Settings.ACTION_SOUND_SETTINGS),
+            SettingHit(R.string.search_setting_battery, Intent.ACTION_POWER_USAGE_SUMMARY),
+            SettingHit(R.string.search_setting_apps, Settings.ACTION_APPLICATION_SETTINGS),
+            SettingHit(R.string.search_setting_default_apps, Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
+            SettingHit(R.string.common_notifications, "android.settings.ALL_APPS_NOTIFICATION_SETTINGS"),
+            SettingHit(R.string.search_setting_storage, Settings.ACTION_INTERNAL_STORAGE_SETTINGS),
+            SettingHit(R.string.common_location, Settings.ACTION_LOCATION_SOURCE_SETTINGS),
+            SettingHit(R.string.search_setting_security, Settings.ACTION_SECURITY_SETTINGS),
+            SettingHit(R.string.search_setting_privacy, Settings.ACTION_PRIVACY_SETTINGS),
+            SettingHit(R.string.search_setting_accessibility, Settings.ACTION_ACCESSIBILITY_SETTINGS),
+            SettingHit(R.string.search_setting_date, Settings.ACTION_DATE_SETTINGS),
+            SettingHit(R.string.search_setting_language, Settings.ACTION_LOCALE_SETTINGS),
+            SettingHit(R.string.search_setting_keyboard, Settings.ACTION_INPUT_METHOD_SETTINGS),
+            SettingHit(R.string.search_setting_developer, Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
+            SettingHit(R.string.search_setting_about, Settings.ACTION_DEVICE_INFO_SETTINGS),
+            SettingHit(R.string.search_setting_nfc, Settings.ACTION_NFC_SETTINGS),
+            SettingHit(R.string.search_setting_cast, Settings.ACTION_CAST_SETTINGS),
+            SettingHit(R.string.search_setting_data_usage, Settings.ACTION_DATA_USAGE_SETTINGS),
+            SettingHit(R.string.search_setting_vpn, Settings.ACTION_VPN_SETTINGS),
+            SettingHit(R.string.search_setting_dnd, Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS),
+            SettingHit(R.string.search_setting_night_light, Settings.ACTION_NIGHT_DISPLAY_SETTINGS),
+            SettingHit(R.string.search_setting_users, "android.settings.USER_SETTINGS"),
+            SettingHit(R.string.search_setting_accounts, Settings.ACTION_SYNC_SETTINGS),
+            SettingHit(R.string.search_setting_system_update, "android.settings.SYSTEM_UPDATE_SETTINGS"),
         )
     }
 }

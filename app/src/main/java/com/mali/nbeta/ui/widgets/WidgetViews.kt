@@ -60,12 +60,14 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mali.nbeta.data.WidgetPlacement
+import com.mali.nbeta.R
 import com.mali.nbeta.data.WidgetSlot
 import com.mali.nbeta.data.widgets.WidgetProviderGroup
 import com.mali.nbeta.ui.LauncherController
@@ -98,7 +100,7 @@ fun WidgetFrame(c: LauncherController, slot: WidgetSlot, modifier: Modifier = Mo
                 .combinedClickable(onClick = openMenu, onLongClick = openMenu),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Widget unavailable · tap to remove", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.widget_unavailable), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -175,7 +177,7 @@ fun WidgetPickerSheet(c: LauncherController, placement: WidgetPlacement) {
     var expanded by remember { mutableStateOf<String?>(null) }
     ModalBottomSheet(onDismissRequest = { c.widgetPicker = null }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Text(
-            "Add widget",
+            stringResource(R.string.home_add_widget),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
         )
@@ -192,7 +194,7 @@ fun WidgetPickerSheet(c: LauncherController, placement: WidgetPlacement) {
                         AppIconSmall(g.packageName)
                         Spacer(Modifier.width(16.dp))
                         Text(g.appLabel, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                        Text("${g.providers.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_number, g.providers.size), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (expanded == g.packageName) {
                         LazyRow(
@@ -257,7 +259,7 @@ private fun ProviderCard(info: AppWidgetProviderInfo, label: String, onClick: ()
         Text(label, fontWeight = FontWeight.Medium, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
         val wCells = ((info.minWidth / dm.density) / 70).toInt().coerceAtLeast(1)
         val hCells = ((info.minHeight / dm.density) / 70).toInt().coerceAtLeast(1)
-        Text("$wCells × $hCells", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.widget_size, wCells, hCells), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -268,8 +270,9 @@ fun WidgetMenuSheet(c: LauncherController, id: Int) {
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     val slot = settings.widgets.firstOrNull { it.id == id }
     ModalBottomSheet(onDismissRequest = { c.widgetMenu = null }) {
-        val label by produceState("Widget", id) {
-            value = withContext(Dispatchers.IO) { repo.info(id)?.loadLabel(c.activity.packageManager) ?: "Widget" }
+        val fallback = stringResource(R.string.common_widget)
+        val label by produceState(fallback, id) {
+            value = withContext(Dispatchers.IO) { repo.info(id)?.loadLabel(c.activity.packageManager) ?: fallback }
         }
         Text(label, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
@@ -278,24 +281,24 @@ fun WidgetMenuSheet(c: LauncherController, id: Int) {
             }
             if (slot != null) {
                 val current = if (slot.heightDp > 0) slot.heightDp else meta?.first ?: 120
-                MenuRow(Icons.Default.Add, "Taller") { repo.update(id) { it.copy(heightDp = (current + 40).coerceAtMost(720)) } }
-                MenuRow(Icons.Default.Close, "Shorter") { repo.update(id) { it.copy(heightDp = (current - 40).coerceAtLeast(56)) } }
-                MenuRow(Icons.Default.KeyboardArrowUp, "Move up") { repo.move(id, -1) }
-                MenuRow(Icons.Default.KeyboardArrowDown, "Move down") { repo.move(id, +1) }
+                MenuRow(Icons.Default.Add, stringResource(R.string.widget_taller)) { repo.update(id) { it.copy(heightDp = (current + 40).coerceAtMost(720)) } }
+                MenuRow(Icons.Default.Close, stringResource(R.string.widget_shorter)) { repo.update(id) { it.copy(heightDp = (current - 40).coerceAtLeast(56)) } }
+                MenuRow(Icons.Default.KeyboardArrowUp, stringResource(R.string.widget_move_up)) { repo.move(id, -1) }
+                MenuRow(Icons.Default.KeyboardArrowDown, stringResource(R.string.widget_move_down)) { repo.move(id, +1) }
                 val other = if (slot.placement == WidgetPlacement.Home) WidgetPlacement.Feed else WidgetPlacement.Home
-                MenuRow(Icons.Default.Share, if (other == WidgetPlacement.Feed) "Move to feed page" else "Move to home screen") {
+                MenuRow(Icons.Default.Share, stringResource(if (other == WidgetPlacement.Feed) R.string.widget_move_to_feed else R.string.widget_move_to_home)) {
                     repo.update(id) { it.copy(placement = other) }
                     c.widgetMenu = null
                 }
                 if (meta?.second == true) {
-                    MenuRow(Icons.Default.Settings, "Reconfigure") {
+                    MenuRow(Icons.Default.Settings, stringResource(R.string.widget_reconfigure)) {
                         c.widgetMenu = null
                         c.widgets.reconfigure(id)
                     }
                 }
-                if (slot.heightDp > 0) MenuRow(Icons.Default.Refresh, "Reset size") { repo.update(id) { it.copy(heightDp = 0) } }
+                if (slot.heightDp > 0) MenuRow(Icons.Default.Refresh, stringResource(R.string.widget_reset_size)) { repo.update(id) { it.copy(heightDp = 0) } }
             }
-            MenuRow(Icons.Default.Close, "Remove") {
+            MenuRow(Icons.Default.Close, stringResource(R.string.common_remove)) {
                 repo.remove(id)
                 c.widgetMenu = null
             }

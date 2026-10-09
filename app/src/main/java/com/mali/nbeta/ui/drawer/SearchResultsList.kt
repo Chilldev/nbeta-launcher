@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.mali.nbeta.R
 import com.mali.nbeta.data.LauncherSettings
 import com.mali.nbeta.data.apps.AppShortcut
 import com.mali.nbeta.data.search.ContactHit
@@ -88,7 +90,7 @@ fun SearchResultsList(c: LauncherController, r: SearchResults, settings: Launche
                         Text(r.query.trim(), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f), maxLines = 1)
                         Text("= $value", fontSize = 28.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
-                    Text("Copy", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.common_copy), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -116,31 +118,38 @@ fun SearchResultsList(c: LauncherController, r: SearchResults, settings: Launche
             }
         }
         if (r.shortcuts.isNotEmpty()) {
-            item(key = "h-shortcuts") { Header("Shortcuts") }
+            item(key = "h-shortcuts") { Header(stringResource(R.string.search_shortcuts)) }
             items(r.shortcuts, key = { "s" + it.key }) { s -> ShortcutRow(c, s) }
         }
         if (r.contacts.isNotEmpty()) {
-            item(key = "h-contacts") { Header("Contacts") }
+            item(key = "h-contacts") { Header(stringResource(R.string.common_contacts)) }
             items(r.contacts, key = { "c${it.id}" }) { ContactRow(c, it) }
         }
         if (r.settings.isNotEmpty()) {
-            item(key = "h-settings") { Header("Settings") }
+            item(key = "h-settings") { Header(stringResource(R.string.common_settings)) }
             items(r.settings, key = { "set" + it.action }) { s ->
-                ResultRow(Icons.Default.Settings, s.label, null) { c.start(Intent(s.action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                ResultRow(Icons.Default.Settings, stringResource(s.label), null) { c.start(Intent(s.action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
         }
-        item(key = "h-web") { Header("Web") }
-        items(r.web, key = { "w" + it.title }) { w ->
-            val icon = when (w) {
-                is WebHit.Url -> Icons.Default.Share
-                is WebHit.Search -> Icons.Default.Search
-                is WebHit.Store -> Icons.Default.PlayArrow
+        item(key = "h-web") { Header(stringResource(R.string.search_web)) }
+        items(r.web, key = { it.key }) { w ->
+            val (icon, title) = when (w) {
+                is WebHit.Url -> Icons.Default.Share to w.url
+                is WebHit.Search -> Icons.Default.Search to stringResource(R.string.search_web_hit, w.engine, w.query)
+                is WebHit.Store -> Icons.Default.PlayArrow to stringResource(R.string.search_store_hit, w.query)
             }
-            ResultRow(icon, w.title, null) { c.start(c.graph.search.webIntent(w)) }
+            ResultRow(icon, title, null) { c.start(c.graph.search.webIntent(w)) }
         }
         item(key = "bottom") { Spacer(Modifier.height(24.dp)) }
     }
 }
+
+private val WebHit.key
+    get() = when (this) {
+        is WebHit.Url -> "wu$url"
+        is WebHit.Search -> "ws$url"
+        is WebHit.Store -> "wp$query"
+    }
 
 @Composable
 private fun Header(text: String) {
@@ -218,10 +227,10 @@ private fun ContactRow(c: LauncherController, h: ContactHit) {
         }
         h.phone?.let { phone ->
             IconButton(onClick = { c.start(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$phone")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) {
-                Icon(Icons.Default.Email, "Message")
+                Icon(Icons.Default.Email, stringResource(R.string.search_message))
             }
             IconButton(onClick = { c.start(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) {
-                Icon(Icons.Default.Call, "Call")
+                Icon(Icons.Default.Call, stringResource(R.string.search_call))
             }
         }
     }
@@ -230,5 +239,5 @@ private fun ContactRow(c: LauncherController, h: ContactHit) {
 fun copyToClipboard(c: LauncherController, text: String) {
     val cm = c.activity.getSystemService(ClipboardManager::class.java)
     cm.setPrimaryClip(ClipData.newPlainText("Result", text))
-    if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(c.activity, "Copied $text", Toast.LENGTH_SHORT).show()
+    if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(c.activity, c.activity.getString(R.string.search_copied, text), Toast.LENGTH_SHORT).show()
 }
