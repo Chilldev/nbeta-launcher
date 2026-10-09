@@ -58,6 +58,18 @@ A launcher is judged on how it feels on HOME and swipe-up, not on cold start alo
 | R8 full mode + resource shrinking | `app/build.gradle.kts` | Smaller, faster code. Always measure release builds. |
 | **Baseline Profile + Startup Profile** | `:baselineprofile` | The home, drawer, search and feed paths are AOT-compiled at install, and DEX layout is optimised for startup. |
 
+## Measured
+
+Macrobenchmark on the Android 16 emulator (host GPU, Apple M4), release build. A physical device will differ, so treat these as relative numbers:
+
+| | Without profile | With baseline profile |
+|---|---|---|
+| Cold start, time to initial display (median) | 275 ms | **218 ms** |
+| Launcher journey (drawer, search, feed), frame CPU time P50 / P99 | – | 2.4 ms / 27 ms |
+| Frame overrun P50 / P95 / P99 (negative = ahead of deadline) | – | −6.3 / 3.4 / 14.3 ms |
+
+Cold start matters less for a home app than for most apps, because the system keeps the launcher process alive. The usual path is a warm HOME press, which is instant.
+
 ## Build
 
 ```bash
