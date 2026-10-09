@@ -71,8 +71,10 @@ fun LauncherRoot(c: LauncherController) {
             TextOnWallpaper.Dark -> true
         }
         val onWallpaper = remember(darkText) {
-            if (darkText) OnWallpaper(Color(0xFF1B1B1F), Color(0xFF1B1B1F).copy(alpha = 0.75f), null)
-            else OnWallpaper(Color.White, Color.White.copy(alpha = 0.85f), Shadow(Color.Black.copy(alpha = 0.45f), Offset(0f, 1.5f), 6f))
+            // White text gets a shadow plus a soft dark scrim (the wallpaper's light parts would wash it out); dark text
+            // a faint light scrim for the same reason on busy light wallpapers.
+            if (darkText) OnWallpaper(Color(0xFF1B1B1F), Color(0xFF1B1B1F).copy(alpha = 0.8f), null, Color.White.copy(alpha = 0.28f))
+            else OnWallpaper(Color.White, Color.White.copy(alpha = 0.9f), Shadow(Color.Black.copy(alpha = 0.6f), Offset(0f, 1.5f), 10f), Color.Black.copy(alpha = 0.45f))
         }
 
         // Warm icons for the whole drawer as soon as the list or style is known; home and dock first.

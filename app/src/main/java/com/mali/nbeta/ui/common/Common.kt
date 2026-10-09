@@ -32,10 +32,11 @@ val LocalDots = compositionLocalOf { emptySet<String>() }
 val LocalIconOverrides = compositionLocalOf { emptyMap<String, String>() }
 
 /** Colours for text drawn straight on the wallpaper. */
-data class OnWallpaper(val text: Color, val secondary: Color, val shadow: Shadow?)
+/** [scrim] is laid behind the status bar/glance and the dock so text stays legible on any wallpaper. */
+data class OnWallpaper(val text: Color, val secondary: Color, val shadow: Shadow?, val scrim: Color = Color.Transparent)
 
 val LocalOnWallpaper = compositionLocalOf {
-    OnWallpaper(Color.White, Color.White.copy(alpha = 0.8f), Shadow(Color.Black.copy(alpha = 0.45f), Offset(0f, 1.5f), 6f))
+    OnWallpaper(Color.White, Color.White.copy(alpha = 0.9f), Shadow(Color.Black.copy(alpha = 0.6f), Offset(0f, 1.5f), 10f), Color.Black.copy(alpha = 0.45f))
 }
 
 /**

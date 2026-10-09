@@ -1,6 +1,10 @@
 package com.mali.nbeta.ui.home
 
 import android.content.Intent
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.SideEffect
@@ -173,10 +177,18 @@ fun HomePageContent(c: LauncherController, settings: LauncherSettings, page: Int
     val density = LocalDensity.current
     val editing = c.editingHome
     val items = settings.homePages.getOrNull(page).orEmpty()
+    val scrim = LocalOnWallpaper.current.scrim
     Box(
         Modifier
             .fillMaxSize()
             .onSizeChanged { c.drawer.height = it.height.toFloat().coerceAtLeast(1f) }
+            .drawBehind {
+                // Behind the status bar and the glance: solid for the first fifth, gone by ~40% of the height.
+                drawRect(
+                    Brush.verticalGradient(0f to scrim, 0.48f to scrim, 1f to Color.Transparent, endY = size.height * 0.42f),
+                    size = size.copy(height = size.height * 0.42f),
+                )
+            }
             .homeGestures(c, settings),
     ) {
         Column(
@@ -191,11 +203,19 @@ fun HomePageContent(c: LauncherController, settings: LauncherSettings, page: Int
                 WidgetColumn(c, settings.widgets.filter { it.placement == WidgetPlacement.Home && it.page == page }, editing)
             }
             AnimatedVisibility(editing, enter = fadeIn(), exit = fadeOut()) {
-                val color = LocalOnWallpaper.current.text
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    TextButton(onClick = { c.widgetPicker = WidgetPlacement.Home }) { Text("Add widget", color = color) }
-                    TextButton(onClick = { c.addPage() }) { Text("Add page", color = color) }
-                    TextButton(onClick = { c.editingHome = false }) { Text("Done", color = color) }
+                // On a pill: these sit mid-wallpaper, where neither scrim reaches.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f))
+                            .padding(horizontal = 4.dp),
+                    ) {
+                        val color = MaterialTheme.colorScheme.primary
+                        TextButton(onClick = { c.widgetPicker = WidgetPlacement.Home }) { Text("Add widget", color = color) }
+                        TextButton(onClick = { c.addPage() }) { Text("Add page", color = color) }
+                        TextButton(onClick = { c.editingHome = false }) { Text("Done", color = color) }
+                    }
                 }
             }
             ItemGrid(c, Container.Page(page), items, settings.homeColumns, settings.iconSizeDp.dp, settings.homeLabels, wallpaperLabelStyle())
@@ -213,6 +233,7 @@ fun DockArea(
     firstHomePage: Int,
     modifier: Modifier = Modifier,
 ) {
+    val onWallpaperScrim = LocalOnWallpaper.current.scrim
     Column(
         modifier
             .fillMaxWidth()
@@ -223,6 +244,11 @@ fun DockArea(
             .graphicsLayer {
                 // Off to the right as the feed slides in (hit-testing follows the translation).
                 translationX = (firstHomePage - position()).coerceAtLeast(0f) * size.width
+            }
+            .drawBehind {
+                val scrim = onWallpaperScrim
+                drawRect(Brush.verticalGradient(listOf(Color.Transparent, scrim), startY = 0f, endY = size.height * 0.6f))
+                drawRect(scrim, topLeft = Offset(0f, size.height * 0.6f), size = size.copy(height = size.height * 0.4f))
             }
             .homeGestures(c, settings)
             .navigationBarsPadding()
@@ -251,7 +277,7 @@ private fun PageDots(count: Int, position: () -> Float) {
                     .size(7.dp)
                     .graphicsLayer {
                         val d = abs(position() - i).coerceAtMost(1f)
-                        alpha = 1f - 0.6f * d
+                        alpha = 1f - 0.5f * d
                         val sc = 1.15f - 0.3f * d
                         scaleX = sc
                         scaleY = sc
@@ -461,7 +487,9 @@ fun FolderIcon(folder: HomeItem.Folder, size: Dp) {
         Modifier
             .size(size)
             .clip(RoundedCornerShape(size * 0.3f))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.75f)),
+            // A tinted container plus a hairline keeps the plate visible on both dark and light wallpapers.
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.92f))
+            .border(1.dp, MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.16f), RoundedCornerShape(size * 0.3f)),
         contentAlignment = Alignment.Center,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(size * 0.06f)) {
@@ -500,7 +528,7 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
         if (s.glanceClock) {
             Text(
                 SimpleDateFormat(if (is24) "HH:mm" else "h:mm", locale).format(Date(now)),
-                style = TextStyle(fontSize = 64.sp, fontWeight = FontWeight.Light, color = w.text, shadow = w.shadow, letterSpacing = (-1).sp),
+                style = TextStyle(fontSize = 64.sp, fontWeight = FontWeight.Normal, color = w.text, shadow = w.shadow, letterSpacing = (-1).sp),
                 modifier = Modifier.clickable(interactionSource = null, indication = null) {
                     c.start(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 },

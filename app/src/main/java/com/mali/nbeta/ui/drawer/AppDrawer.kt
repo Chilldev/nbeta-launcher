@@ -454,8 +454,8 @@ private fun FastScroller(
             sections.forEach { (letter, _) ->
                 Text(
                     letter,
-                    fontSize = 10.sp,
-                    fontWeight = if (letter == active) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 11.sp,
+                    fontWeight = if (letter == active) FontWeight.Bold else FontWeight.SemiBold,
                     color = if (letter == active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

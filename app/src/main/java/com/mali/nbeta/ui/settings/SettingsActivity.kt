@@ -365,7 +365,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
                             Icon(
                                 Icons.Default.Notifications,
                                 if (alerting) "Stop alerts from ${src.title}" else "Alert me about ${src.title}",
-                                tint = if (alerting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                tint = if (alerting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                             )
                         }
                     }
