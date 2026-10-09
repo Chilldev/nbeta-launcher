@@ -263,7 +263,7 @@ fun DockArea(
             .navigationBarsPadding()
             .padding(horizontal = 12.dp),
     ) {
-        if (pageCount > 1) PageDots(pageCount, { position() - firstHomePage })
+        if (pageCount > 1 && (settings.showPageDots || c.dnd.active)) PageDots(pageCount, { position() - firstHomePage })
         if (settings.showHomeSearch) SearchPill(onClick = { c.openSearch() })
         if (settings.showDock) {
             val dock = settings.dockItems

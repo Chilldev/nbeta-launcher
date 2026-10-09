@@ -97,6 +97,8 @@ data class LauncherSettings(
     val homeLabels: Boolean = true,
     val showDock: Boolean = true,
     val showHomeSearch: Boolean = true,
+    val hideStatusBar: Boolean = false,
+    val showPageDots: Boolean = true,
     val glanceClock: Boolean = true,
     val glanceWeather: Boolean = true,
     val glanceCalendar: Boolean = true,

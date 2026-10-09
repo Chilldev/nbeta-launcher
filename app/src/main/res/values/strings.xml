@@ -493,4 +493,7 @@
     <string name="common_not_now">Not now</string>
     <string name="settings_search_events">Calendar events</string>
     <string name="settings_search_events_summary">Find upcoming events by name (needs calendar access)</string>
+    <string name="settings_page_dots">Page dots</string>
+    <string name="settings_hide_status_bar">Hide status bar on home</string>
+    <string name="settings_hide_status_bar_summary">Swipe down from the top edge to see it briefly</string>
 </resources>

@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mali.nbeta.data.TextOnWallpaper
 import com.mali.nbeta.data.apps.IconStyle
@@ -142,7 +144,7 @@ fun LauncherRoot(c: LauncherController) {
             // Status bar icons follow whatever is under them: wallpaper text colour on home, theme on drawer/feed.
             val view = LocalView.current
             val window = c.activity.window
-            LaunchedEffect(darkText, dark, feedOn) {
+            LaunchedEffect(darkText, dark, feedOn, settings.hideStatusBar) {
                 snapshotFlow { c.drawer.progress > 0.5f || (feedOn && pager.currentPage == 0) }
                     .distinctUntilChanged()
                     .collect { onSurface ->
@@ -150,6 +152,10 @@ fun LauncherRoot(c: LauncherController) {
                         WindowCompat.getInsetsController(window, view).apply {
                             isAppearanceLightStatusBars = light
                             isAppearanceLightNavigationBars = light
+                            // Hidden only on the home pages; a swipe from the top still reveals it briefly.
+                            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                            if (settings.hideStatusBar && !onSurface) hide(WindowInsetsCompat.Type.statusBars())
+                            else show(WindowInsetsCompat.Type.statusBars())
                         }
                     }
             }

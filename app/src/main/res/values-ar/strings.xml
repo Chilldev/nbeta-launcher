@@ -528,4 +528,7 @@
     <string name="common_not_now">ليس الآن</string>
     <string name="settings_search_events">أحداث التقويم</string>
     <string name="settings_search_events_summary">ابحث عن الأحداث القادمة بالاسم (يتطلب الوصول إلى التقويم)</string>
+    <string name="settings_page_dots">نقاط الصفحات</string>
+    <string name="settings_hide_status_bar">إخفاء شريط الحالة في الشاشة الرئيسية</string>
+    <string name="settings_hide_status_bar_summary">اسحب لأسفل من الحافة العلوية لإظهاره مؤقتًا</string>
 </resources>

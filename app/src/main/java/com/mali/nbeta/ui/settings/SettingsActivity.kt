@@ -265,6 +265,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.home(s: LauncherSetti
     item { SwitchPref(stringResource(R.string.settings_home_labels), null, s.homeLabels) { v -> set { it.copy(homeLabels = v) } } }
     item { SwitchPref(stringResource(R.string.settings_dock), stringResource(R.string.settings_dock_summary), s.showDock) { v -> set { it.copy(showDock = v) } } }
     item { SwitchPref(stringResource(R.string.settings_search_bar), null, s.showHomeSearch) { v -> set { it.copy(showHomeSearch = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_page_dots), null, s.showPageDots) { v -> set { it.copy(showPageDots = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_hide_status_bar), stringResource(R.string.settings_hide_status_bar_summary), s.hideStatusBar) { v -> set { it.copy(hideStatusBar = v) } } }
     item { SectionHeader(stringResource(R.string.settings_at_a_glance)) }
     item { SwitchPref(stringResource(R.string.settings_clock), null, s.glanceClock) { v -> set { it.copy(glanceClock = v) } } }
     item { SwitchPref(stringResource(R.string.settings_glance_weather), null, s.glanceWeather) { v -> set { it.copy(glanceWeather = v) } } }
