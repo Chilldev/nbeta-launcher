@@ -531,4 +531,13 @@
     <string name="settings_page_dots">نقاط الصفحات</string>
     <string name="settings_hide_status_bar">إخفاء شريط الحالة في الشاشة الرئيسية</string>
     <string name="settings_hide_status_bar_summary">اسحب لأسفل من الحافة العلوية لإظهاره مؤقتًا</string>
+    <string name="lock_needs_screen_lock">اضبط قفل الشاشة (رمز PIN أو نقش أو بصمة) في إعدادات النظام لقفل التطبيقات</string>
+    <string name="lock_prompt_subtitle">أكّد هويتك</string>
+    <string name="lock_prompt_title">فتح %1$s</string>
+    <string name="lock_remove_title">إزالة قفل %1$s</string>
+    <string name="lock_added">يتطلب %1$s الآن بصمتك أو وجهك أو رمز PIN</string>
+    <string name="menu_lock_app">قفل التطبيق</string>
+    <string name="menu_unlock_app">إزالة القفل</string>
+    <string name="settings_locked_apps">التطبيقات المقفلة</string>
+    <plurals name="settings_locked_count"><item quantity="zero">لا توجد تطبيقات مقفلة · اضغط مطولًا على تطبيق لقفله</item><item quantity="one">تطبيق واحد يتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="two">تطبيقان يتطلبان فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="few">%d تطبيقات تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="many">%d تطبيقًا تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="other">%d تطبيق تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item></plurals>
 </resources>

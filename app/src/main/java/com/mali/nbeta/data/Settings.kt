@@ -116,6 +116,8 @@ data class LauncherSettings(
     val showSuggestions: Boolean = true,
     val drawerSort: DrawerSort = DrawerSort.Alphabetical,
     val hiddenApps: Set<String> = emptySet(),
+    /** Apps that need fingerprint/face/PIN to open from Nbeta. */
+    val lockedApps: Set<String> = emptySet(),
     val renamedApps: Map<String, String> = emptyMap(),
     // Icons
     val iconShape: IconShape = IconShape.System,

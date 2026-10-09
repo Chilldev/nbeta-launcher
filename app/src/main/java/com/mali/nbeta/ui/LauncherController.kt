@@ -15,6 +15,7 @@ import com.mali.nbeta.AppGraph
 import com.mali.nbeta.R
 import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
+import com.mali.nbeta.system.AppLock
 import com.mali.nbeta.data.Layout
 import com.mali.nbeta.data.homePages
 import com.mali.nbeta.data.stableKey
@@ -79,12 +80,36 @@ class LauncherController(
 
     fun launch(app: AppEntry, bounds: BoundsHolder?) {
         val r = bounds?.rect()
-        graph.apps.launch(app, r, launchOptions(view, r))
+        guarded(app.packageName, app.userSerial, app.label) { graph.apps.launch(app, r, launchOptions(view, r)) }
     }
 
     fun launchShortcut(shortcut: AppShortcut, bounds: BoundsHolder?) {
         val r = bounds?.rect()
-        graph.shortcuts.launch(shortcut, r, launchOptions(view, r))
+        val serial = activity.getSystemService(android.os.UserManager::class.java).getSerialNumberForUser(shortcut.info.userHandle)
+        guarded(shortcut.info.`package`, serial, shortcut.appLabel.ifEmpty { shortcut.label }) { graph.shortcuts.launch(shortcut, r, launchOptions(view, r)) }
+    }
+
+    fun isLocked(app: AppEntry) = app.key in graph.settings.value.lockedApps
+
+    /** Locked apps (and their shortcuts) open only after fingerprint/face/PIN. */
+    private fun guarded(packageName: String, userSerial: Long, label: String, open: () -> Unit) {
+        val locked = graph.settings.value.lockedApps.any { it.substringBefore('/') == packageName && it.endsWith("#$userSerial") }
+        if (!locked) return open()
+        AppLock.authenticate(activity, activity.getString(R.string.lock_prompt_title, label), open)
+    }
+
+    fun toggleLock(app: AppEntry) {
+        if (isLocked(app)) {
+            // Removing a lock is itself protected.
+            AppLock.authenticate(activity, activity.getString(R.string.lock_remove_title, app.label)) {
+                graph.settings.update { it.copy(lockedApps = it.lockedApps - app.key) }
+            }
+        } else if (!AppLock.available(activity)) {
+            Toast.makeText(activity, R.string.lock_needs_screen_lock, Toast.LENGTH_LONG).show()
+        } else {
+            graph.settings.update { it.copy(lockedApps = it.lockedApps + app.key) }
+            Toast.makeText(activity, activity.getString(R.string.lock_added, app.label), Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun start(intent: Intent, bounds: BoundsHolder? = null) {

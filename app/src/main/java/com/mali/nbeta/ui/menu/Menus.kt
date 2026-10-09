@@ -169,8 +169,9 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
     }
     MenuRow(Icons.Default.Edit, stringResource(R.string.common_rename)) { c.renameTarget = app; dismiss() }
     MenuRow(Icons.Default.Face, stringResource(R.string.menu_change_icon)) { c.iconPickerFor = app; dismiss() }
+    MenuRow(Icons.Default.Lock, stringResource(if (c.isLocked(app)) R.string.menu_unlock_app else R.string.menu_lock_app)) { c.toggleLock(app); dismiss() }
     if (origin == Origin.Drawer || origin == Origin.Search) {
-        MenuRow(Icons.Default.Lock, stringResource(R.string.menu_hide_from_drawer)) { c.hide(app); dismiss() }
+        MenuRow(Icons.Default.Close, stringResource(R.string.menu_hide_from_drawer)) { c.hide(app); dismiss() }
     }
     if (loaded?.second == false) {
         MenuRow(Icons.Default.Delete, stringResource(R.string.common_uninstall)) { graph.apps.uninstall(app); dismiss() }

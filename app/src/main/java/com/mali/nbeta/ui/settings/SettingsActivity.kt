@@ -286,7 +286,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.drawer(s: LauncherSet
     item { ChoicePref(stringResource(R.string.settings_sort), DrawerSort.entries, s.drawerSort, { stringResource(it.label) }) { v -> set { it.copy(drawerSort = v) } } }
     item { SwitchPref(stringResource(R.string.settings_auto_keyboard), stringResource(R.string.settings_auto_keyboard_summary), s.autoKeyboard) { v -> set { it.copy(autoKeyboard = v) } } }
     item { SwitchPref(stringResource(R.string.settings_suggestions_row), stringResource(R.string.settings_suggestions_row_summary), s.showSuggestions) { v -> set { it.copy(showSuggestions = v) } } }
-    item { ClickPref(stringResource(R.string.settings_hidden_apps), pluralStringResource(R.plurals.settings_hidden_count, s.hiddenApps.size, s.hiddenApps.size), Icons.Default.Lock) { go(Page.Hidden) } }
+    item {
+        val activity = LocalContext.current as android.app.Activity
+        val title = stringResource(R.string.settings_hidden_apps)
+        // Hidden apps are only revealed after the same check as locked apps (when the phone has a screen lock).
+        ClickPref(title, pluralStringResource(R.plurals.settings_hidden_count, s.hiddenApps.size, s.hiddenApps.size), Icons.Default.Lock) {
+            if (com.mali.nbeta.system.AppLock.available(activity)) com.mali.nbeta.system.AppLock.authenticate(activity, title) { go(Page.Hidden) }
+            else go(Page.Hidden)
+        }
+    }
+    item {
+        ClickPref(stringResource(R.string.settings_locked_apps), pluralStringResource(R.plurals.settings_locked_count, s.lockedApps.size, s.lockedApps.size), Icons.Default.Lock) {}
+    }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.icons(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {

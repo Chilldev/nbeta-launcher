@@ -496,4 +496,13 @@
     <string name="settings_page_dots">Page dots</string>
     <string name="settings_hide_status_bar">Hide status bar on home</string>
     <string name="settings_hide_status_bar_summary">Swipe down from the top edge to see it briefly</string>
+    <string name="lock_needs_screen_lock">Set a screen lock (PIN, pattern or fingerprint) in system settings to lock apps</string>
+    <string name="lock_prompt_subtitle">Confirm it\'s you</string>
+    <string name="lock_prompt_title">Open %1$s</string>
+    <string name="lock_remove_title">Unlock %1$s</string>
+    <string name="lock_added">%1$s now needs your fingerprint, face or PIN</string>
+    <string name="menu_lock_app">Lock app</string>
+    <string name="menu_unlock_app">Remove lock</string>
+    <string name="settings_locked_apps">Locked apps</string>
+    <plurals name="settings_locked_count"><item quantity="one">%d app needs unlock to open · long-press an app to lock it</item><item quantity="other">%d apps need unlock to open · long-press an app to lock it</item></plurals>
 </resources>
