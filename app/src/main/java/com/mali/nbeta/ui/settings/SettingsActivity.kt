@@ -291,7 +291,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.drawer(s: LauncherSet
         val title = stringResource(R.string.settings_hidden_apps)
         // Hidden apps are only revealed after the same check as locked apps (when the phone has a screen lock).
         ClickPref(title, pluralStringResource(R.plurals.settings_hidden_count, s.hiddenApps.size, s.hiddenApps.size), Icons.Default.Lock) {
-            if (com.mali.nbeta.system.AppLock.available(activity)) com.mali.nbeta.system.AppLock.authenticate(activity, title) { go(Page.Hidden) }
+            if (com.mali.nbeta.system.AppLock.available(activity)) com.mali.nbeta.system.AppLock.authenticate(activity, title, fresh = true) { go(Page.Hidden) }
             else go(Page.Hidden)
         }
     }

@@ -59,6 +59,7 @@ data class AppEntry(
     val profile: ProfileKind,
     /** Changes whenever the APK changes; part of the icon cache key. */
     val version: Long,
+    val category: AppCategory = AppCategory.Tools,
 ) {
     val packageName: String get() = component.packageName
     val packageKey: String get() = "$packageName#$userSerial"
@@ -73,7 +74,7 @@ object AppKeys {
 }
 
 @Serializable
-private data class CachedApp(val c: String, val s: Long, val l: String, val k: ProfileKind, val v: Long)
+private data class CachedApp(val c: String, val s: Long, val l: String, val k: ProfileKind, val v: Long, val g: AppCategory = AppCategory.Tools)
 
 @Serializable
 data class LaunchStat(val count: Int = 0, val last: Long = 0, /** launches per hour of day */ val hours: List<Int> = emptyList())
@@ -187,7 +188,7 @@ class AppRepository(
             val list = cached.mapNotNull { c ->
                 val user = users.getOrPut(c.s) { userManager.getUserForSerialNumber(c.s) } ?: return@mapNotNull null
                 val cn = ComponentName.unflattenFromString(c.c) ?: return@mapNotNull null
-                AppEntry(AppKeys.of(cn, c.s), cn, user, c.s, c.l, c.l, c.k, c.v)
+                AppEntry(AppKeys.of(cn, c.s), cn, user, c.s, c.l, c.l, c.k, c.v, c.g)
             }
             if (raw.value.isEmpty()) raw.value = list
         } catch (e: Exception) {
@@ -216,7 +217,8 @@ class AppRepository(
                 val ai = info.applicationInfo
                 val version = (ai.sourceDir?.let { File(it).lastModified() } ?: 0L) xor info.firstInstallTime
                 val label = info.label?.toString()?.trim().orEmpty().ifEmpty { info.componentName.packageName }
-                list += AppEntry(AppKeys.of(info.componentName, p.serial), info.componentName, p.user, p.serial, label, label, p.kind, version)
+                val category = Categories.categorize(info.componentName.packageName, label, ai.category)
+                list += AppEntry(AppKeys.of(info.componentName, p.serial), info.componentName, p.user, p.serial, label, label, p.kind, version, category)
             }
         }
         list.sortWith(labelOrder)
@@ -232,7 +234,7 @@ class AppRepository(
         try {
             val json = com.mali.nbeta.data.AppJson.encodeToString(
                 snapshotSerializer,
-                list.map { CachedApp(it.component.flattenToShortString(), it.userSerial, it.originalLabel, it.profile, it.version) },
+                list.map { CachedApp(it.component.flattenToShortString(), it.userSerial, it.originalLabel, it.profile, it.version, it.category) },
             )
             val tmp = File(snapshotFile.parentFile, snapshotFile.name + ".tmp")
             tmp.writeText(json)

@@ -95,13 +95,13 @@ class LauncherController(
     private fun guarded(packageName: String, userSerial: Long, label: String, open: () -> Unit) {
         val locked = graph.settings.value.lockedApps.any { it.substringBefore('/') == packageName && it.endsWith("#$userSerial") }
         if (!locked) return open()
-        AppLock.authenticate(activity, activity.getString(R.string.lock_prompt_title, label), open)
+        AppLock.authenticate(activity, activity.getString(R.string.lock_prompt_title, label), onSuccess = open)
     }
 
     fun toggleLock(app: AppEntry) {
         if (isLocked(app)) {
             // Removing a lock is itself protected.
-            AppLock.authenticate(activity, activity.getString(R.string.lock_remove_title, app.label)) {
+            AppLock.authenticate(activity, activity.getString(R.string.lock_remove_title, app.label), fresh = true) {
                 graph.settings.update { it.copy(lockedApps = it.lockedApps - app.key) }
             }
         } else if (!AppLock.available(activity)) {

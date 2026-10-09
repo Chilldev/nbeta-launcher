@@ -27,8 +27,9 @@ object AppLock {
         unlockedAt = 0L
     }
 
-    fun authenticate(activity: Activity, title: String, onSuccess: () -> Unit) {
-        if (recentlyUnlocked()) return onSuccess()
+    /** [fresh]: always ask, ignoring a recent unlock (for removing locks and revealing hidden apps). */
+    fun authenticate(activity: Activity, title: String, fresh: Boolean = false, onSuccess: () -> Unit) {
+        if (!fresh && recentlyUnlocked()) return onSuccess()
         if (!available(activity)) {
             Toast.makeText(activity, R.string.lock_needs_screen_lock, Toast.LENGTH_LONG).show()
             return
