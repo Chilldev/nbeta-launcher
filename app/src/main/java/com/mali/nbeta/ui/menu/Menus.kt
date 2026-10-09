@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -111,7 +112,7 @@ fun AppMenuPopup(c: LauncherController, req: MenuRequest) {
                 shape = RoundedCornerShape(24.dp),
                 tonalElevation = 4.dp,
                 shadowElevation = 12.dp,
-                modifier = Modifier.width(272.dp),
+                modifier = Modifier.width(300.dp),
             ) {
                 Column(Modifier.padding(vertical = 8.dp)) {
                     when (val t = req.target) {
@@ -146,6 +147,13 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
         value = withContext(Dispatchers.IO) { graph.shortcuts.forApp(app) to graph.apps.isSystemApp(app) }
     }
     val shortcuts = loaded?.first.orEmpty()
+    val allNotifs by com.mali.nbeta.system.NotificationDotsService.notifications.collectAsStateWithLifecycle()
+    val notifs = remember(allNotifs, app.packageKey) { allNotifs.filter { it.packageKey == app.packageKey }.take(3) }
+    if (notifs.isNotEmpty()) {
+        val appIcon = com.mali.nbeta.ui.common.rememberAppIcon(app)
+        notifs.forEach { n -> NotificationRow(n, appIcon, onDone = dismiss) }
+        HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    }
     shortcuts.forEach { s -> ShortcutMenuRow(c, app, s, dismiss) }
     if (shortcuts.isNotEmpty()) HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
 

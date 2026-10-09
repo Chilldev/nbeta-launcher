@@ -559,4 +559,13 @@
     <string name="perm_install_why">Update Nbeta from its GitHub releases, no cable needed</string>
     <string name="update_blocked_play_protect">Google Play Protect stopped the install. Try again and choose “More details › Install anyway”, or download it from the GitHub release page.</string>
     <string name="update_cancelled">Update cancelled</string>
+    <string name="notif_dismiss">Dismiss</string>
+    <string name="notif_reply">Reply</string>
+    <string name="notif_mark_read">Mark as read</string>
+    <string name="notif_reply_hint">Reply…</string>
+    <string name="notif_send">Send</string>
+    <string name="notif_reply_sent">Sent</string>
+    <string name="notif_reply_failed">Couldn\'t send. Open the app to reply.</string>
+    <string name="search_messages">Messages</string>
+    <string name="search_people">People</string>
 </resources>

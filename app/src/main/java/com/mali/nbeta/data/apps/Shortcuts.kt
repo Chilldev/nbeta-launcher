@@ -28,6 +28,10 @@ data class AppShortcut(
     val label: String,
     val appLabel: String,
 ) {
+    /** A chat with a person or group (WhatsApp, Slack, Telegram, Messages…), as opposed to an app action. */
+    val isConversation: Boolean = info.categories?.contains("android.shortcut.conversation") == true ||
+        (android.os.Build.VERSION.SDK_INT >= 30 && info.isCached)
+
     val key: String = "${info.`package`}/${info.id}#${info.userHandle.hashCode()}"
 }
 
@@ -106,9 +110,11 @@ class ShortcutRepository(
         val out = ArrayList<AppShortcut>()
         for (profile in apps.profiles.value) {
             if (profile.quiet) continue
+            // Cached = conversation shortcuts apps keep for recent chats even after removing them from the dynamic list.
+            val cached = if (android.os.Build.VERSION.SDK_INT >= 30) LauncherApps.ShortcutQuery.FLAG_MATCH_CACHED else 0
             val q = LauncherApps.ShortcutQuery()
-                .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC)
-            for (s in query(q, profile.user)) {
+                .setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or cached)
+            for (s in query(q, profile.user).distinctBy { it.key }) {
                 val app = byPackage[s.info.`package` to profile.serial]?.firstOrNull() ?: continue
                 out += s.copy(appLabel = app.label)
             }

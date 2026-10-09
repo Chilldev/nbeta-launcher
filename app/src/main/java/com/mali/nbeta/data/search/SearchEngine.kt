@@ -55,11 +55,15 @@ data class SearchResults(
     val conversion: String? = null,
     val events: List<EventHit> = emptyList(),
     val shortcuts: List<AppShortcut> = emptyList(),
+    /** Recent chats from messaging apps (conversation shortcuts). */
+    val people: List<AppShortcut> = emptyList(),
+    /** Current notifications whose text matches. */
+    val messages: List<com.mali.nbeta.system.NotifItem> = emptyList(),
     val contacts: List<ContactHit> = emptyList(),
     val settings: List<SettingHit> = emptyList(),
     val web: List<WebHit> = emptyList(),
 ) {
-    val isEmpty get() = apps.isEmpty() && calc == null && conversion == null && events.isEmpty() && shortcuts.isEmpty() && contacts.isEmpty() && settings.isEmpty()
+    val isEmpty get() = apps.isEmpty() && calc == null && conversion == null && events.isEmpty() && shortcuts.isEmpty() && people.isEmpty() && messages.isEmpty() && contacts.isEmpty() && settings.isEmpty()
 }
 
 class SearchEngine(
@@ -114,9 +118,20 @@ class SearchEngine(
             if (sc == 0) null else ia.app to sc + (apps.frecency(ia.app.key, now) * 8).coerceAtMost(90.0).toInt()
         }.sortedByDescending { it.second }.take(12).map { it.first }
 
+        val (conversationIndex, actionIndex) = shortcutIndex.value.partition { it.sc.isConversation }
         val shortcutHits = if (cfg.searchShortcuts && q.length >= 2) {
-            shortcutIndex.value.mapNotNull { s -> Matcher.score(q, s.s).takeIf { it >= 600 }?.let { s.sc to it } }
+            actionIndex.mapNotNull { s -> Matcher.score(q, s.s).takeIf { it >= 600 }?.let { s.sc to it } }
                 .sortedByDescending { it.second }.take(5).map { it.first }
+        } else emptyList()
+        // People: match the chat name only (not the app name), so "slack" doesn't list every Slack chat.
+        val peopleHits = if (cfg.searchShortcuts && q.length >= 2) {
+            conversationIndex.mapNotNull { s -> Matcher.score(q, Searchable(s.sc.label)).takeIf { it >= 600 }?.let { s.sc to it } }
+                .sortedByDescending { it.second }.distinctBy { it.first.label to it.first.appLabel }.take(6).map { it.first }
+        } else emptyList()
+        val messageHits = if (q.length >= 2) {
+            com.mali.nbeta.system.NotificationDotsService.notifications.value
+                .filter { TextFold.fold(it.title + " " + it.text).contains(q) }
+                .take(4)
         } else emptyList()
 
         val settingHits = if (cfg.searchSettings && q.length >= 3) {
@@ -138,6 +153,8 @@ class SearchEngine(
             query = raw,
             apps = appHits,
             calc = calc,
+            people = peopleHits,
+            messages = messageHits,
             conversion = conversion,
             events = eventsJob?.await().orEmpty(),
             shortcuts = shortcutHits,

@@ -594,4 +594,13 @@
     <string name="perm_install_why">تحديث Nbeta من إصدارات GitHub دون كابل</string>
     <string name="update_blocked_play_protect">أوقف Google Play Protect التثبيت. أعد المحاولة واختر «مزيد من التفاصيل › التثبيت على أي حال»، أو نزّله من صفحة الإصدار على GitHub.</string>
     <string name="update_cancelled">أُلغي التحديث</string>
+    <string name="notif_dismiss">تجاهل</string>
+    <string name="notif_reply">رد</string>
+    <string name="notif_mark_read">وضع علامة مقروء</string>
+    <string name="notif_reply_hint">اكتب ردًا…</string>
+    <string name="notif_send">إرسال</string>
+    <string name="notif_reply_sent">تم الإرسال</string>
+    <string name="notif_reply_failed">تعذّر الإرسال. افتح التطبيق للرد.</string>
+    <string name="search_messages">الرسائل</string>
+    <string name="search_people">الأشخاص</string>
 </resources>

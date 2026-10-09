@@ -25,7 +25,8 @@ Kotlin + Jetpack Compose, minSdk 29, targetSdk 36. The release APK is about 4 MB
   - apps (prefix, word, initials, CamelCase, fuzzy and one-typo matching; accents and Arabic letter variants are folded)
   - app shortcuts, contacts (call or message inline), a calculator and ~30 system settings pages
   - the web (Google, DuckDuckGo, Brave, Bing or Startpage), URLs and the Play Store
-- Long-press menu: app shortcuts, add to home or dock, app info, rename, hide, uninstall.
+- Long-press menu: the app's latest notifications (open the exact chat, **reply inline**, mark as read, dismiss), app shortcuts, add to home or dock, app info, rename, change icon, lock, hide, uninstall.
+- People and messages in search: recent chats from WhatsApp, Slack, Telegram, Messages… (conversation shortcuts) next to your contacts, and the text of current notifications.
 - Icon shapes (system, circle, squircle, rounded square, teardrop), ADW/Nova icon packs, Android 13 themed icons and notification dots.
 - Change icon for any single app: choose any icon from any installed pack, with search.
 

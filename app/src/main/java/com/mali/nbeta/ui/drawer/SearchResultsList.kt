@@ -36,6 +36,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.res.stringResource
@@ -146,9 +148,19 @@ fun SearchResultsList(c: LauncherController, r: SearchResults, settings: Launche
             item(key = "h-events") { Header(stringResource(R.string.search_events)) }
             items(r.events, key = { "e${it.id}-${it.begin}" }) { e -> EventRow(c, e) }
         }
-        if (r.contacts.isNotEmpty()) {
-            item(key = "h-contacts") { Header(stringResource(R.string.common_contacts)) }
+        if (r.contacts.isNotEmpty() || r.people.isNotEmpty()) {
+            item(key = "h-people") { Header(stringResource(R.string.search_people)) }
             items(r.contacts, key = { "c${it.id}" }) { ContactRow(c, it) }
+            items(r.people, key = { "p" + it.key }) { s -> ShortcutRow(c, s) }
+        }
+        if (r.messages.isNotEmpty()) {
+            item(key = "h-messages") { Header(stringResource(R.string.search_messages)) }
+            items(r.messages, key = { "m" + it.key }) { n ->
+                val allApps by c.graph.apps.apps.collectAsStateWithLifecycle()
+                val app = remember(allApps, n.packageKey) { allApps.firstOrNull { it.packageKey == n.packageKey } }
+                val icon = app?.let { com.mali.nbeta.ui.common.rememberAppIcon(it) }
+                com.mali.nbeta.ui.menu.NotificationRow(n, icon, onDone = { c.drawer.close() }, modifier = Modifier.clip(RoundedCornerShape(16.dp)))
+            }
         }
         if (r.settings.isNotEmpty()) {
             item(key = "h-settings") { Header(stringResource(R.string.common_settings)) }
