@@ -161,6 +161,9 @@ fun LauncherRoot(c: LauncherController) {
                     }
             }
 
+            LaunchedEffect(pager, feedOn) {
+                c.feedRequests.collect { if (feedOn) { c.drawer.close(); pager.animateScrollToPage(0) } }
+            }
             LaunchedEffect(pager, homePage) {
                 c.homeEvents.collect { animate ->
                     if (animate) {

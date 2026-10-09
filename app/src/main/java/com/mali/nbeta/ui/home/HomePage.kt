@@ -1,6 +1,12 @@
 package com.mali.nbeta.ui.home
 
 import android.content.Intent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import com.mali.nbeta.data.action
+import com.mali.nbeta.data.GestureAction
+import com.mali.nbeta.data.Gesture
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
@@ -129,10 +135,12 @@ fun Modifier.homeGestures(c: LauncherController, settings: LauncherSettings): Mo
         if (c.drawer.isClosed && dy > 0f) pullDown += dy else c.drawer.dragBy(dy)
     }
     return this
-        .pointerInput(settings.doubleTap, editing) {
+        .multiFingerGestures(enabled = !editing && !c.dnd.active) { g -> c.perform(settings.action(g)) }
+        .pointerInput(settings.action(Gesture.DoubleTap), editing) {
+            val doubleTap = settings.action(Gesture.DoubleTap)
             detectTapGestures(
-                onDoubleTap = if (settings.doubleTap == DoubleTapAction.LockScreen && !editing) {
-                    { GlobalActions.lockScreen(context) }
+                onDoubleTap = if (doubleTap != GestureAction.None && !editing) {
+                    { c.perform(doubleTap) }
                 } else null,
                 onLongPress = {
                     // A long-press over a widget opens the widget's menu instead (both detectors fire together).
@@ -151,12 +159,7 @@ fun Modifier.homeGestures(c: LauncherController, settings: LauncherSettings): Mo
             onDragStarted = { pullDown = 0f },
             onDragStopped = { velocity ->
                 if (pullDown > pullThreshold && c.drawer.isClosed) {
-                    when (settings.swipeDown) {
-                        SwipeDownAction.Notifications -> GlobalActions.expandNotifications(context)
-                        SwipeDownAction.QuickSettings -> GlobalActions.expandQuickSettings(context)
-                        SwipeDownAction.Search -> c.openSearch()
-                        SwipeDownAction.None -> Unit
-                    }
+                    c.perform(settings.action(Gesture.SwipeDown))
                 } else {
                     c.drawer.settle(velocity)
                 }
@@ -594,4 +597,46 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
 fun formatTemp(c: Double, unit: TempUnit): String = when (unit) {
     TempUnit.Celsius -> "%d°".format(c.roundToInt())
     TempUnit.Fahrenheit -> "%d°".format((c * 9 / 5 + 32).roundToInt())
+}
+
+/**
+ * Two-finger swipes and pinch, read in the Initial pass so they win over the one-finger drawer drag. Single-finger
+ * gestures pass through untouched.
+ */
+private fun Modifier.multiFingerGestures(enabled: Boolean, onGesture: (Gesture) -> Unit): Modifier = if (!enabled) this else pointerInput(Unit) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        var startCentroid: Offset? = null
+        var startSpread = 0f
+        var centroid = Offset.Zero
+        var spread = 0f
+        var multi = false
+        while (true) {
+            val ev = awaitPointerEvent(PointerEventPass.Initial)
+            val pressed = ev.changes.filter { it.pressed }
+            if (pressed.isEmpty()) break
+            if (pressed.size >= 2) {
+                val c = pressed.fold(Offset.Zero) { a, ch -> a + ch.position } / pressed.size.toFloat()
+                val sp = pressed.map { (it.position - c).getDistance() }.average().toFloat()
+                if (startCentroid == null) {
+                    startCentroid = c
+                    startSpread = sp
+                }
+                centroid = c
+                spread = sp
+                multi = true
+                ev.changes.forEach { it.consume() }
+            } else if (multi) {
+                ev.changes.forEach { it.consume() }
+            }
+        }
+        val start = startCentroid ?: return@awaitEachGesture
+        val dy = centroid.y - start.y
+        val threshold = 60.dp.toPx()
+        when {
+            startSpread > 0f && spread / startSpread < 0.65f -> onGesture(Gesture.PinchIn)
+            dy < -threshold -> onGesture(Gesture.TwoFingerUp)
+            dy > threshold -> onGesture(Gesture.TwoFingerDown)
+        }
+    }
 }

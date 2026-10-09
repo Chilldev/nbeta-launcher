@@ -526,4 +526,19 @@
     <string name="feed_search">Search stories</string>
     <string name="feed_search_hint">Search your feed</string>
     <string name="feed_search_none">No stories match</string>
+    <string name="gesture_app_missing">That app isn\'t installed any more</string>
+    <string name="gesture_two_finger_up">Two-finger swipe up</string>
+    <string name="gesture_two_finger_down">Two-finger swipe down</string>
+    <string name="gesture_pinch_in">Pinch in</string>
+    <string name="gesture_none">Nothing</string>
+    <string name="gesture_notifications">Notifications</string>
+    <string name="gesture_quick_settings">Quick settings</string>
+    <string name="gesture_search">Search</string>
+    <string name="gesture_lock">Lock screen</string>
+    <string name="gesture_recents">Recent apps</string>
+    <string name="gesture_drawer">App drawer</string>
+    <string name="gesture_feed">Feed</string>
+    <string name="gesture_edit_home">Edit home screen</string>
+    <string name="gesture_open_app">Open an app…</string>
+    <string name="gesture_open_app_named">Open %1$s</string>
 </resources>

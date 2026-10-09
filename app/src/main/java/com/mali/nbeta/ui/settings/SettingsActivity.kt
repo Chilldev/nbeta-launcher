@@ -86,6 +86,7 @@ import com.mali.nbeta.BuildConfig
 import com.mali.nbeta.NbetaApp
 import com.mali.nbeta.R
 import com.mali.nbeta.data.DefaultFeeds
+import com.mali.nbeta.data.action
 import com.mali.nbeta.data.DoubleTapAction
 import com.mali.nbeta.data.DrawerSort
 import com.mali.nbeta.data.FeedOrder
@@ -355,11 +356,14 @@ private fun NotificationDotsPref(s: LauncherSettings, set: ((LauncherSettings) -
 
 private fun androidx.compose.foundation.lazy.LazyListScope.gestures(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
     item { ClickPref(stringResource(R.string.settings_swipe_up), stringResource(R.string.settings_swipe_up_summary)) {} }
-    item {
-        ChoicePref(stringResource(R.string.settings_swipe_down), SwipeDownAction.entries, s.swipeDown, { stringResource(it.label) }) { v -> set { it.copy(swipeDown = v) } }
-    }
-    item {
-        ChoicePref(stringResource(R.string.settings_double_tap), DoubleTapAction.entries, s.doubleTap, { stringResource(it.label) }) { v -> set { it.copy(doubleTap = v) } }
+    listOf(
+        com.mali.nbeta.data.Gesture.SwipeDown to R.string.settings_swipe_down,
+        com.mali.nbeta.data.Gesture.DoubleTap to R.string.settings_double_tap,
+        com.mali.nbeta.data.Gesture.TwoFingerUp to R.string.gesture_two_finger_up,
+        com.mali.nbeta.data.Gesture.TwoFingerDown to R.string.gesture_two_finger_down,
+        com.mali.nbeta.data.Gesture.PinchIn to R.string.gesture_pinch_in,
+    ).forEach { (g, title) ->
+        item(key = "gesture-" + g.name) { GesturePref(stringResource(title), g, s, set) }
     }
     item {
         val context = LocalContext.current
@@ -902,4 +906,96 @@ private fun SetupBanner(go: (Page) -> Unit) {
 @Composable
 private fun FilledTonalButtonCompat(text: String, onClick: () -> Unit) {
     androidx.compose.material3.FilledTonalButton(onClick = onClick) { Text(text) }
+}
+
+@Composable
+private fun gestureLabel(a: com.mali.nbeta.data.GestureAction): String {
+    val graph = LocalGraph.current
+    return when (a) {
+        com.mali.nbeta.data.GestureAction.None -> stringResource(R.string.gesture_none)
+        com.mali.nbeta.data.GestureAction.Notifications -> stringResource(R.string.gesture_notifications)
+        com.mali.nbeta.data.GestureAction.QuickSettings -> stringResource(R.string.gesture_quick_settings)
+        com.mali.nbeta.data.GestureAction.Search -> stringResource(R.string.gesture_search)
+        com.mali.nbeta.data.GestureAction.LockScreen -> stringResource(R.string.gesture_lock)
+        com.mali.nbeta.data.GestureAction.Recents -> stringResource(R.string.gesture_recents)
+        com.mali.nbeta.data.GestureAction.Drawer -> stringResource(R.string.gesture_drawer)
+        com.mali.nbeta.data.GestureAction.Feed -> stringResource(R.string.gesture_feed)
+        com.mali.nbeta.data.GestureAction.EditHome -> stringResource(R.string.gesture_edit_home)
+        is com.mali.nbeta.data.GestureAction.OpenApp ->
+            stringResource(R.string.gesture_open_app_named, graph.apps.byKey.collectAsStateWithLifecycle().value[a.key]?.label ?: "?")
+    }
+}
+
+/** Built-in actions in a radio list, plus "Open an app…" which continues to an app picker. */
+@Composable
+private fun GesturePref(title: String, g: com.mali.nbeta.data.Gesture, s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
+    val current = s.action(g)
+    var open by remember { mutableStateOf(false) }
+    var pickApp by remember { mutableStateOf(false) }
+    val choose: (com.mali.nbeta.data.GestureAction) -> Unit = { a -> set { it.copy(gestures = it.gestures + (g.name to a.id)) } }
+    ClickPref(title, gestureLabel(current)) { open = true }
+    if (open) {
+        AlertDialog(
+            onDismissRequest = { open = false },
+            title = { Text(title) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    com.mali.nbeta.data.GestureAction.builtIns.forEach { a ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { choose(a); open = false }.padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.RadioButton(current == a, onClick = null)
+                            Spacer(Modifier.width(16.dp))
+                            Text(gestureLabel(a))
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().clickable { open = false; pickApp = true }.padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.RadioButton(current is com.mali.nbeta.data.GestureAction.OpenApp, onClick = null)
+                        Spacer(Modifier.width(16.dp))
+                        Text(if (current is com.mali.nbeta.data.GestureAction.OpenApp) gestureLabel(current) else stringResource(R.string.gesture_open_app))
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.common_close)) } },
+        )
+    }
+    if (pickApp) AppPickerDialog(title, onDismiss = { pickApp = false }) { app -> choose(com.mali.nbeta.data.GestureAction.OpenApp(app.key)); pickApp = false }
+}
+
+@Composable
+private fun AppPickerDialog(title: String, onDismiss: () -> Unit, onPick: (com.mali.nbeta.data.apps.AppEntry) -> Unit) {
+    val graph = LocalGraph.current
+    val apps by graph.apps.visibleApps.collectAsStateWithLifecycle()
+    var q by remember { mutableStateOf("") }
+    val shown = remember(apps, q) {
+        val f = com.mali.nbeta.data.search.TextFold.fold(q.trim())
+        if (f.isEmpty()) apps else apps.filter { com.mali.nbeta.data.search.TextFold.fold(it.label).contains(f) }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                OutlinedTextField(q, { q = it }, singleLine = true, label = { Text(stringResource(R.string.common_search)) }, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.height(360.dp)) {
+                    items(shown, key = { it.key }) { app ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { onPick(app) }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            com.mali.nbeta.ui.common.IconImage(com.mali.nbeta.ui.common.rememberAppIcon(app), 36.dp, null)
+                            Spacer(Modifier.width(16.dp))
+                            Text(app.label, maxLines = 1)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
+    )
 }

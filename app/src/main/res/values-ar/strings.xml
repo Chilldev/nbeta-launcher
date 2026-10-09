@@ -561,4 +561,19 @@
     <string name="feed_search">البحث في الأخبار</string>
     <string name="feed_search_hint">ابحث في الموجز</string>
     <string name="feed_search_none">لا توجد أخبار مطابقة</string>
+    <string name="gesture_app_missing">لم يعد هذا التطبيق مثبتًا</string>
+    <string name="gesture_two_finger_up">التمرير بإصبعين لأعلى</string>
+    <string name="gesture_two_finger_down">التمرير بإصبعين لأسفل</string>
+    <string name="gesture_pinch_in">ضم الإصبعين</string>
+    <string name="gesture_none">لا شيء</string>
+    <string name="gesture_notifications">الإشعارات</string>
+    <string name="gesture_quick_settings">الإعدادات السريعة</string>
+    <string name="gesture_search">البحث</string>
+    <string name="gesture_lock">قفل الشاشة</string>
+    <string name="gesture_recents">التطبيقات الحديثة</string>
+    <string name="gesture_drawer">درج التطبيقات</string>
+    <string name="gesture_feed">الموجز</string>
+    <string name="gesture_edit_home">تعديل الشاشة الرئيسية</string>
+    <string name="gesture_open_app">فتح تطبيق…</string>
+    <string name="gesture_open_app_named">فتح %1$s</string>
 </resources>

@@ -131,6 +131,8 @@ data class LauncherSettings(
     // Gestures
     val swipeDown: SwipeDownAction = SwipeDownAction.Notifications,
     val doubleTap: DoubleTapAction = DoubleTapAction.LockScreen,
+    /** Gesture name -> GestureAction id; missing entries use the defaults in [action]. */
+    val gestures: Map<String, String> = emptyMap(),
     // Search
     val searchContacts: Boolean = true,
     val searchCalculator: Boolean = true,

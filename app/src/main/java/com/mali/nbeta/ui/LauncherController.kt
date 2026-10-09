@@ -16,6 +16,8 @@ import com.mali.nbeta.R
 import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
 import com.mali.nbeta.system.AppLock
+import com.mali.nbeta.system.GlobalActions
+import com.mali.nbeta.data.GestureAction
 import com.mali.nbeta.data.Layout
 import com.mali.nbeta.data.homePages
 import com.mali.nbeta.data.stableKey
@@ -196,6 +198,25 @@ class LauncherController(
         }
         drawer.close()
         Toast.makeText(activity, activity.getString(R.string.drawer_folder_added, name), Toast.LENGTH_SHORT).show()
+    }
+
+    /** Asks LauncherRoot to show the feed page. */
+    val feedRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    fun perform(action: GestureAction) {
+        when (action) {
+            GestureAction.None -> Unit
+            GestureAction.Notifications -> GlobalActions.expandNotifications(activity)
+            GestureAction.QuickSettings -> GlobalActions.expandQuickSettings(activity)
+            GestureAction.Search -> openSearch()
+            GestureAction.LockScreen -> GlobalActions.lockScreen(activity)
+            GestureAction.Recents -> GlobalActions.recents(activity)
+            GestureAction.Drawer -> drawer.open()
+            GestureAction.Feed -> feedRequests.tryEmit(Unit)
+            GestureAction.EditHome -> editingHome = true
+            is GestureAction.OpenApp -> graph.apps.byKey.value[action.key]?.let { launch(it, null) }
+                ?: Toast.makeText(activity, R.string.gesture_app_missing, Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun addPage() {
