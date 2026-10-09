@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -60,7 +61,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
+import com.mali.nbeta.data.Layout
+import com.mali.nbeta.data.homePages
 import com.mali.nbeta.data.WidgetPlacement
 import com.mali.nbeta.data.apps.AppEntry
 import com.mali.nbeta.data.apps.AppShortcut
@@ -108,7 +112,15 @@ fun AppMenuPopup(c: LauncherController, req: MenuRequest) {
             ) {
                 Column(Modifier.padding(vertical = 8.dp)) {
                     when (val t = req.target) {
-                        is MenuTarget.App -> AppMenuContent(c, t.app, t.origin, dismiss)
+                        is MenuTarget.App -> AppMenuContent(c, t.app, t.origin, t.container, dismiss)
+                        is MenuTarget.Folder -> {
+                            MenuRow(Icons.Default.Edit, "Open & rename") { c.openFolder = t.folder.id; dismiss() }
+                            MenuRow(Icons.Default.Share, "Ungroup") {
+                                c.graph.settings.update { Layout.ungroup(it, t.folder.id) }
+                                dismiss()
+                            }
+                            MenuRow(Icons.Default.Close, "Remove folder") { c.removeItem(t.folder); dismiss() }
+                        }
                         is MenuTarget.PinnedShortcut -> {
                             MenuRow(Icons.Default.Close, "Remove from home") {
                                 c.removeItem(t.item)
@@ -124,7 +136,7 @@ fun AppMenuPopup(c: LauncherController, req: MenuRequest) {
 }
 
 @Composable
-private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin, dismiss: () -> Unit) {
+private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin, container: Container?, dismiss: () -> Unit) {
     val graph = c.graph
     // Binder calls (shortcuts, ApplicationInfo) happen off the main thread, once per menu.
     val loaded by produceState<Pair<List<AppShortcut>, Boolean>?>(null, app.key) {
@@ -143,6 +155,15 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
         QuickAction(if (inDock) Icons.Default.KeyboardArrowDown else Icons.Default.Star, if (inDock) "Off dock" else "To dock") { c.toggleDock(app.key); dismiss() }
     }
     HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    if (container is Container.Folder) {
+        MenuRow(Icons.Default.Close, "Remove from folder") {
+            c.graph.settings.update { st ->
+                val page = c.currentHomePage.coerceIn(0, st.homePages.lastIndex)
+                Layout.move(st, HomeItem.App(app.key), Container.Page(page), Layout.items(st, Container.Page(page)).size)
+            }
+            dismiss()
+        }
+    }
     MenuRow(Icons.Default.Edit, "Rename") { c.renameTarget = app; dismiss() }
     if (origin == Origin.Drawer || origin == Origin.Search) {
         MenuRow(Icons.Default.Lock, "Hide from drawer") { c.hide(app); dismiss() }
@@ -184,7 +205,13 @@ private fun pinToHome(c: LauncherController, app: AppEntry, s: AppShortcut) {
             val pinned = la.getShortcuts(q, app.user).orEmpty().map { it.id }
             la.pinShortcuts(app.packageName, (pinned + s.info.id).distinct(), app.user)
             val item = HomeItem.Shortcut(app.packageName, s.info.id, app.userSerial, s.label)
-            c.graph.settings.update { st -> if (item in st.homeItems) st else st.copy(homeItems = st.homeItems + item) }
+            c.graph.settings.update { st ->
+                if (Layout.containerOf(st, item) != null) st
+                else {
+                    val page = c.currentHomePage.coerceIn(0, st.homePages.lastIndex)
+                    Layout.insert(st, Container.Page(page), Int.MAX_VALUE, item)
+                }
+            }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 android.widget.Toast.makeText(c.activity, "Set Nbeta as your home app to pin shortcuts", android.widget.Toast.LENGTH_SHORT).show()

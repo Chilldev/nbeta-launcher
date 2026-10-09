@@ -236,7 +236,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.home(s: LauncherSetti
     item { SectionHeader("Layout") }
     item {
         ClickPref("Reset home layout", "Restore the default dock and favourites") {
-            set { it.copy(homeItems = emptyList(), dockItems = emptyList(), layoutInitialized = false) }
+            set { it.copy(homeItems = emptyList(), pages = emptyList(), dockItems = emptyList(), layoutInitialized = false) }
         }
     }
 }

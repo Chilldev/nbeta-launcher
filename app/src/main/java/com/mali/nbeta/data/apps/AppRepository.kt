@@ -339,7 +339,7 @@ class AppRepository(
         settings.update { s ->
             if (s.layoutInitialized) s else s.copy(
                 dockItems = dock.map { HomeItem.App(it) },
-                homeItems = home.map { HomeItem.App(it) },
+                pages = listOf(home.map { HomeItem.App(it) }),
                 layoutInitialized = true,
             )
         }

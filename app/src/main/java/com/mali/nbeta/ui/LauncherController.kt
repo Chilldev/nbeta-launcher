@@ -12,7 +12,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.mali.nbeta.AppGraph
+import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
+import com.mali.nbeta.data.Layout
+import com.mali.nbeta.data.homePages
+import com.mali.nbeta.data.stableKey
+import com.mali.nbeta.ui.dnd.DragDrop
 import com.mali.nbeta.data.WidgetPlacement
 import com.mali.nbeta.data.apps.AppEntry
 import com.mali.nbeta.data.apps.AppShortcut
@@ -22,11 +27,13 @@ import com.mali.nbeta.ui.common.launchOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-enum class Origin { Home, Dock, Drawer, Search }
+enum class Origin { Home, Dock, Drawer, Search, Folder }
 
 sealed interface MenuTarget {
-    data class App(val app: AppEntry, val origin: Origin) : MenuTarget
+    /** [container] is where the tile lives on the home screen (null in drawer/search). */
+    data class App(val app: AppEntry, val origin: Origin, val container: Container? = null) : MenuTarget
     data class PinnedShortcut(val item: HomeItem.Shortcut, val origin: Origin) : MenuTarget
+    data class Folder(val folder: HomeItem.Folder) : MenuTarget
 }
 
 data class MenuRequest(val target: MenuTarget, val anchor: Rect)
@@ -50,6 +57,15 @@ class LauncherController(
     var widgetMenu by mutableStateOf<Int?>(null)
     var renameTarget by mutableStateOf<AppEntry?>(null)
     var editingHome by mutableStateOf(false)
+    var openFolder by mutableStateOf<String?>(null)
+
+    /** Index into the home pages (feed excluded) currently shown; -1 while on the feed. */
+    var currentHomePage by mutableIntStateOf(0)
+    var dockBounds: androidx.compose.ui.geometry.Rect? = null
+    var dockHeightPx by mutableIntStateOf(0)
+    fun isOverDock(p: androidx.compose.ui.geometry.Offset) = dockBounds?.contains(p) == true
+
+    val dnd = DragDrop(this)
     var focusSearch by mutableIntStateOf(0)
         private set
 
@@ -91,6 +107,8 @@ class LauncherController(
         widgetMenu = null
         widgetPicker = null
         editingHome = false
+        openFolder = null
+        dnd.cancel()
         homeEvents.tryEmit(animate)
     }
 
@@ -102,43 +120,47 @@ class LauncherController(
         }
         menu = null
         editingHome = false
+        openFolder = null
     }
 
-    // --- Home layout edits ---
+    // --- Home layout edits (rules live in Layout) ---
 
-    private fun HomeItem.matches(key: String) = this is HomeItem.App && this.key == key
+    fun isOnHome(key: String): Boolean {
+        val s = graph.settings.value
+        return Layout.appKeys(s.copy(dockItems = emptyList())).contains(key)
+    }
 
-    fun isOnHome(key: String) = graph.settings.value.homeItems.any { it.matches(key) }
-    fun isInDock(key: String) = graph.settings.value.dockItems.any { it.matches(key) }
+    fun isInDock(key: String) = graph.settings.value.dockItems.any { it is HomeItem.App && it.key == key }
 
     fun toggleHome(key: String) = graph.settings.update { s ->
-        if (s.homeItems.any { it.matches(key) }) s.copy(homeItems = s.homeItems.filterNot { it.matches(key) })
-        else s.copy(homeItems = s.homeItems + HomeItem.App(key))
+        val item = HomeItem.App(key)
+        val where = Layout.containerOf(s, item)
+        if (where != null && where != Container.Dock) Layout.normalize(Layout.remove(s, item))
+        else {
+            val page = currentHomePage.coerceIn(0, s.homePages.lastIndex)
+            Layout.move(s, item, Container.Page(page), Layout.items(s, Container.Page(page)).size)
+        }
     }
 
     fun toggleDock(key: String) = graph.settings.update { s ->
+        val item = HomeItem.App(key)
         when {
-            s.dockItems.any { it.matches(key) } -> s.copy(dockItems = s.dockItems.filterNot { it.matches(key) })
+            s.dockItems.any { it.stableKey == item.stableKey } -> Layout.normalize(Layout.remove(s, item))
             s.dockItems.size >= MAX_DOCK -> {
                 Toast.makeText(activity, "The dock holds $MAX_DOCK apps", Toast.LENGTH_SHORT).show()
                 s
             }
-            else -> s.copy(dockItems = s.dockItems + HomeItem.App(key))
+            else -> Layout.move(s, item, Container.Dock, s.dockItems.size)
         }
     }
 
-    fun removeItem(item: HomeItem) = graph.settings.update { s ->
-        s.copy(homeItems = s.homeItems - item, dockItems = s.dockItems - item)
+    fun removeItem(item: HomeItem) {
+        if (item is HomeItem.Shortcut) graph.shortcuts.unpin(item.packageName, item.id, item.userSerial)
+        graph.settings.update { Layout.normalize(Layout.remove(it, item)) }
     }
 
-    /** Moves an item within the home grid or dock, used by drag-to-reorder. */
-    fun moveItem(item: HomeItem, inDock: Boolean, toIndex: Int) = graph.settings.update { s ->
-        val list = (if (inDock) s.dockItems else s.homeItems).toMutableList()
-        val from = list.indexOf(item)
-        if (from < 0) return@update s
-        list.removeAt(from)
-        list.add(toIndex.coerceIn(0, list.size), item)
-        if (inDock) s.copy(dockItems = list) else s.copy(homeItems = list)
+    fun addPage() {
+        graph.settings.update { Layout.addPage(it).first }
     }
 
     fun hide(app: AppEntry) {
@@ -215,7 +237,7 @@ class WidgetFlow(private val c: LauncherController, private val launchBind: (Int
     }
 
     private fun place() {
-        repo.add(pendingId, pendingPlacement)
+        repo.add(pendingId, pendingPlacement, c.currentHomePage.coerceAtLeast(0))
         pendingId = -1
         pendingInfo = null
     }

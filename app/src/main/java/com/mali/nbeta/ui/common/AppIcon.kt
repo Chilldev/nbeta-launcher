@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -24,7 +23,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.semantics
+import com.mali.nbeta.data.Container
+import com.mali.nbeta.data.HomeItem
+import com.mali.nbeta.ui.dnd.DragItem
+import com.mali.nbeta.ui.dnd.LocalDragDrop
+import com.mali.nbeta.ui.dnd.tileGestures
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,8 +83,8 @@ fun IconImage(bitmap: ImageBitmap?, size: Dp, contentDescription: String?, modif
 }
 
 /**
- * One app tile: icon, optional label and notification dot, press-to-shrink feedback. Bounds are captured cheaply for
- * the launch animation.
+ * One app tile: icon, optional label and notification dot, press-to-shrink feedback. With [origin] set (or for drawer
+ * tiles, null origin) and a [LocalDragDrop] present, long-press-then-drag picks the app up.
  */
 @Composable
 fun AppTile(
@@ -87,10 +95,20 @@ fun AppTile(
     onClick: (BoundsHolder) -> Unit,
     onLongClick: (BoundsHolder) -> Unit,
     modifier: Modifier = Modifier,
+    origin: Container? = null,
+    draggable: Boolean = true,
+    item: HomeItem = HomeItem.App(app.key),
+    hidden: Boolean = false,
+    highlight: Boolean = false,
 ) {
     val bitmap = rememberAppIcon(app)
     val hasDot = app.packageKey in LocalDots.current
-    Tile(bitmap, app.label, iconSize, showLabel, labelStyle, hasDot, onClick, onLongClick, modifier)
+    Tile(
+        bitmap, app.label, iconSize, showLabel, labelStyle, hasDot, onClick, onLongClick, modifier,
+        dragItem = if (draggable) ({ DragItem(item, origin, app, bitmap) }) else null,
+        hidden = hidden,
+        highlight = highlight,
+    )
 }
 
 @Composable
@@ -104,24 +122,49 @@ fun Tile(
     onClick: (BoundsHolder) -> Unit,
     onLongClick: (BoundsHolder) -> Unit,
     modifier: Modifier = Modifier,
+    dragItem: (() -> DragItem?)? = null,
+    hidden: Boolean = false,
+    highlight: Boolean = false,
+    icon: (@Composable () -> Unit)? = null,
 ) {
     val bounds = remember { BoundsHolder() }
+    val root = remember { BoundsHolder() }
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.88f else 1f, spring(dampingRatio = 0.6f, stiffness = 900f), label = "press")
+    val scale by animateFloatAsState(
+        when {
+            highlight -> 1.18f
+            pressed -> 0.88f
+            else -> 1f
+        },
+        spring(dampingRatio = 0.6f, stiffness = 900f),
+        label = "press",
+    )
     val haptics = LocalHapticFeedback.current
+    val dnd = LocalDragDrop.current
+    val currentDrag by rememberUpdatedState(dragItem)
+    val currentClick by rememberUpdatedState(onClick)
+    val currentLong by rememberUpdatedState(onLongClick)
     Column(
         modifier
-            .combinedClickable(
-                interactionSource = interaction,
-                indication = null,
-                onClick = { onClick(bounds) },
-                onLongClick = {
+            .graphicsLayer { alpha = if (hidden) 0f else 1f }
+            .onPlaced { root.coords = it }
+            .tileGestures(
+                key = Unit,
+                interaction = interaction,
+                dnd = dnd,
+                coords = { root.coords },
+                onClick = { currentClick(bounds) },
+                onLongPress = {
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onLongClick(bounds)
+                    currentLong(bounds)
                 },
-                onLongClickLabel = "Options",
+                dragItem = { currentDrag?.invoke() },
             )
+            .semantics(mergeDescendants = true) {
+                onClick(label = null) { currentClick(bounds); true }
+                onLongClick(label = "Options") { currentLong(bounds); true }
+            }
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -133,7 +176,7 @@ fun Tile(
                     scaleY = scale
                 },
         ) {
-            IconImage(bitmap, iconSize, if (showLabel) null else label)
+            if (icon != null) Box(Modifier.size(iconSize)) { icon() } else IconImage(bitmap, iconSize, if (showLabel) null else label)
             if (hasDot) {
                 Box(
                     Modifier

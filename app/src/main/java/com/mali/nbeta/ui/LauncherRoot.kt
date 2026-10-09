@@ -32,7 +32,16 @@ import com.mali.nbeta.ui.common.LocalOnWallpaper
 import com.mali.nbeta.ui.common.OnWallpaper
 import com.mali.nbeta.ui.drawer.AppDrawer
 import com.mali.nbeta.ui.feed.FeedPage
-import com.mali.nbeta.ui.home.HomePage
+import com.mali.nbeta.ui.home.DockArea
+import com.mali.nbeta.ui.home.FolderOverlay
+import com.mali.nbeta.ui.home.HomePageContent
+import com.mali.nbeta.ui.dnd.DragOverlay
+import com.mali.nbeta.ui.dnd.dragHost
+import com.mali.nbeta.ui.dnd.LocalDragDrop
+import com.mali.nbeta.data.homePages
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import com.mali.nbeta.ui.menu.AppMenuPopup
 import com.mali.nbeta.ui.menu.HomeMenuSheet
 import com.mali.nbeta.ui.menu.RenameDialog
@@ -70,7 +79,7 @@ fun LauncherRoot(c: LauncherController) {
         val apps by graph.apps.visibleApps.collectAsStateWithLifecycle()
         LaunchedEffect(apps, iconStyle) {
             val s = graph.settings.value
-            val firstKeys = (s.dockItems + s.homeItems).mapNotNull { (it as? com.mali.nbeta.data.HomeItem.App)?.key }.toSet()
+            val firstKeys = com.mali.nbeta.data.Layout.appKeys(s)
             val (first, rest) = apps.partition { it.key in firstKeys }
             graph.icons.prewarm(first, iconStyle)
             graph.icons.prewarm(rest, iconStyle)
@@ -78,17 +87,50 @@ fun LauncherRoot(c: LauncherController) {
 
         CompositionLocalProvider(
             LocalGraph provides graph,
+            LocalDragDrop provides c.dnd,
             LocalIconStyle provides iconStyle,
             LocalDots provides if (settings.notificationDots) dots else emptySet(),
             LocalOnWallpaper provides onWallpaper,
         ) {
             val feedOn = settings.feedEnabled
-            val homePage = if (feedOn) 1 else 0
+            val feedOffset = if (feedOn) 1 else 0
+            val homePage = feedOffset
+            val homeCount = settings.homePages.size
             // Re-created when the feed is toggled so the page index never points past the end.
-            val pager = key(feedOn) { rememberPagerState(initialPage = homePage) { if (feedOn) 2 else 1 } }
+            // While dragging, one extra empty page waits at the end so items can be dropped onto a new page.
+            val pager = key(feedOn) { rememberPagerState(initialPage = homePage) { feedOffset + settings.homePages.size + if (c.dnd.active) 1 else 0 } }
             val scope = rememberCoroutineScope()
             val drawerClosed by remember { derivedStateOf { c.drawer.isClosed } }
             val onFeed by remember(feedOn) { derivedStateOf { feedOn && pager.currentPage == 0 } }
+
+            LaunchedEffect(pager, feedOffset) {
+                snapshotFlow { pager.currentPage }.collect { c.currentHomePage = it - feedOffset }
+            }
+
+            // Hold an item at the screen edge to move it to the neighbouring page.
+            LaunchedEffect(c.dnd.active, pager, feedOffset) {
+                if (!c.dnd.active) return@LaunchedEffect
+                val edge = c.activity.resources.displayMetrics.widthPixels * 0.07f
+                val width = c.activity.resources.displayMetrics.widthPixels
+                var dwell = 0
+                var dir = 0
+                while (true) {
+                    delay(100)
+                    c.dnd.tick()
+                    val x = c.dnd.pointer.x
+                    val next = when {
+                        x < edge && pager.currentPage > feedOffset -> -1
+                        x > width - edge && pager.currentPage < pager.pageCount - 1 -> 1
+                        else -> 0
+                    }
+                    if (next != 0 && next == dir) dwell++ else dwell = 0
+                    dir = next
+                    if (dwell >= 6) {
+                        dwell = 0
+                        pager.animateScrollToPage(pager.currentPage + dir)
+                    }
+                }
+            }
 
             // Status bar icons follow whatever is under them: wallpaper text colour on home, theme on drawer/feed.
             val view = LocalView.current
@@ -124,23 +166,34 @@ fun LauncherRoot(c: LauncherController) {
             Box(
                 Modifier
                     .fillMaxSize()
+                    .dragHost(c.dnd)
                     .drawBehind {
                         if (settings.wallpaperDim > 0f) drawRect(Color.Black.copy(alpha = settings.wallpaperDim))
                     },
             ) {
                 HorizontalPager(
                     state = pager,
-                    userScrollEnabled = drawerClosed,
+                    userScrollEnabled = drawerClosed && !c.dnd.active,
                     beyondViewportPageCount = 0,
+                    key = { it },
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
                     if (feedOn && page == 0) {
                         FeedPage(c, active = onFeed)
                     } else {
-                        HomePage(c, settings)
+                        HomePageContent(c, settings, page - feedOffset)
                     }
                 }
+                DockArea(
+                    c, settings,
+                    pageCount = homeCount + if (c.dnd.active) 1 else 0,
+                    position = { pager.currentPage + pager.currentPageOffsetFraction },
+                    firstHomePage = homePage,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
                 AppDrawer(c, settings)
+                FolderOverlay(c, settings)
+                DragOverlay(c.dnd, settings.iconSizeDp.dp)
             }
 
             c.menu?.let { AppMenuPopup(c, it) }

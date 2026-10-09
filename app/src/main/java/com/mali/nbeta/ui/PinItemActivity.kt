@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.mali.nbeta.NbetaApp
+import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
+import com.mali.nbeta.data.Layout
 import com.mali.nbeta.data.WidgetPlacement
 import com.mali.nbeta.ui.theme.NbetaTheme
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +106,9 @@ class PinItemActivity : ComponentActivity() {
         if (request.accept()) {
             val serial = getSystemService(UserManager::class.java).getSerialNumberForUser(shortcut.userHandle)
             val item = HomeItem.Shortcut(shortcut.`package`, shortcut.id, serial, label)
-            graph.settings.update { s -> if (item in s.homeItems) s else s.copy(homeItems = s.homeItems + item) }
+            graph.settings.update { s ->
+                if (Layout.containerOf(s, item) != null) s else Layout.insert(s, Container.Page(0), Int.MAX_VALUE, item)
+            }
         }
         finish()
     }

@@ -4,7 +4,11 @@ import android.appwidget.AppWidgetProviderInfo
 import android.widget.FrameLayout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.roundToInt
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -71,15 +75,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun WidgetColumn(c: LauncherController, slots: List<WidgetSlot>, onWallpaper: Boolean) {
+fun WidgetColumn(c: LauncherController, slots: List<WidgetSlot>, editing: Boolean) {
     if (slots.isEmpty()) return
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        slots.forEach { slot -> key(slot.id) { WidgetFrame(c, slot) } }
+        slots.forEach { slot -> key(slot.id) { WidgetFrame(c, slot, editing = editing) } }
     }
 }
 
 @Composable
-fun WidgetFrame(c: LauncherController, slot: WidgetSlot, modifier: Modifier = Modifier) {
+fun WidgetFrame(c: LauncherController, slot: WidgetSlot, modifier: Modifier = Modifier, editing: Boolean = false) {
     val repo = LocalGraph.current.widgets
     val info = remember(slot.id) { repo.info(slot.id) }
     val openMenu = { c.widgetMenu = slot.id }
@@ -98,14 +102,43 @@ fun WidgetFrame(c: LauncherController, slot: WidgetSlot, modifier: Modifier = Mo
         }
         return
     }
-    val height = if (slot.heightDp > 0) slot.heightDp else remember(slot.id) { repo.defaultHeightDp(slot.id) }
-    BoxWithConstraints(modifier.fillMaxWidth().height(height.dp).widgetLongPress(openMenu)) {
+    val saved = if (slot.heightDp > 0) slot.heightDp else remember(slot.id) { repo.defaultHeightDp(slot.id) }
+    // Live height while the resize handle is dragged; written to settings once, on release.
+    var live by remember(slot.id, saved) { mutableStateOf(saved.toFloat()) }
+    val height = live.roundToInt()
+    val density = LocalDensity.current
+    BoxWithConstraints(
+        modifier
+            .fillMaxWidth()
+            .height(height.dp)
+            .then(if (editing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)) else Modifier)
+            .widgetLongPress(openMenu),
+    ) {
         val width = maxWidth
         AndroidView(
             factory = { ctx -> repo.view(slot.id) ?: FrameLayout(ctx) },
             modifier = Modifier.fillMaxSize(),
         )
         LaunchedEffect(slot.id, width, height) { repo.reportSize(slot.id, width.value, height.toFloat()) }
+        if (editing) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 4.dp)
+                    .size(width = 64.dp, height = 28.dp)
+                    .pointerInput(slot.id) {
+                        detectVerticalDragGestures(
+                            onDragEnd = { repo.update(slot.id) { it.copy(heightDp = live.roundToInt()) } },
+                        ) { change, dy ->
+                            change.consume()
+                            live = (live + with(density) { dy.toDp().value }).coerceIn(56f, 720f)
+                        }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.size(width = 48.dp, height = 6.dp).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.primary))
+            }
+        }
     }
 }
 

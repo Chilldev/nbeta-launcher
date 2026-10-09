@@ -33,7 +33,7 @@ enum class WebEngine(val label: String, val template: String) {
     Bing("Bing", "https://www.bing.com/search?q=%s"),
     Startpage("Startpage", "https://www.startpage.com/do/search?q=%s"),
 }
-enum class LinkOpener { CustomTab, Browser }
+enum class LinkOpener { Reader, CustomTab, Browser }
 enum class TempUnit { Celsius, Fahrenheit }
 enum class WidgetPlacement { Home, Feed }
 
@@ -48,7 +48,20 @@ sealed interface HomeItem {
     @Serializable
     @kotlinx.serialization.SerialName("shortcut")
     data class Shortcut(val packageName: String, val id: String, val userSerial: Long, val label: String) : HomeItem
+
+    /** Holds apps and shortcuts only; folders never nest. */
+    @Serializable
+    @kotlinx.serialization.SerialName("folder")
+    data class Folder(val id: String, val name: String, val items: List<HomeItem>) : HomeItem
 }
+
+/** Identity that survives edits (a folder stays the same folder when its contents change). */
+val HomeItem.stableKey: String
+    get() = when (this) {
+        is HomeItem.App -> "a:$key"
+        is HomeItem.Shortcut -> "s:$packageName/$id#$userSerial"
+        is HomeItem.Folder -> "f:$id"
+    }
 
 @Immutable
 @Serializable
@@ -56,6 +69,7 @@ data class WidgetSlot(
     val id: Int,
     val placement: WidgetPlacement = WidgetPlacement.Home,
     val heightDp: Int = 0, // 0 = provider's default height
+    val page: Int = 0, // home page index when placement is Home
 )
 
 @Immutable
@@ -87,7 +101,9 @@ data class LauncherSettings(
     val glanceWeather: Boolean = true,
     val glanceCalendar: Boolean = true,
     val glanceAlarm: Boolean = true,
+    /** Legacy single home page; migrated into [pages] on load. */
     val homeItems: List<HomeItem> = emptyList(),
+    val pages: List<List<HomeItem>> = emptyList(),
     val dockItems: List<HomeItem> = emptyList(),
     val layoutInitialized: Boolean = false,
     // Drawer
@@ -103,6 +119,8 @@ data class LauncherSettings(
     val iconPack: String? = null,
     val themedIcons: Boolean = false,
     val notificationDots: Boolean = true,
+    /** App key -> "iconPackPackage/drawableName". */
+    val iconOverrides: Map<String, String> = emptyMap(),
     // Gestures
     val swipeDown: SwipeDownAction = SwipeDownAction.Notifications,
     val doubleTap: DoubleTapAction = DoubleTapAction.LockScreen,
@@ -119,7 +137,12 @@ data class LauncherSettings(
     val feedRefreshHours: Int = 2,
     val feedWifiOnly: Boolean = false,
     val feedFetchImages: Boolean = true,
-    val linkOpener: LinkOpener = LinkOpener.CustomTab,
+    val linkOpener: LinkOpener = LinkOpener.Reader,
+    val readerTextScale: Float = 1f,
+    val mutedKeywords: List<String> = emptyList(),
+    val newsAlerts: Boolean = false,
+    val alertSources: Set<String> = emptySet(),
+    val alertKeywords: List<String> = emptyList(),
     /** Client ID of the user's own Reddit "installed app" (public by design, not a secret). */
     val redditClientId: String? = null,
     // Weather
@@ -193,14 +216,18 @@ class JsonStore<T>(
 }
 
 class SettingsRepository(context: Context, scope: CoroutineScope) {
-    private val store = JsonStore(File(context.filesDir, "settings.json"), LauncherSettings.serializer(), { LauncherSettings() }, scope)
+    private val store = JsonStore(File(context.filesDir, "settings.json"), LauncherSettings.serializer(), { LauncherSettings() }, scope).apply {
+        // v1 kept a single home page in homeItems.
+        if (value.pages.isEmpty() && value.homeItems.isNotEmpty()) update { it.copy(pages = listOf(it.homeItems), homeItems = emptyList()) }
+    }
     val flow: StateFlow<LauncherSettings> = store.flow
     val value: LauncherSettings get() = store.value
     fun update(transform: (LauncherSettings) -> LauncherSettings) = store.update(transform)
 
     fun export(): String = AppJson.encodeToString(LauncherSettings.serializer(), value)
     fun import(json: String) {
-        store.replace(AppJson.decodeFromString(LauncherSettings.serializer(), json))
+        val s = AppJson.decodeFromString(LauncherSettings.serializer(), json)
+        store.replace(if (s.pages.isEmpty() && s.homeItems.isNotEmpty()) s.copy(pages = listOf(s.homeItems), homeItems = emptyList()) else s)
     }
 }
 

@@ -89,9 +89,9 @@ class WidgetRepository(private val context: Context, private val settings: Setti
         return info.configure != null && info.widgetFeatures and AppWidgetProviderInfo.WIDGET_FEATURE_RECONFIGURABLE != 0
     }
 
-    fun add(id: Int, placement: WidgetPlacement) {
+    fun add(id: Int, placement: WidgetPlacement, page: Int = 0) {
         synchronized(infoCache) { infoCache.remove(id) }
-        settings.update { s -> if (s.widgets.any { it.id == id }) s else s.copy(widgets = s.widgets + WidgetSlot(id, placement)) }
+        settings.update { s -> if (s.widgets.any { it.id == id }) s else s.copy(widgets = s.widgets + WidgetSlot(id, placement, page = page)) }
     }
 
     fun discard(id: Int) {
@@ -113,10 +113,10 @@ class WidgetRepository(private val context: Context, private val settings: Setti
         settings.update { s ->
             val l = s.widgets.toMutableList()
             val i = l.indexOfFirst { it.id == id }
-            val placement = l.getOrNull(i)?.placement ?: return@update s
+            val me = l.getOrNull(i) ?: return@update s
             // Swap with the nearest widget on the same page.
             var j = i + delta
-            while (j in l.indices && l[j].placement != placement) j += delta
+            while (j in l.indices && (l[j].placement != me.placement || l[j].page != me.page)) j += delta
             if (j !in l.indices) return@update s
             l[i] = l[j].also { l[j] = l[i] }
             s.copy(widgets = l)

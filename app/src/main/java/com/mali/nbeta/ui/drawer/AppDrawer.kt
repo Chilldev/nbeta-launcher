@@ -131,12 +131,20 @@ fun AppDrawer(c: LauncherController, settings: LauncherSettings) {
                         focusManager.clearFocus()
                         keyboard?.hide()
                     }
-                    SheetPhase.Closed -> {
+                    // Not while an app is being dragged out: its tile owns the gesture and must stay composed.
+                    SheetPhase.Closed -> if (!c.dnd.active) {
                         c.query = ""
                         gridState.scrollToItem(0)
                     }
                 }
             }
+    }
+
+    LaunchedEffect(c.dnd.finished) {
+        if (c.dnd.finished > 0 && c.drawer.isClosed) {
+            c.query = ""
+            gridState.scrollToItem(0)
+        }
     }
 
     // Pull down at the top of the list closes the drawer; pushing up while half open opens it.
