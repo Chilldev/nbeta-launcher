@@ -13,7 +13,13 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
@@ -70,10 +76,35 @@ class FeedRepository(
     context: Context,
     private val scope: CoroutineScope,
     private val settings: SettingsRepository,
-    private val http: OkHttpClient,
+    httpProvider: () -> OkHttpClient,
 ) {
+    // Built on first network use (always on an IO thread), never on the main thread at startup.
+    private val http by lazy(httpProvider)
     private val store = JsonStore(File(context.filesDir, "feed.json"), FeedCache.serializer(), { FeedCache() }, scope, debounceMs = 800)
     val cache: StateFlow<FeedCache> = store.flow
+
+    /** The feed page's current filter; lives here so it survives the page leaving composition. */
+    val filter = MutableStateFlow<FeedFilter>(FeedFilter.All)
+
+    /**
+     * The visible list, ranked off the main thread. The order is frozen between refreshes: marking read or resolving
+     * an image updates cards in place instead of reshuffling what is under the user's thumb.
+     */
+    val arranged: StateFlow<List<FeedItem>> = run {
+        var lastKey: Any? = null
+        var lastOrder: List<String> = emptyList()
+        combine(cache, filter, settings.flow.map { it.feedOrder }.distinctUntilChanged()) { c, f, o ->
+            val key = listOf(c.items.size, c.items.sumOf { it.id.hashCode().toLong() }, c.dismissed.size, c.mutedSources, f, o, if (f == FeedFilter.Saved) c.saved.size else 0)
+            if (key != lastKey) {
+                lastKey = key
+                lastOrder = arrange(c, o, f).map { it.id }
+            }
+            val byId = HashMap<String, FeedItem>(c.items.size + c.saved.size)
+            c.saved.forEach { byId[it.id] = it }
+            c.items.forEach { byId[it.id] = it }
+            lastOrder.mapNotNull { byId[it] }
+        }.flowOn(Dispatchers.Default).stateIn(scope, SharingStarted.Eagerly, emptyList())
+    }
 
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing
@@ -240,7 +271,8 @@ class FeedRepository(
         scope.launch(Dispatchers.IO) {
             val url = ogSemaphore.withPermit { runCatching { fetchOgImage(item.link) }.getOrNull() }
             store.update { c ->
-                c.copy(items = c.items.map { if (it.id == item.id) it.copy(imageUrl = url, imageTried = true) else it })
+                fun FeedItem.resolved() = if (id == item.id) copy(imageUrl = url, imageTried = true) else this
+                c.copy(items = c.items.map { it.resolved() }, saved = c.saved.map { it.resolved() })
             }
             ogInFlight.remove(item.id)
         }

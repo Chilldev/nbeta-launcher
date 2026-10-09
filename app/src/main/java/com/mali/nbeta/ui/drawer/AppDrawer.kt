@@ -296,7 +296,7 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
             b.rect()?.let { c.menu = MenuRequest(MenuTarget.App(app, Origin.Drawer), it) }
         }
         Box(Modifier.weight(1f)) {
-            val headerCount = if (showSuggestions) 1 else 0
+            val headerCount = (if (showSuggestions) 1 else 0) + (if (tab == 1 && workProfile?.quiet == true) 1 else 0)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(cols),
                 state = gridState,
@@ -400,13 +400,15 @@ private fun FastScroller(
     val scope = rememberCoroutineScope()
     var active by remember { mutableStateOf<String?>(null) }
     var railHeight by remember { mutableIntStateOf(1) }
+    // The gesture blocks below outlive recompositions; read the header offset fresh each time.
+    val offset by rememberUpdatedState(headerCount)
 
     fun jump(y: Float) {
         val i = ((y / railHeight) * sections.size).toInt().coerceIn(0, sections.size - 1)
         val (letter, index) = sections[i]
         if (active != letter) {
             active = letter
-            scope.launch { state.scrollToItem(index + headerCount) }
+            scope.launch { state.scrollToItem(index + offset) }
         }
     }
 

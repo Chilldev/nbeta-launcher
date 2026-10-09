@@ -73,6 +73,7 @@ import com.mali.nbeta.ui.common.IconImage
 import com.mali.nbeta.ui.common.rememberShortcutIcon
 import com.mali.nbeta.ui.settings.SettingsActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private class AnchorAbove(private val anchor: android.graphics.Rect, private val margin: Int) : PopupPositionProvider {
@@ -125,9 +126,11 @@ fun AppMenuPopup(c: LauncherController, req: MenuRequest) {
 @Composable
 private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin, dismiss: () -> Unit) {
     val graph = c.graph
-    val shortcuts by produceState(emptyList<AppShortcut>(), app.key) {
-        value = withContext(Dispatchers.IO) { graph.shortcuts.forApp(app) }
+    // Binder calls (shortcuts, ApplicationInfo) happen off the main thread, once per menu.
+    val loaded by produceState<Pair<List<AppShortcut>, Boolean>?>(null, app.key) {
+        value = withContext(Dispatchers.IO) { graph.shortcuts.forApp(app) to graph.apps.isSystemApp(app) }
     }
+    val shortcuts = loaded?.first.orEmpty()
     shortcuts.forEach { s -> ShortcutMenuRow(c, app, s, dismiss) }
     if (shortcuts.isNotEmpty()) HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
@@ -144,7 +147,7 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
     if (origin == Origin.Drawer || origin == Origin.Search) {
         MenuRow(Icons.Default.Lock, "Hide from drawer") { c.hide(app); dismiss() }
     }
-    if (!graph.apps.isSystemApp(app)) {
+    if (loaded?.second == false) {
         MenuRow(Icons.Default.Delete, "Uninstall") { graph.apps.uninstall(app); dismiss() }
     }
 }
@@ -175,15 +178,18 @@ private fun ShortcutMenuRow(c: LauncherController, app: AppEntry, s: AppShortcut
 
 private fun pinToHome(c: LauncherController, app: AppEntry, s: AppShortcut) {
     val la = c.activity.getSystemService(LauncherApps::class.java)
-    try {
-        val q = LauncherApps.ShortcutQuery().setPackage(app.packageName).setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
-        val pinned = la.getShortcuts(q, app.user).orEmpty().map { it.id }
-        la.pinShortcuts(app.packageName, (pinned + s.info.id).distinct(), app.user)
-        c.graph.settings.update { st ->
-            st.copy(homeItems = st.homeItems + HomeItem.Shortcut(app.packageName, s.info.id, app.userSerial, s.label))
+    c.graph.scope.launch(Dispatchers.IO) {
+        try {
+            val q = LauncherApps.ShortcutQuery().setPackage(app.packageName).setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+            val pinned = la.getShortcuts(q, app.user).orEmpty().map { it.id }
+            la.pinShortcuts(app.packageName, (pinned + s.info.id).distinct(), app.user)
+            val item = HomeItem.Shortcut(app.packageName, s.info.id, app.userSerial, s.label)
+            c.graph.settings.update { st -> if (item in st.homeItems) st else st.copy(homeItems = st.homeItems + item) }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                android.widget.Toast.makeText(c.activity, "Set Nbeta as your home app to pin shortcuts", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
-    } catch (e: Exception) {
-        android.widget.Toast.makeText(c.activity, "Set Nbeta as your home app to pin shortcuts", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
 

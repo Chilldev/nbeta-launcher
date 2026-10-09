@@ -46,6 +46,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,6 +103,7 @@ fun HomePage(c: LauncherController, settings: LauncherSettings) {
     val editing = c.editingHome
     var pullDown by remember { mutableStateOf(0f) }
     val pullThreshold = with(density) { 56.dp.toPx() }
+    val scope = rememberCoroutineScope()
 
     val dragState = rememberDraggableState { dy ->
         if (c.drawer.isClosed && dy > 0f) pullDown += dy else c.drawer.dragBy(dy)
@@ -115,7 +118,13 @@ fun HomePage(c: LauncherController, settings: LauncherSettings) {
                     onDoubleTap = if (settings.doubleTap == DoubleTapAction.LockScreen && !editing) {
                         { GlobalActions.lockScreen(context) }
                     } else null,
-                    onLongPress = { if (!editing) c.homeMenu = true },
+                    onLongPress = {
+                        // A long-press over a widget opens the widget's menu instead (both detectors fire together).
+                        if (!editing) scope.launch {
+                            delay(60)
+                            if (c.widgetMenu == null) c.homeMenu = true
+                        }
+                    },
                     onTap = { if (editing) c.editingHome = false },
                 )
             }
@@ -243,7 +252,7 @@ private fun ItemGrid(
                                 scaleY = s
                             }
                             .then(
-                                if (editing) Modifier.pointerInput(item, columns) {
+                                if (editing) Modifier.pointerInput(item, columns, cellW, cellH, rows) {
                                     detectDragGestures(
                                         onDragStart = {
                                             val idx = order.indexOf(item)

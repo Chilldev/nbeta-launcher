@@ -48,8 +48,8 @@ class AppGraph(val app: Application) {
             .build()
     }
 
-    val feed: FeedRepository by lazy { FeedRepository(app, scope, settings, http) }
-    val glance: GlanceRepository by lazy { GlanceRepository(app, scope, settings, http) }
+    val feed: FeedRepository by lazy { FeedRepository(app, scope, settings) { http } }
+    val glance: GlanceRepository by lazy { GlanceRepository(app, scope, settings) { http } }
     val widgets: WidgetRepository by lazy { WidgetRepository(app, settings) }
 
     fun start() {
@@ -58,7 +58,6 @@ class AppGraph(val app: Application) {
             // Pay for JSON/HTTP setup off the main thread, before the user swipes to the feed.
             feed
             glance
-            http
         }
         scope.launch {
             delay(5_000)

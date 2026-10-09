@@ -1,6 +1,7 @@
 package com.mali.nbeta.data
 
 import android.content.Context
+import android.util.AtomicFile
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.CoroutineScope
@@ -160,19 +161,30 @@ class JsonStore<T>(
         state.value = value
     }
 
-    private fun read(): T? = try {
-        if (file.exists()) AppJson.decodeFromString(serializer, file.readText()) else null
-    } catch (e: Exception) {
-        Log.w("JsonStore", "Discarding unreadable ${file.name}", e)
-        null
+    private val atomic get() = AtomicFile(file)
+
+    private fun read(): T? {
+        if (!file.exists() && !File(file.path + ".bak").exists()) return null
+        return try {
+            AppJson.decodeFromString(serializer, atomic.readFully().decodeToString())
+        } catch (e: Exception) {
+            // Never silently overwrite a file we failed to read: keep it for recovery, then start from defaults.
+            Log.e("JsonStore", "Unreadable ${file.name}; keeping it as ${file.name}.corrupt", e)
+            file.renameTo(File(file.path + ".corrupt"))
+            null
+        }
     }
 
+    /** AtomicFile fsyncs and swaps, so a crash or power loss mid-write leaves the previous version intact. */
     private fun write(value: T) {
+        val a = atomic
+        var out: java.io.FileOutputStream? = null
         try {
-            val tmp = File(file.parentFile, file.name + ".tmp")
-            tmp.writeText(AppJson.encodeToString(serializer, value))
-            tmp.renameTo(file)
+            out = a.startWrite()
+            out.write(AppJson.encodeToString(serializer, value).toByteArray())
+            a.finishWrite(out)
         } catch (e: Exception) {
+            out?.let { a.failWrite(it) }
             Log.e("JsonStore", "Could not save ${file.name}", e)
         }
     }

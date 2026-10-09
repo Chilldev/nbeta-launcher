@@ -68,13 +68,29 @@ class IconRepository(private val context: Context) {
     /** Icon work is CPU-bound and bursts at startup; cap it so it never starves the UI thread's RenderThread. */
     private val dispatcher = Dispatchers.Default.limitedParallelism(4)
 
+    @Volatile private var activeStyle: String? = null
+
     private fun key(app: AppEntry, style: IconStyle) = "${app.key}|${app.version}|${style.id}"
+
+    /** One file per app and style; the APK version is a suffix so an update replaces, rather than adds, a file. */
+    private fun diskBase(app: AppEntry, style: IconStyle) = hash("${app.key}|${style.id}")
 
     fun peek(app: AppEntry, style: IconStyle): ImageBitmap? = memory.get(key(app, style))
 
     suspend fun load(app: AppEntry, style: IconStyle): ImageBitmap = withContext(dispatcher) {
+        // Switching shape/pack/theme drops the old set from memory instead of keeping two full sets of bitmaps.
+        if (activeStyle != style.id) {
+            synchronized(this@IconRepository) {
+                if (activeStyle != null && activeStyle != style.id) memory.evictAll()
+                activeStyle = style.id
+            }
+        }
         val k = key(app, style)
-        memory.get(k) ?: (readDisk(k) ?: renderAndStore(k) { renderApp(app, style) }).also { memory.put(k, it) }
+        memory.get(k) ?: run {
+            val base = diskBase(app, style)
+            val file = File(diskDir, "$base-${app.version}")
+            (readDisk(file) ?: renderAndStore(file, base) { renderApp(app, style) })
+        }.also { memory.put(k, it) }
     }
 
     /** Warm the memory cache for everything visible on the home screen and in the drawer. */
@@ -100,22 +116,23 @@ class IconRepository(private val context: Context) {
         diskDir.listFiles()?.forEach { it.delete() }
     }
 
-    private fun readDisk(k: String): ImageBitmap? {
-        val f = File(diskDir, hash(k))
+    private fun readDisk(f: File): ImageBitmap? {
         if (!f.exists()) return null
         val opts = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.HARDWARE }
         return BitmapFactory.decodeFile(f.path, opts)?.asImageBitmap()
     }
 
-    private inline fun renderAndStore(k: String, render: () -> Bitmap): ImageBitmap {
+    private inline fun renderAndStore(file: File, base: String, render: () -> Bitmap): ImageBitmap {
         val bmp = render()
         try {
-            val tmp = File(diskDir, hash(k) + ".tmp")
+            // Older versions of this icon are dead weight.
+            diskDir.listFiles { f -> f.name.startsWith("$base-") && f.name != file.name }?.forEach { it.delete() }
+            val tmp = File(diskDir, file.name + ".tmp")
             tmp.outputStream().use { out ->
                 val fmt = if (Build.VERSION.SDK_INT >= 30) Bitmap.CompressFormat.WEBP_LOSSLESS else Bitmap.CompressFormat.PNG
                 bmp.compress(fmt, 100, out)
             }
-            tmp.renameTo(File(diskDir, hash(k)))
+            tmp.renameTo(file)
         } catch (e: Exception) {
             Log.w(TAG, "Icon cache write failed", e)
         }

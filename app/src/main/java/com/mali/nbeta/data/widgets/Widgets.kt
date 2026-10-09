@@ -1,6 +1,5 @@
 package com.mali.nbeta.data.widgets
 
-import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -11,55 +10,19 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.SizeF
-import android.view.MotionEvent
-import android.view.ViewConfiguration
 import android.view.ViewGroup
 import androidx.compose.runtime.Immutable
 import com.mali.nbeta.data.SettingsRepository
 import com.mali.nbeta.data.WidgetPlacement
 import com.mali.nbeta.data.WidgetSlot
-import kotlin.math.abs
 
-/** Widget frame that turns a long-press anywhere on the widget into a host menu, the way Launcher3 does. */
-@SuppressLint("ViewConstructor")
-class LongPressWidgetView(context: Context, private val onLongPress: (Int) -> Unit) : AppWidgetHostView(context) {
-    private val slop = ViewConfiguration.get(context).scaledTouchSlop
-    private var downX = 0f
-    private var downY = 0f
-    private var fired = false
-    private val longPress = Runnable {
-        fired = true
-        parent?.requestDisallowInterceptTouchEvent(true)
-        performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
-        onLongPress(appWidgetId)
+/** Long-press on widgets is detected in Compose (WidgetFrame), so the host uses plain AppWidgetHostViews. */
+class LauncherWidgetHost(context: Context) : AppWidgetHost(context, HOST_ID) {
+    var onProvidersChangedListener: (() -> Unit)? = null
+
+    override fun onProvidersChanged() {
+        onProvidersChangedListener?.invoke()
     }
-
-    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                fired = false
-                downX = ev.x
-                downY = ev.y
-                postDelayed(longPress, ViewConfiguration.getLongPressTimeout().toLong())
-            }
-            MotionEvent.ACTION_MOVE -> if (abs(ev.x - downX) > slop || abs(ev.y - downY) > slop) removeCallbacks(longPress)
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> removeCallbacks(longPress)
-        }
-        return fired
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-            removeCallbacks(longPress)
-            fired = false
-        }
-        return fired || super.onTouchEvent(event)
-    }
-}
-
-class LauncherWidgetHost(context: Context, private val onLongPress: (Int) -> Unit) : AppWidgetHost(context, HOST_ID) {
-    override fun onCreateView(context: Context, appWidgetId: Int, appWidget: AppWidgetProviderInfo?): AppWidgetHostView =
-        LongPressWidgetView(context, onLongPress)
 
     companion object {
         const val HOST_ID = 0x4e42
@@ -67,15 +30,18 @@ class LauncherWidgetHost(context: Context, private val onLongPress: (Int) -> Uni
 }
 
 @Immutable
-data class WidgetProviderGroup(val appLabel: String, val packageName: String, val providers: List<AppWidgetProviderInfo>)
+data class WidgetProviderGroup(val appLabel: String, val packageName: String, val providers: List<Pair<AppWidgetProviderInfo, String>>)
 
 class WidgetRepository(private val context: Context, private val settings: SettingsRepository) {
     val manager: AppWidgetManager = AppWidgetManager.getInstance(context)
-    var longPressListener: ((Int) -> Unit)? = null
-    val host = LauncherWidgetHost(context) { id -> longPressListener?.invoke(id) }
+    val host = LauncherWidgetHost(context).apply { onProvidersChangedListener = { synchronized(infoCache) { infoCache.clear() } } }
     private val views = HashMap<Int, AppWidgetHostView>()
+    private val infoCache = HashMap<Int, AppWidgetProviderInfo?>()
 
-    fun info(id: Int): AppWidgetProviderInfo? = manager.getAppWidgetInfo(id)
+    /** Memoised: getAppWidgetInfo is a binder call and composition asks for it often. */
+    fun info(id: Int): AppWidgetProviderInfo? = synchronized(infoCache) {
+        infoCache.getOrPut(id) { runCatching { manager.getAppWidgetInfo(id) }.getOrNull() }
+    }
 
     /** Host views are kept alive across recompositions; recreating them would reload the remote content. */
     fun view(id: Int): AppWidgetHostView? {
@@ -94,7 +60,8 @@ class WidgetRepository(private val context: Context, private val settings: Setti
             .groupBy { it.provider.packageName }
             .map { (pkg, list) ->
                 val label = runCatching { pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }.getOrDefault(pkg)
-                WidgetProviderGroup(label, pkg, list.sortedBy { it.loadLabel(pm) })
+                // Labels come from the provider's resources; load them here, off the main thread, not in composition.
+                WidgetProviderGroup(label, pkg, list.map { it to it.loadLabel(pm) }.sortedBy { it.second.lowercase() })
             }
             .sortedBy { it.appLabel.lowercase() }
     }
@@ -123,12 +90,14 @@ class WidgetRepository(private val context: Context, private val settings: Setti
     }
 
     fun add(id: Int, placement: WidgetPlacement) {
+        synchronized(infoCache) { infoCache.remove(id) }
         settings.update { s -> if (s.widgets.any { it.id == id }) s else s.copy(widgets = s.widgets + WidgetSlot(id, placement)) }
     }
 
     fun discard(id: Int) {
         runCatching { host.deleteAppWidgetId(id) }
         views.remove(id)
+        synchronized(infoCache) { infoCache.remove(id) }
     }
 
     fun remove(id: Int) {

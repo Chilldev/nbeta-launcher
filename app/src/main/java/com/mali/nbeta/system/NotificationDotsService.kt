@@ -1,40 +1,81 @@
 package com.mali.nbeta.system
 
+import android.app.Notification
 import android.content.ComponentName
 import android.content.Context
+import android.os.UserHandle
 import android.os.UserManager
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.util.concurrent.Executors
 
-/** Publishes which packages (per profile) have notifications, for the dots on app icons. */
+/**
+ * Publishes which packages (per profile) have notifications, for the dots on app icons.
+ *
+ * Callbacks arrive on the launcher's main thread, so each event is an O(1) map update using the notification it
+ * carries; only the initial snapshot calls getActiveNotifications (which parcels every notification), on a
+ * background thread.
+ */
 class NotificationDotsService : NotificationListenerService() {
-    override fun onListenerConnected() = publish()
+    private val worker = Executors.newSingleThreadExecutor()
+    private val byKey = HashMap<String, String>() // notification key -> "package#userSerial"
+    private val serials = HashMap<UserHandle, Long>()
+
+    override fun onListenerConnected() {
+        worker.execute {
+            val active = try {
+                activeNotifications.orEmpty()
+            } catch (_: Exception) {
+                return@execute
+            }
+            val ranking = currentRanking
+            synchronized(byKey) {
+                byKey.clear()
+                for (sbn in active) if (counts(sbn, ranking)) byKey[sbn.key] = packageKey(sbn)
+                publish()
+            }
+        }
+    }
+
     override fun onListenerDisconnected() {
+        synchronized(byKey) { byKey.clear() }
         dots.value = emptySet()
     }
-    override fun onNotificationPosted(sbn: StatusBarNotification?) = publish()
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) = publish()
 
-    private fun publish() {
-        val um = getSystemService(UserManager::class.java)
-        val active = try {
-            activeNotifications.orEmpty()
-        } catch (_: Exception) {
-            return
+    override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap?) {
+        synchronized(byKey) {
+            val changed = if (counts(sbn, rankingMap)) byKey.put(sbn.key, packageKey(sbn)) == null else byKey.remove(sbn.key) != null
+            if (changed) publish()
         }
-        dots.value = active.asSequence()
-            .filter { !it.isOngoing && it.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY == 0 }
-            .filter { n -> ranking(n)?.canShowBadge() != false }
-            .map { "${it.packageName}#${um.getSerialNumberForUser(it.user)}" }
-            .toSet()
     }
 
-    private fun ranking(sbn: StatusBarNotification): Ranking? {
+    override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap?) {
+        synchronized(byKey) { if (byKey.remove(sbn.key) != null) publish() }
+    }
+
+    override fun onDestroy() {
+        worker.shutdown()
+        super.onDestroy()
+    }
+
+    private fun counts(sbn: StatusBarNotification, rankingMap: RankingMap?): Boolean {
+        val n = sbn.notification
+        if (sbn.isOngoing || n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return false
         val r = Ranking()
-        return if (currentRanking?.getRanking(sbn.key, r) == true) r else null
+        return rankingMap?.getRanking(sbn.key, r) != true || r.canShowBadge()
+    }
+
+    private fun packageKey(sbn: StatusBarNotification): String {
+        val serial = serials.getOrPut(sbn.user) { getSystemService(UserManager::class.java).getSerialNumberForUser(sbn.user) }
+        return "${sbn.packageName}#$serial"
+    }
+
+    private fun publish() {
+        val next = byKey.values.toSet()
+        if (next != dots.value) dots.value = next
     }
 
     companion object {

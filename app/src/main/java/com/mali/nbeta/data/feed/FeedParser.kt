@@ -66,7 +66,10 @@ object FeedParser {
     private fun parseXml(input: InputStream, sourceId: String, baseUrl: String): ParsedFeed {
         val p = Xml.newPullParser()
         p.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+        // Real-world feeds use HTML entities (&nbsp; &rsquo; …) outside CDATA; strict parsing would reject the whole feed.
+        runCatching { p.setFeature("http://xmlpull.org/v1/doc/features.html#relaxed", true) }
         p.setInput(input, null)
+        for ((name, value) in named) if (name !in XML_ENTITIES) runCatching { p.defineEntityReplacementText(name, value) }
         var feedTitle: String? = null
         var siteUrl: String? = null
         val items = ArrayList<FeedItem>()
@@ -247,6 +250,7 @@ object FeedParser {
         return wsRegex.replace(decodeEntities(noTags), " ").trim()
     }
 
+    private val XML_ENTITIES = setOf("amp", "lt", "gt", "quot", "apos")
     private val entity = Regex("&(#x?[0-9a-fA-F]+|[a-zA-Z]+);")
     private val named = mapOf(
         "amp" to "&", "lt" to "<", "gt" to ">", "quot" to "\"", "apos" to "'", "nbsp" to " ", "hellip" to "…",
@@ -256,8 +260,8 @@ object FeedParser {
     private fun decodeEntities(s: String): String = entity.replace(s) { m ->
         val e = m.groupValues[1]
         when {
-            e.startsWith("#x") || e.startsWith("#X") -> e.substring(2).toIntOrNull(16)?.let { String(Character.toChars(it)) } ?: m.value
-            e.startsWith("#") -> e.substring(1).toIntOrNull()?.let { String(Character.toChars(it)) } ?: m.value
+            e.startsWith("#x") || e.startsWith("#X") -> e.substring(2).toIntOrNull(16)?.takeIf(Character::isValidCodePoint)?.let { String(Character.toChars(it)) } ?: m.value
+            e.startsWith("#") -> e.substring(1).toIntOrNull()?.takeIf(Character::isValidCodePoint)?.let { String(Character.toChars(it)) } ?: m.value
             else -> named[e] ?: m.value
         }
     }
@@ -276,7 +280,12 @@ object FeedParser {
         fmt("EEE, d MMM yyyy HH:mm:ss Z"),
         fmt("EEE, dd MMM yyyy HH:mm:ss Z"),
         fmt("EEE, d MMM yy HH:mm:ss Z"),
+        // Without the weekday: feeds often state the wrong one, which strict resolution rejects.
+        fmt("d MMM yyyy HH:mm:ss zzz"),
+        fmt("d MMM yyyy HH:mm zzz"),
+        fmt("d MMM yy HH:mm:ss Z"),
     )
+    private val weekday = Regex("^[A-Za-z]{3,9},?\\s+")
 
     private fun fmt(p: String) = DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient().appendPattern(p)
         .parseDefaulting(ChronoField.OFFSET_SECONDS, 0).toFormatter(Locale.US)
@@ -302,11 +311,12 @@ object FeedParser {
             } catch (_: Exception) {
             }
         }
-        // "Thu, 09 Oct 2026 10:00:00 EDT" style zones the JDK may not know: drop the zone, assume UTC.
-        val noZone = s.replace(Regex(" [A-Z]{2,5}$"), " +0000")
-        if (noZone != s) for (f in rfc822) {
+        val noWeekday = s.replace(weekday, "")
+        // "Thu, 09 Oct 2026 10:00:00 EDT"-style zones the JDK may not know: drop the zone, assume UTC.
+        val noZone = noWeekday.replace(Regex(" [A-Z]{2,5}$"), " +0000")
+        for (candidate in listOf(noWeekday, noZone).distinct()) for (f in rfc822) {
             try {
-                return ZonedDateTime.parse(noZone, f).toInstant().toEpochMilli()
+                return ZonedDateTime.parse(candidate, f).toInstant().toEpochMilli()
             } catch (_: Exception) {
             }
         }

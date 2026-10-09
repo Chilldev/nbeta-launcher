@@ -40,6 +40,9 @@ class LauncherController(
     launchBind: (Intent) -> Unit,
 ) {
     val drawer = SheetController(scope)
+
+    /** Hoisted so the feed keeps its scroll position while the page is off screen. */
+    val feedListState = androidx.compose.foundation.lazy.LazyListState()
     var query by mutableStateOf("")
     var menu by mutableStateOf<MenuRequest?>(null)
     var homeMenu by mutableStateOf(false)

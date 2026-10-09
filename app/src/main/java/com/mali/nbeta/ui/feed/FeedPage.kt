@@ -93,16 +93,15 @@ fun FeedPage(c: LauncherController, active: Boolean) {
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     val cache by feed.cache.collectAsStateWithLifecycle()
     val refreshing by feed.refreshing.collectAsStateWithLifecycle()
-    var filter by remember { mutableStateOf<FeedFilter>(FeedFilter.All) }
+    val filter by feed.filter.collectAsStateWithLifecycle()
+    val setFilter: (FeedFilter) -> Unit = { feed.filter.value = it }
     val dark = isDark(settings)
     val scope = rememberCoroutineScope()
-    val listState = rememberLazyListState()
+    val listState = c.feedListState
     val sources = remember(settings.feedSources) { settings.feedSources.associateBy { it.id } }
 
-    // Ranking runs off the main thread; the list only recomposes with the finished result.
-    val items by produceState(emptyList<FeedItem>(), cache, filter, settings.feedOrder) {
-        value = withContext(Dispatchers.Default) { feed.arrange(cache, settings.feedOrder, filter) }
-    }
+    // Ranked off the main thread in the repository; available immediately when the page comes back.
+    val items by feed.arranged.collectAsStateWithLifecycle()
 
     LaunchedEffect(active) {
         if (active) {
@@ -141,7 +140,7 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                     WidgetFrame(c, slot, Modifier.clip(RoundedCornerShape(24.dp)))
                 }
                 item(key = "filters", contentType = "filters") {
-                    FilterRow(settings.feedSources, filter, settings.feedOrder, { filter = it }) { order ->
+                    FilterRow(settings.feedSources, filter, settings.feedOrder, setFilter) { order ->
                         graph.settings.update { it.copy(feedOrder = order) }
                     }
                 }
@@ -168,7 +167,7 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                         onSave = { feed.toggleSaved(item) },
                         onHide = { feed.dismiss(item) },
                         onMute = { feed.muteSource(item.sourceId, true) },
-                        onOnlySource = { filter = FeedFilter.Source(item.sourceId) },
+                        onOnlySource = { setFilter(FeedFilter.Source(item.sourceId)) },
                         onShare = {
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "${item.title}\n${item.link}")
                             c.start(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

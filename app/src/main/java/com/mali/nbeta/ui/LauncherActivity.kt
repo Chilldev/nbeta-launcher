@@ -28,7 +28,6 @@ class LauncherActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.isNavigationBarContrastEnforced = false
         controller = LauncherController(this, graph, lifecycleScope) { intent -> bindWidget.launch(intent) }
-        graph.widgets.longPressListener = { id -> controller.widgetMenu = id }
         setContent { LauncherRoot(controller) }
     }
 
@@ -40,6 +39,7 @@ class LauncherActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         graph.glance.refresh()
+        graph.shortcuts.checkPermission()
     }
 
     override fun onStop() {
@@ -68,7 +68,6 @@ class LauncherActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        graph.widgets.longPressListener = null
         customTabs.unbind()
     }
 }

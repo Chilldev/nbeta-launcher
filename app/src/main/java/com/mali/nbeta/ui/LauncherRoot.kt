@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
@@ -83,7 +84,8 @@ fun LauncherRoot(c: LauncherController) {
         ) {
             val feedOn = settings.feedEnabled
             val homePage = if (feedOn) 1 else 0
-            val pager = rememberPagerState(initialPage = homePage) { if (feedOn) 2 else 1 }
+            // Re-created when the feed is toggled so the page index never points past the end.
+            val pager = key(feedOn) { rememberPagerState(initialPage = homePage) { if (feedOn) 2 else 1 } }
             val scope = rememberCoroutineScope()
             val drawerClosed by remember { derivedStateOf { c.drawer.isClosed } }
             val onFeed by remember(feedOn) { derivedStateOf { feedOn && pager.currentPage == 0 } }
@@ -103,7 +105,7 @@ fun LauncherRoot(c: LauncherController) {
                     }
             }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(pager, homePage) {
                 c.homeEvents.collect { animate ->
                     if (animate) {
                         if (!c.drawer.isClosed) c.drawer.close()

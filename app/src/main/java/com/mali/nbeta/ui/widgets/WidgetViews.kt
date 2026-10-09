@@ -5,6 +5,12 @@ import android.widget.FrameLayout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -75,14 +81,57 @@ fun WidgetColumn(c: LauncherController, slots: List<WidgetSlot>, onWallpaper: Bo
 @Composable
 fun WidgetFrame(c: LauncherController, slot: WidgetSlot, modifier: Modifier = Modifier) {
     val repo = LocalGraph.current.widgets
+    val info = remember(slot.id) { repo.info(slot.id) }
+    val openMenu = { c.widgetMenu = slot.id }
+    if (info == null) {
+        // The provider is gone (uninstalled, restored from another device...). Keep it removable.
+        Box(
+            modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f))
+                .combinedClickable(onClick = openMenu, onLongClick = openMenu),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Widget unavailable · tap to remove", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
     val height = if (slot.heightDp > 0) slot.heightDp else remember(slot.id) { repo.defaultHeightDp(slot.id) }
-    BoxWithConstraints(modifier.fillMaxWidth().height(height.dp)) {
+    BoxWithConstraints(modifier.fillMaxWidth().height(height.dp).widgetLongPress(openMenu)) {
         val width = maxWidth
         AndroidView(
             factory = { ctx -> repo.view(slot.id) ?: FrameLayout(ctx) },
             modifier = Modifier.fillMaxSize(),
         )
         LaunchedEffect(slot.id, width, height) { repo.reportSize(slot.id, width.value, height.toFloat()) }
+    }
+}
+
+/**
+ * Detects a long-press over a widget in the Initial pass, i.e. before the widget's own views see the events, so it
+ * works on empty areas too and needs no timers in the hosted View. Once it fires, the rest of the gesture is consumed
+ * (the widget receives a cancel). Movement beyond touch slop hands the gesture to the widget or the pager.
+ */
+private fun Modifier.widgetLongPress(onLongPress: () -> Unit): Modifier = pointerInput(Unit) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+            while (true) {
+                val ev = awaitPointerEvent(PointerEventPass.Initial)
+                val change = ev.changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed || change.isConsumed) break
+                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) break
+            }
+        }
+        if (released == null) {
+            onLongPress()
+            do {
+                val ev = awaitPointerEvent(PointerEventPass.Initial)
+                ev.changes.forEach { it.consume() }
+            } while (ev.changes.any { it.pressed })
+        }
     }
 }
 
@@ -118,8 +167,8 @@ fun WidgetPickerSheet(c: LauncherController, placement: WidgetPlacement) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.padding(bottom = 12.dp),
                         ) {
-                            items(g.providers, key = { it.provider.flattenToShortString() + it.profile.hashCode() }) { info ->
-                                ProviderCard(info) {
+                            items(g.providers, key = { it.first.provider.flattenToShortString() + it.first.profile.hashCode() }) { (info, label) ->
+                                ProviderCard(info, label) {
                                     c.widgetPicker = null
                                     c.widgets.add(info, placement)
                                 }
@@ -144,7 +193,7 @@ private fun AppIconSmall(pkg: String) {
 }
 
 @Composable
-private fun ProviderCard(info: AppWidgetProviderInfo, onClick: () -> Unit) {
+private fun ProviderCard(info: AppWidgetProviderInfo, label: String, onClick: () -> Unit) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.densityDpi
     val preview by produceState<ImageBitmap?>(null, info) {
@@ -172,7 +221,7 @@ private fun ProviderCard(info: AppWidgetProviderInfo, onClick: () -> Unit) {
             preview?.let { Image(it, null, Modifier.fillMaxWidth(), contentScale = ContentScale.Fit) }
         }
         Spacer(Modifier.height(8.dp))
-        Text(info.loadLabel(context.packageManager), fontWeight = FontWeight.Medium, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
+        Text(label, fontWeight = FontWeight.Medium, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
         val wCells = ((info.minWidth / dm.density) / 70).toInt().coerceAtLeast(1)
         val hCells = ((info.minHeight / dm.density) / 70).toInt().coerceAtLeast(1)
         Text("$wCells × $hCells", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -186,11 +235,16 @@ fun WidgetMenuSheet(c: LauncherController, id: Int) {
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     val slot = settings.widgets.firstOrNull { it.id == id }
     ModalBottomSheet(onDismissRequest = { c.widgetMenu = null }) {
-        val label = remember(id) { repo.info(id)?.loadLabel(c.activity.packageManager) ?: "Widget" }
+        val label by produceState("Widget", id) {
+            value = withContext(Dispatchers.IO) { repo.info(id)?.loadLabel(c.activity.packageManager) ?: "Widget" }
+        }
         Text(label, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+            val meta by produceState<Pair<Int, Boolean>?>(null, id) {
+                value = withContext(Dispatchers.IO) { repo.defaultHeightDp(id) to repo.isReconfigurable(id) }
+            }
             if (slot != null) {
-                val current = if (slot.heightDp > 0) slot.heightDp else repo.defaultHeightDp(id)
+                val current = if (slot.heightDp > 0) slot.heightDp else meta?.first ?: 120
                 MenuRow(Icons.Default.Add, "Taller") { repo.update(id) { it.copy(heightDp = (current + 40).coerceAtMost(720)) } }
                 MenuRow(Icons.Default.Close, "Shorter") { repo.update(id) { it.copy(heightDp = (current - 40).coerceAtLeast(56)) } }
                 MenuRow(Icons.Default.KeyboardArrowUp, "Move up") { repo.move(id, -1) }
@@ -200,7 +254,7 @@ fun WidgetMenuSheet(c: LauncherController, id: Int) {
                     repo.update(id) { it.copy(placement = other) }
                     c.widgetMenu = null
                 }
-                if (repo.isReconfigurable(id)) {
+                if (meta?.second == true) {
                     MenuRow(Icons.Default.Settings, "Reconfigure") {
                         c.widgetMenu = null
                         c.widgets.reconfigure(id)

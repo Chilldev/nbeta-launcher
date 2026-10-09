@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -132,6 +133,10 @@ class AppRepository(
             refresh()
         }
         refreshRequests.debounce(250).onEach { refresh() }.launchIn(scope + Dispatchers.IO)
+        // "Reset home layout" clears the flag; re-seed the defaults right away.
+        settings.flow.map { it.layoutInitialized }.distinctUntilChanged().drop(1)
+            .onEach { initialized -> if (!initialized) requestRefresh() }
+            .launchIn(scope)
         launcherApps.registerCallback(callback, android.os.Handler(android.os.Looper.getMainLooper()))
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_MANAGED_PROFILE_ADDED)

@@ -77,8 +77,10 @@ class GlanceRepository(
     private val context: Context,
     private val scope: CoroutineScope,
     private val settings: SettingsRepository,
-    private val http: OkHttpClient,
+    httpProvider: () -> OkHttpClient,
 ) {
+    // Built on first network use (always on an IO thread), never on the main thread at startup.
+    private val http by lazy(httpProvider)
     private val weatherStore = JsonStore(File(context.filesDir, "weather.json"), Weather.serializer().nullable, { null }, scope)
     val weather: StateFlow<Weather?> = weatherStore.flow
 

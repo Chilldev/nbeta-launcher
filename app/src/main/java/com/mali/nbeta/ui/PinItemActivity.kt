@@ -1,11 +1,15 @@
 package com.mali.nbeta.ui
 
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
+import android.content.Intent
 import android.content.pm.LauncherApps
+import android.content.pm.ShortcutInfo
 import android.os.Bundle
 import android.os.UserManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -29,32 +33,44 @@ import com.mali.nbeta.ui.theme.NbetaTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Confirms "Add to home screen" requests from other apps (browser shortcuts, app widgets). */
+/**
+ * Confirms "Add to home screen" requests from other apps. Widgets follow the same path as the picker: bind (asking
+ * once if needed), accept the request with the bound id, run the provider's configuration, then place.
+ */
 class PinItemActivity : ComponentActivity() {
+    private val graph get() = (application as NbetaApp).graph
+    private lateinit var request: LauncherApps.PinItemRequest
+    private var pendingId = -1
+
+    private val bind = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        if (r.resultCode == RESULT_OK) acceptWidget() else abandon()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val graph = (application as NbetaApp).graph
         val la = getSystemService(LauncherApps::class.java)
-        val request = runCatching { la.getPinItemRequest(intent) }.getOrNull()
-        if (request == null || !request.isValid) {
+        val req = runCatching { la.getPinItemRequest(intent) }.getOrNull()
+        if (req == null || !req.isValid) {
             finish()
             return
         }
-        val isShortcut = request.requestType == LauncherApps.PinItemRequest.REQUEST_TYPE_SHORTCUT
-        val shortcut = request.shortcutInfo
-        val widget = request.getAppWidgetProviderInfo(this)
+        request = req
+        val isShortcut = req.requestType == LauncherApps.PinItemRequest.REQUEST_TYPE_SHORTCUT
+        val shortcut = req.shortcutInfo
+        val widget = req.getAppWidgetProviderInfo(this)
         val label = when {
             isShortcut -> (shortcut?.shortLabel ?: shortcut?.longLabel ?: "Shortcut").toString()
             else -> widget?.loadLabel(packageManager) ?: "Widget"
         }
+        val density = resources.displayMetrics.densityDpi
 
         setContent {
             NbetaTheme(graph.settings.value) {
                 val icon by produceState<ImageBitmap?>(null) {
                     value = withContext(Dispatchers.IO) {
                         runCatching {
-                            val d = if (isShortcut && shortcut != null) la.getShortcutIconDrawable(shortcut, resources.displayMetrics.densityDpi)
-                            else widget?.loadPreviewImage(this@PinItemActivity, resources.displayMetrics.densityDpi) ?: widget?.loadIcon(this@PinItemActivity, resources.displayMetrics.densityDpi)
+                            val d = if (isShortcut && shortcut != null) la.getShortcutIconDrawable(shortcut, density)
+                            else widget?.loadPreviewImage(this@PinItemActivity, density) ?: widget?.loadIcon(this@PinItemActivity, density)
                             d?.toBitmap(256, (256f * d.intrinsicHeight / d.intrinsicWidth.coerceAtLeast(1)).toInt().coerceIn(1, 512))?.asImageBitmap()
                         }.getOrNull()
                     }
@@ -71,24 +87,78 @@ class PinItemActivity : ComponentActivity() {
                     },
                     confirmButton = {
                         TextButton(onClick = {
-                            if (isShortcut && shortcut != null) {
-                                if (request.accept()) {
-                                    val serial = getSystemService(UserManager::class.java).getSerialNumberForUser(shortcut.userHandle)
-                                    graph.settings.update { s ->
-                                        s.copy(homeItems = s.homeItems + HomeItem.Shortcut(shortcut.`package`, shortcut.id, serial, label))
-                                    }
-                                }
-                            } else if (widget != null) {
-                                val id = graph.widgets.allocate()
-                                val ok = request.accept(Bundle().apply { putInt(AppWidgetManager.EXTRA_APPWIDGET_ID, id) })
-                                if (ok) graph.widgets.add(id, WidgetPlacement.Home) else graph.widgets.discard(id)
+                            when {
+                                isShortcut && shortcut != null -> addShortcut(shortcut, label)
+                                widget != null -> startWidget(widget)
+                                else -> finish()
                             }
-                            finish()
                         }) { Text("Add") }
                     },
                     dismissButton = { TextButton(onClick = { finish() }) { Text("Cancel") } },
                 )
             }
         }
+    }
+
+    private fun addShortcut(shortcut: ShortcutInfo, label: String) {
+        if (request.accept()) {
+            val serial = getSystemService(UserManager::class.java).getSerialNumberForUser(shortcut.userHandle)
+            val item = HomeItem.Shortcut(shortcut.`package`, shortcut.id, serial, label)
+            graph.settings.update { s -> if (item in s.homeItems) s else s.copy(homeItems = s.homeItems + item) }
+        }
+        finish()
+    }
+
+    private fun startWidget(info: AppWidgetProviderInfo) {
+        pendingId = graph.widgets.allocate()
+        if (graph.widgets.bindIfAllowed(pendingId, info)) {
+            acceptWidget()
+        } else {
+            bind.launch(
+                Intent(AppWidgetManager.ACTION_APPWIDGET_BIND)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingId)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.provider)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE, info.profile),
+            )
+        }
+    }
+
+    private fun acceptWidget() {
+        val info = request.getAppWidgetProviderInfo(this)
+        if (info == null || !request.accept(Bundle().apply { putInt(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingId) })) return abandon()
+        if (graph.widgets.needsConfigure(info)) {
+            try {
+                graph.widgets.host.startAppWidgetConfigureActivityForResult(this, pendingId, 0, REQUEST_CONFIGURE, null)
+            } catch (_: Exception) {
+                abandon()
+            }
+        } else {
+            place()
+        }
+    }
+
+    @Deprecated("AppWidgetHost reports configuration results only through onActivityResult")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CONFIGURE) {
+            if (resultCode == RESULT_OK) place() else abandon()
+        }
+    }
+
+    private fun place() {
+        graph.widgets.add(pendingId, WidgetPlacement.Home)
+        pendingId = -1
+        finish()
+    }
+
+    private fun abandon() {
+        if (pendingId >= 0) graph.widgets.discard(pendingId)
+        pendingId = -1
+        finish()
+    }
+
+    companion object {
+        private const val REQUEST_CONFIGURE = 4201
     }
 }

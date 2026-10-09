@@ -16,7 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.plus
 
 @Immutable
@@ -45,10 +47,20 @@ class ShortcutRepository(
     /** Index of every manifest/dynamic shortcut, for search. */
     val all: StateFlow<List<AppShortcut>> = _all
 
+    private val reindexRequests = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    @Volatile private var hadPermission = false
+
     init {
-        apps.packageChanges.onStart { emit("") }.debounce(1500)
+        // Package changes, profile list changes (e.g. after boot) and gaining the home role all rebuild the index.
+        merge(apps.packageChanges, apps.profiles.map { "" }, reindexRequests)
+            .debounce(1000)
             .onEach { reindex() }
             .launchIn(scope + Dispatchers.IO)
+    }
+
+    /** Call on resume: the shortcut permission appears only once the user picks Nbeta as home. */
+    fun checkPermission() {
+        if (!hadPermission && hasPermission()) reindexRequests.tryEmit("")
     }
 
     fun hasPermission(): Boolean = try {
@@ -87,7 +99,8 @@ class ShortcutRepository(
     }
 
     private fun reindex() {
-        if (!hasPermission()) return
+        hadPermission = hasPermission()
+        if (!hadPermission) return
         val byPackage = apps.apps.value.groupBy { it.packageName to it.userSerial }
         val out = ArrayList<AppShortcut>()
         for (profile in apps.profiles.value) {
