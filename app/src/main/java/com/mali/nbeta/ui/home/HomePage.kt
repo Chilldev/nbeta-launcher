@@ -460,7 +460,7 @@ fun HomeItemTile(
             }
             val bmp = shortcut?.let { rememberShortcutIcon(it) }
             Tile(
-                bmp, item.label, iconSize, labels, labelStyle, hasDot = false,
+                bmp, item.label, iconSize, labels, labelStyle, hasDot = 0,
                 onClick = { b -> shortcut?.let { c.launchShortcut(it, b) } },
                 onLongClick = { b -> b.rect()?.let { c.menu = MenuRequest(MenuTarget.PinnedShortcut(item, origin), it) } },
                 dragItem = { DragItem(item, container, null, bmp) },
@@ -473,7 +473,7 @@ fun HomeItemTile(
             val firstApp = item.items.firstNotNullOfOrNull { (it as? HomeItem.App)?.let { a -> byKey[a.key] } }
             val firstIcon = firstApp?.let { rememberAppIcon(it) }
             Tile(
-                null, item.name, iconSize, labels, labelStyle, hasDot = false,
+                null, item.name, iconSize, labels, labelStyle, hasDot = 0,
                 onClick = { c.openFolder = item.id },
                 onLongClick = { b -> b.rect()?.let { c.menu = MenuRequest(MenuTarget.Folder(item), it) } },
                 dragItem = { DragItem(item, container, null, firstIcon) },

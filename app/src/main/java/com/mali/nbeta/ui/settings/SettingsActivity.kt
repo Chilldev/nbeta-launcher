@@ -309,6 +309,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.icons(s: LauncherSett
         SwitchPref(stringResource(R.string.settings_themed_icons), stringResource(R.string.settings_themed_icons_summary), s.themedIcons) { v -> set { it.copy(themedIcons = v) } }
     }
     item { NotificationDotsPref(s, set) }
+    if (s.notificationDots) item {
+        SwitchPref(stringResource(R.string.settings_dot_counts), stringResource(R.string.settings_dot_counts_summary), s.notificationCounts) { v -> set { it.copy(notificationCounts = v) } }
+    }
     item {
         val context = LocalContext.current
         ClickPref(stringResource(R.string.settings_clear_icon_cache), stringResource(R.string.settings_clear_icon_cache_summary)) {

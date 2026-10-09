@@ -28,7 +28,10 @@ import kotlin.math.abs
 
 val LocalGraph = staticCompositionLocalOf<AppGraph> { error("No AppGraph") }
 val LocalIconStyle = compositionLocalOf { IconStyle(IconShape.System, null, false, false) }
-val LocalDots = compositionLocalOf { emptySet<String>() }
+/** "package#userSerial" -> notification count. */
+val LocalDots = compositionLocalOf { emptyMap<String, Int>() }
+/** Show the count inside the dot instead of a plain dot. */
+val LocalDotCounts = compositionLocalOf { false }
 val LocalIconOverrides = compositionLocalOf { emptyMap<String, String>() }
 
 /** Colours for text drawn straight on the wallpaper. */

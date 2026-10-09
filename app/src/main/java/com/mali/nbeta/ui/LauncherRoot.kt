@@ -94,7 +94,8 @@ fun LauncherRoot(c: LauncherController) {
             LocalDragDrop provides c.dnd,
             com.mali.nbeta.ui.common.LocalIconOverrides provides settings.iconOverrides,
             LocalIconStyle provides iconStyle,
-            LocalDots provides if (settings.notificationDots) dots else emptySet(),
+            LocalDots provides if (settings.notificationDots) dots else emptyMap(),
+            com.mali.nbeta.ui.common.LocalDotCounts provides settings.notificationCounts,
             LocalOnWallpaper provides onWallpaper,
         ) {
             val feedOn = settings.feedEnabled

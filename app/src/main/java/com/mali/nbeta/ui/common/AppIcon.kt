@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -105,9 +106,9 @@ fun AppTile(
     highlight: Boolean = false,
 ) {
     val bitmap = rememberAppIcon(app)
-    val hasDot = app.packageKey in LocalDots.current
+    val dotCount = LocalDots.current[app.packageKey] ?: 0
     Tile(
-        bitmap, app.label, iconSize, showLabel, labelStyle, hasDot, onClick, onLongClick, modifier,
+        bitmap, app.label, iconSize, showLabel, labelStyle, dotCount, onClick, onLongClick, modifier,
         dragItem = if (draggable) ({ DragItem(item, origin, app, bitmap) }) else null,
         hidden = hidden,
         highlight = highlight,
@@ -121,7 +122,8 @@ fun Tile(
     iconSize: Dp,
     showLabel: Boolean,
     labelStyle: TextStyle,
-    hasDot: Boolean,
+    /** Notifications for this tile; 0 = no dot. */
+    hasDot: Int,
     onClick: (BoundsHolder) -> Unit,
     onLongClick: (BoundsHolder) -> Unit,
     modifier: Modifier = Modifier,
@@ -181,15 +183,38 @@ fun Tile(
                 },
         ) {
             if (icon != null) Box(Modifier.size(iconSize)) { icon() } else IconImage(bitmap, iconSize, if (showLabel) null else label)
-            if (hasDot) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 1.dp, y = (-1).dp)
-                        .size(iconSize * 0.22f)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiary),
-                )
+            if (hasDot > 0) {
+                if (LocalDotCounts.current) {
+                    val text = if (hasDot > 99) "99+" else hasDot.toString()
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 4.dp, y = (-4).dp)
+                            .defaultMinSize(minWidth = iconSize * 0.34f, minHeight = iconSize * 0.34f)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.tertiary)
+                            .padding(horizontal = 4.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text,
+                            color = MaterialTheme.colorScheme.onTertiary,
+                            fontSize = (iconSize.value * 0.2f).sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            style = TextStyle(platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false)),
+                        )
+                    }
+                } else {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 1.dp, y = (-1).dp)
+                            .size(iconSize * 0.22f)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.tertiary),
+                    )
+                }
             }
         }
         if (showLabel) {

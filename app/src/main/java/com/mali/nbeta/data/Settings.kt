@@ -124,6 +124,7 @@ data class LauncherSettings(
     val iconPack: String? = null,
     val themedIcons: Boolean = false,
     val notificationDots: Boolean = true,
+    val notificationCounts: Boolean = true,
     /** App key -> "iconPackPackage/drawableName". */
     val iconOverrides: Map<String, String> = emptyMap(),
     // Gestures

@@ -540,4 +540,6 @@
     <string name="menu_unlock_app">إزالة القفل</string>
     <string name="settings_locked_apps">التطبيقات المقفلة</string>
     <plurals name="settings_locked_count"><item quantity="zero">لا توجد تطبيقات مقفلة · اضغط مطولًا على تطبيق لقفله</item><item quantity="one">تطبيق واحد يتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="two">تطبيقان يتطلبان فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="few">%d تطبيقات تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="many">%d تطبيقًا تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="other">%d تطبيق تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item></plurals>
+    <string name="settings_dot_counts">إظهار العدد</string>
+    <string name="settings_dot_counts_summary">أرقام بدلًا من النقاط</string>
 </resources>

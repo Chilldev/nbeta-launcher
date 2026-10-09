@@ -21,7 +21,7 @@ import java.util.concurrent.Executors
  */
 class NotificationDotsService : NotificationListenerService() {
     private val worker = Executors.newSingleThreadExecutor()
-    private val byKey = HashMap<String, String>() // notification key -> "package#userSerial"
+    private val byKey = HashMap<String, Pair<String, Int>>() // notification key -> ("package#userSerial", count)
     private val serials = HashMap<UserHandle, Long>()
 
     override fun onListenerConnected() {
@@ -34,7 +34,7 @@ class NotificationDotsService : NotificationListenerService() {
             val ranking = currentRanking
             synchronized(byKey) {
                 byKey.clear()
-                for (sbn in active) if (counts(sbn, ranking)) byKey[sbn.key] = packageKey(sbn)
+                for (sbn in active) if (counts(sbn, ranking)) byKey[sbn.key] = entry(sbn)
                 publish()
             }
         }
@@ -42,12 +42,12 @@ class NotificationDotsService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         synchronized(byKey) { byKey.clear() }
-        dots.value = emptySet()
+        dots.value = emptyMap()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap?) {
         synchronized(byKey) {
-            val changed = if (counts(sbn, rankingMap)) byKey.put(sbn.key, packageKey(sbn)) == null else byKey.remove(sbn.key) != null
+            val changed = if (counts(sbn, rankingMap)) entry(sbn).let { byKey.put(sbn.key, it) != it } else byKey.remove(sbn.key) != null
             if (changed) publish()
         }
     }
@@ -73,14 +73,19 @@ class NotificationDotsService : NotificationListenerService() {
         return "${sbn.packageName}#$serial"
     }
 
+    /** A messaging notification's own number (e.g. "5 new messages") counts for that many; otherwise one each. */
+    private fun entry(sbn: StatusBarNotification) = packageKey(sbn) to sbn.notification.number.coerceAtLeast(1)
+
     private fun publish() {
-        val next = byKey.values.toSet()
+        val next = HashMap<String, Int>()
+        for ((pkg, n) in byKey.values) next[pkg] = (next[pkg] ?: 0) + n
         if (next != dots.value) dots.value = next
     }
 
     companion object {
-        private val dots = MutableStateFlow<Set<String>>(emptySet())
-        val packagesWithDots: StateFlow<Set<String>> = dots
+        private val dots = MutableStateFlow<Map<String, Int>>(emptyMap())
+        /** "package#userSerial" -> number of notifications. */
+        val packagesWithDots: StateFlow<Map<String, Int>> = dots
 
         fun isEnabled(context: Context): Boolean {
             val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: return false
