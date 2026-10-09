@@ -52,6 +52,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -67,6 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.mali.nbeta.NbetaApp
+import com.mali.nbeta.R
 import com.mali.nbeta.data.reader.Article
 import com.mali.nbeta.data.reader.Block
 import com.mali.nbeta.ui.feed.CustomTabs
@@ -110,17 +113,17 @@ class ReaderActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(
                             title = { Text(source ?: article?.siteName ?: Uri.parse(url).host.orEmpty(), maxLines = 1, style = MaterialTheme.typography.titleMedium) },
-                            navigationIcon = { IconButton(onClick = { finish() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+                            navigationIcon = { IconButton(onClick = { finish() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back)) } },
                             actions = {
-                                TextButton(onClick = { graph.settings.update { it.copy(readerTextScale = (it.readerTextScale - 0.1f).coerceAtLeast(0.8f)) } }) { Text("A−") }
-                                TextButton(onClick = { graph.settings.update { it.copy(readerTextScale = (it.readerTextScale + 0.1f).coerceAtMost(1.6f)) } }) { Text("A+") }
+                                TextButton(onClick = { graph.settings.update { it.copy(readerTextScale = (it.readerTextScale - 0.1f).coerceAtLeast(0.8f)) } }) { Text(stringResource(R.string.reader_text_smaller)) }
+                                TextButton(onClick = { graph.settings.update { it.copy(readerTextScale = (it.readerTextScale + 0.1f).coerceAtMost(1.6f)) } }) { Text(stringResource(R.string.reader_text_larger)) }
                                 if (item != null) IconButton(onClick = { graph.feed.toggleSaved(item) }) {
-                                    Icon(if (saved) Icons.Default.Favorite else Icons.Default.FavoriteBorder, if (saved) "Unsave" else "Save")
+                                    Icon(if (saved) Icons.Default.Favorite else Icons.Default.FavoriteBorder, stringResource(if (saved) R.string.feed_unsave else R.string.common_save))
                                 }
                                 IconButton(onClick = {
                                     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, url)
                                     startActivity(Intent.createChooser(send, null))
-                                }) { Icon(Icons.Default.Share, "Share") }
+                                }) { Icon(Icons.Default.Share, stringResource(R.string.common_share)) }
                             },
                             scrollBehavior = scroll,
                         )
@@ -176,7 +179,7 @@ private fun ArticleBody(a: Article, scale: Float, padding: PaddingValues, onLink
                 Text(a.title, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp * scale, lineHeight = 36.sp * scale), fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    listOfNotNull(a.byline, a.siteName, "${a.minutes} min read").joinToString(" · "),
+                    listOfNotNull(a.byline, a.siteName, pluralStringResource(R.plurals.reader_min_read, a.minutes, a.minutes)).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -224,7 +227,7 @@ private fun ArticleBody(a: Article, scale: Float, padding: PaddingValues, onLink
             }
         }
         item {
-            TextButton(onClick = onOriginal, modifier = Modifier.padding(top = 24.dp)) { Text("View original page") }
+            TextButton(onClick = onOriginal, modifier = Modifier.padding(top = 24.dp)) { Text(stringResource(R.string.reader_view_original)) }
         }
     }
 }

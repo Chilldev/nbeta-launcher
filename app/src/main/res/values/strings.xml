@@ -1,8 +1,463 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Nbeta</string>
+    <string name="app_name" translatable="false">Nbeta</string>
     <string name="settings">Nbeta settings</string>
     <string name="notification_dots">Nbeta notification dots</string>
     <string name="accessibility_label">Nbeta gestures</string>
     <string name="accessibility_description">Lets Nbeta lock the screen when you double-tap the home screen and open recent apps from a gesture. It does not read or collect anything on your screen.</string>
+
+    <!-- Shared -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_add">Add</string>
+    <string name="common_save">Save</string>
+    <string name="common_remove">Remove</string>
+    <string name="common_reset">Reset</string>
+    <string name="common_close">Close</string>
+    <string name="common_back">Back</string>
+    <string name="common_copy">Copy</string>
+    <string name="common_clear">Clear</string>
+    <string name="common_share">Share</string>
+    <string name="common_more">More</string>
+    <string name="common_done">Done</string>
+    <string name="common_options">Options</string>
+    <string name="common_rename">Rename</string>
+    <string name="common_app_info">App info</string>
+    <string name="common_uninstall">Uninstall</string>
+    <string name="common_search">Search</string>
+    <string name="common_settings">Settings</string>
+    <string name="common_launcher_settings">Launcher settings</string>
+    <string name="common_contacts">Contacts</string>
+    <string name="common_notifications">Notifications</string>
+    <string name="common_location">Location</string>
+    <string name="common_wallpaper">Wallpaper</string>
+    <string name="common_widget">Widget</string>
+    <string name="common_today">Today</string>
+
+    <!-- Home screen -->
+    <string name="home_add_widget">Add widget</string>
+    <string name="home_add_page">Add page</string>
+    <string name="home_search_hint">Search apps, contacts, web…</string>
+    <string name="home_folder_default_name">Folder</string>
+    <string name="home_no_app">No app can handle this</string>
+    <string name="home_not_allowed">Not allowed: %1$s</string>
+    <plurals name="home_dock_full">
+        <item quantity="one">The dock holds %d app</item>
+        <item quantity="other">The dock holds %d apps</item>
+    </plurals>
+    <string name="home_app_hidden">%1$s hidden. Unhide it in Settings › App drawer.</string>
+    <string name="home_set_default_first">Set Nbeta as your home app first</string>
+    <string name="home_couldnt_open">Couldn\'t open %1$s</string>
+    <string name="home_shortcut_unavailable">Shortcut unavailable</string>
+    <string name="home_enable_gestures">Turn on “Nbeta gestures” in Accessibility to use this gesture</string>
+
+    <!-- At a glance -->
+    <string name="glance_now">Now</string>
+    <plurals name="glance_in_minutes">
+        <item quantity="one">in %d min</item>
+        <item quantity="other">in %d min</item>
+    </plurals>
+    <string name="glance_no_title">(No title)</string>
+    <string name="weather_clear">Clear</string>
+    <string name="weather_mostly_clear">Mostly clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+
+    <!-- Pin requests from other apps -->
+    <string name="pin_shortcut">Shortcut</string>
+    <string name="pin_add_to_home">Add to home screen?</string>
+    <string name="pin_add_widget">Add widget?</string>
+
+    <!-- App drawer -->
+    <string name="drawer_personal">Personal</string>
+    <string name="drawer_work">Work</string>
+    <string name="drawer_work_paused">Work apps are paused</string>
+    <string name="drawer_resume">Resume</string>
+    <string name="drawer_pause_work">Pause work apps</string>
+    <string name="drawer_private">Private</string>
+    <string name="drawer_unlock">Unlock</string>
+    <string name="drawer_lock">Lock</string>
+
+    <!-- Search results -->
+    <string name="search_shortcuts">Shortcuts</string>
+    <string name="search_web">Web</string>
+    <string name="search_web_hit">Search %1$s for “%2$s”</string>
+    <string name="search_store_hit">Search Play Store for “%1$s”</string>
+    <string name="search_message">Message</string>
+    <string name="search_call">Call</string>
+    <string name="search_copied">Copied %1$s</string>
+    <string name="search_setting_wifi">Wi‑Fi</string>
+    <string name="search_setting_bluetooth">Bluetooth</string>
+    <string name="search_setting_mobile_network">Mobile network</string>
+    <string name="search_setting_network">Network &amp; internet</string>
+    <string name="search_setting_hotspot">Hotspot &amp; tethering</string>
+    <string name="search_setting_airplane">Airplane mode</string>
+    <string name="search_setting_display">Display &amp; brightness</string>
+    <string name="search_setting_sound">Sound &amp; vibration</string>
+    <string name="search_setting_battery">Battery</string>
+    <string name="search_setting_apps">Apps</string>
+    <string name="search_setting_default_apps">Default apps</string>
+    <string name="search_setting_storage">Storage</string>
+    <string name="search_setting_security">Security &amp; privacy</string>
+    <string name="search_setting_privacy">Privacy</string>
+    <string name="search_setting_accessibility">Accessibility</string>
+    <string name="search_setting_date">Date &amp; time</string>
+    <string name="search_setting_language">Language &amp; input</string>
+    <string name="search_setting_keyboard">Keyboard</string>
+    <string name="search_setting_developer">Developer options</string>
+    <string name="search_setting_about">About phone</string>
+    <string name="search_setting_nfc">NFC</string>
+    <string name="search_setting_cast">Cast</string>
+    <string name="search_setting_data_usage">Data usage</string>
+    <string name="search_setting_vpn">VPN</string>
+    <string name="search_setting_dnd">Do not disturb</string>
+    <string name="search_setting_night_light">Night light</string>
+    <string name="search_setting_users">Users</string>
+    <string name="search_setting_accounts">Accounts</string>
+    <string name="search_setting_system_update">System update</string>
+
+    <!-- Menus -->
+    <string name="menu_open_rename">Open &amp; rename</string>
+    <string name="menu_ungroup">Ungroup</string>
+    <string name="menu_remove_folder">Remove folder</string>
+    <string name="menu_remove_from_home">Remove from home</string>
+    <string name="menu_off_home">Off home</string>
+    <string name="menu_to_home">To home</string>
+    <string name="menu_off_dock">Off dock</string>
+    <string name="menu_to_dock">To dock</string>
+    <string name="menu_remove_from_folder">Remove from folder</string>
+    <string name="menu_change_icon">Change icon</string>
+    <string name="menu_hide_from_drawer">Hide from drawer</string>
+    <string name="menu_add_to_home">Add to home</string>
+    <string name="menu_pin_needs_default">Set Nbeta as your home app to pin shortcuts</string>
+    <string name="menu_set_wallpaper">Set wallpaper</string>
+    <string name="menu_widgets">Widgets</string>
+    <string name="menu_edit_home">Edit home screen</string>
+    <string name="menu_label">Label</string>
+    <string name="menu_reset_to">Reset to “%1$s”</string>
+    <string name="menu_choose_icon">Choose an icon</string>
+    <string name="menu_no_icon_packs">No icon packs installed. Install one from the Play Store (search “icon pack”), then come back here to pick icons app by app.</string>
+    <string name="menu_search_icons">Search icons</string>
+
+    <!-- Widgets -->
+    <string name="widget_unavailable">Widget unavailable · tap to remove</string>
+    <string name="widget_size">%1$d × %2$d</string>
+    <string name="widget_taller">Taller</string>
+    <string name="widget_shorter">Shorter</string>
+    <string name="widget_move_up">Move up</string>
+    <string name="widget_move_down">Move down</string>
+    <string name="widget_move_to_feed">Move to feed page</string>
+    <string name="widget_move_to_home">Move to home screen</string>
+    <string name="widget_reconfigure">Reconfigure</string>
+    <string name="widget_reset_size">Reset size</string>
+    <string name="widget_cant_set_up">This widget can\'t be set up</string>
+    <string name="widget_cant_reconfigure">Can\'t reconfigure this widget</string>
+
+    <!-- Feed -->
+    <string name="feed_empty_no_sources">Your feed has no sources yet.</string>
+    <string name="feed_add_sources">Add sources</string>
+    <string name="feed_load_failed">Couldn\'t load stories. Check your connection.</string>
+    <string name="feed_try_again">Try again</string>
+    <string name="feed_nothing_saved">Nothing saved yet. Tap ♡ on a story to keep it.</string>
+    <string name="feed_caught_up">You\'re all caught up.</string>
+    <string name="feed_not_updated">Not updated yet</string>
+    <string name="feed_updated_now">Updated just now</string>
+    <string name="feed_updated">Updated %1$s</string>
+    <string name="feed_updating">Updating…</string>
+    <string name="feed_refresh">Refresh</string>
+    <string name="feed_mark_all_read">Mark all as read</string>
+    <string name="feed_add_widget_here">Add widget here</string>
+    <string name="feed_settings">Feed settings</string>
+    <string name="feed_weather_high_low">H %1$s · L %2$s</string>
+    <string name="feed_all_day">All day</string>
+    <string name="feed_show_weather">Show weather</string>
+    <string name="feed_show_calendar">Show calendar</string>
+    <string name="feed_for_you">For you</string>
+    <string name="feed_latest">Latest</string>
+    <string name="feed_unread">Unread</string>
+    <string name="feed_saved">Saved</string>
+    <string name="feed_unsave">Unsave</string>
+    <string name="feed_open_in_browser">Open in browser</string>
+    <string name="feed_hide_story">Hide this story</string>
+    <string name="feed_mute_keyword_menu">Mute a keyword…</string>
+    <string name="feed_more_from">More from %1$s</string>
+    <string name="feed_fewer_from">Fewer from %1$s</string>
+    <string name="feed_mute_keyword_title">Mute a keyword</string>
+    <string name="feed_mute_keyword_body">Stories mentioning it will be hidden from your feed.</string>
+    <string name="feed_keyword">Keyword</string>
+    <string name="feed_mute">Mute</string>
+    <string name="feed_error_rate_limited">Reddit is rate-limiting. Sign in under Feed › Reddit.</string>
+    <string name="feed_error_no_feed">No feed found at %1$s</string>
+    <string name="news_channel_name">Breaking news</string>
+    <string name="news_channel_description">New stories from sources and keywords you chose in Nbeta\'s feed settings</string>
+    <plurals name="news_new_stories">
+        <item quantity="one">%d new story</item>
+        <item quantity="other">%d new stories</item>
+    </plurals>
+
+    <!-- Reader -->
+    <string name="reader_text_smaller" translatable="false">A−</string>
+    <string name="reader_text_larger" translatable="false">A+</string>
+    <plurals name="reader_min_read">
+        <item quantity="one">%d min read</item>
+        <item quantity="other">%d min read</item>
+    </plurals>
+    <string name="reader_view_original">View original page</string>
+
+    <!-- Settings: main page -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_appearance_summary">Theme, colours, wallpaper dimming</string>
+    <string name="settings_home">Home screen</string>
+    <string name="settings_home_summary">Grid, dock, search bar, at-a-glance</string>
+    <string name="settings_drawer">App drawer</string>
+    <string name="settings_drawer_summary">Columns, sorting, keyboard, hidden apps</string>
+    <string name="settings_icons">Icons</string>
+    <string name="settings_icons_summary">Shape, icon packs, themed icons, dots</string>
+    <string name="settings_gestures">Gestures</string>
+    <string name="settings_gestures_summary">Swipe down, double-tap</string>
+    <string name="settings_search_summary">Contacts, calculator, shortcuts, web</string>
+    <string name="settings_feed">Feed</string>
+    <string name="settings_feed_summary">Sources, refresh, reading</string>
+    <string name="settings_weather">Weather &amp; glance</string>
+    <string name="settings_weather_summary">Location, units</string>
+    <string name="settings_hidden_apps">Hidden apps</string>
+    <string name="settings_backup">Backup &amp; restore</string>
+    <string name="settings_backup_summary">Export or import your setup</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_summary">Nbeta %1$s</string>
+    <string name="settings_default_title">Make Nbeta your home app</string>
+    <string name="settings_default_body">Shortcuts, work profile controls and pinning need Nbeta to be the default home app.</string>
+    <string name="settings_default_action">Set as default</string>
+
+    <!-- Settings: shared values -->
+    <string name="settings_percent">%1$d%%</string>
+    <string name="settings_dp">%1$d dp</string>
+    <string name="settings_number">%1$d</string>
+    <string name="settings_light">Light</string>
+    <string name="settings_dark">Dark</string>
+    <string name="settings_nothing">Nothing</string>
+    <string name="settings_columns">Columns</string>
+
+    <!-- Settings: appearance -->
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_wallpaper_colours">Wallpaper colours</string>
+    <string name="settings_wallpaper_colours_summary">Use Material You colours from your wallpaper</string>
+    <string name="settings_text_on_wallpaper">Text on wallpaper</string>
+    <string name="settings_text_auto">Automatic (from wallpaper)</string>
+    <string name="settings_dim_wallpaper">Dim wallpaper</string>
+    <string name="settings_drawer_opacity">Drawer opacity</string>
+    <string name="settings_language">Language</string>
+
+    <!-- Settings: home screen -->
+    <string name="settings_icon_size">Icon size</string>
+    <string name="settings_home_labels">Labels on home screen</string>
+    <string name="settings_dock">Dock</string>
+    <string name="settings_dock_summary">A row of favourites above the navigation bar</string>
+    <string name="settings_search_bar">Search bar</string>
+    <string name="settings_at_a_glance">At a glance</string>
+    <string name="settings_clock">Clock</string>
+    <string name="settings_glance_weather">Weather</string>
+    <string name="settings_next_event">Next calendar event</string>
+    <string name="settings_next_alarm">Next alarm</string>
+    <string name="settings_layout">Layout</string>
+    <string name="settings_reset_layout">Reset home layout</string>
+    <string name="settings_reset_layout_summary">Restore the default dock and favourites</string>
+
+    <!-- Settings: app drawer -->
+    <string name="settings_labels">Labels</string>
+    <string name="settings_sort">Sort apps</string>
+    <string name="settings_sort_az">A to Z</string>
+    <string name="settings_sort_most_used">Most used</string>
+    <string name="settings_auto_keyboard">Open keyboard automatically</string>
+    <string name="settings_auto_keyboard_summary">Start typing as soon as the drawer opens</string>
+    <string name="settings_suggestions_row">Suggested apps row</string>
+    <string name="settings_suggestions_row_summary">Your most used apps, learnt on device</string>
+    <plurals name="settings_hidden_count">
+        <item quantity="one">%d hidden</item>
+        <item quantity="other">%d hidden</item>
+    </plurals>
+
+    <!-- Settings: icons -->
+    <string name="settings_icon_shape">Icon shape</string>
+    <string name="settings_shape_system">System default</string>
+    <string name="settings_shape_circle">Circle</string>
+    <string name="settings_shape_squircle">Squircle</string>
+    <string name="settings_shape_rounded_square">Rounded square</string>
+    <string name="settings_shape_teardrop">Teardrop</string>
+    <string name="settings_icon_pack">Icon pack</string>
+    <string name="settings_icon_pack_system">System icons</string>
+    <string name="settings_icon_pack_none">System icons (no packs installed)</string>
+    <string name="settings_themed_icons">Themed icons</string>
+    <string name="settings_themed_icons_summary">Tint icons that support it with your wallpaper colours</string>
+    <string name="settings_dots">Notification dots</string>
+    <string name="settings_dots_on">Show a dot on apps with notifications</string>
+    <string name="settings_dots_needs_access">Needs notification access — tap to grant</string>
+    <string name="settings_clear_icon_cache">Clear icon cache</string>
+    <string name="settings_clear_icon_cache_summary">Re-render every icon</string>
+    <string name="settings_icons_redrawn">Icons will be redrawn</string>
+
+    <!-- Settings: gestures -->
+    <string name="settings_swipe_up">Swipe up</string>
+    <string name="settings_swipe_up_summary">Open the app drawer</string>
+    <string name="settings_swipe_down">Swipe down</string>
+    <string name="settings_quick_settings">Quick settings</string>
+    <string name="settings_double_tap">Double-tap</string>
+    <string name="settings_lock_screen">Lock screen</string>
+    <string name="settings_lock_permission">Lock-screen permission</string>
+    <string name="settings_enabled">Enabled</string>
+    <string name="settings_lock_permission_needed">Double-tap to lock needs the “Nbeta gestures” accessibility service</string>
+    <string name="settings_swipe_to_feed">Swipe right</string>
+    <string name="settings_swipe_to_feed_summary">Open the feed</string>
+
+    <!-- Settings: search -->
+    <string name="settings_contacts_on">Call or message from search</string>
+    <string name="settings_contacts_off">Tap to allow contact access</string>
+    <string name="settings_calculator">Calculator</string>
+    <string name="settings_calculator_summary">Type 12*7 or sqrt(2)</string>
+    <string name="settings_app_shortcuts">App shortcuts</string>
+    <string name="settings_app_shortcuts_summary">Find actions like “New message” or “Scan QR”</string>
+    <string name="settings_system_settings">System settings</string>
+    <string name="settings_system_settings_summary">Jump to Wi‑Fi, Bluetooth, Battery…</string>
+    <string name="settings_web_search">Web search</string>
+
+    <!-- Settings: feed -->
+    <string name="settings_feed_page">Feed page</string>
+    <string name="settings_feed_page_summary">Swipe right from home for your feed</string>
+    <string name="settings_sources">Sources</string>
+    <string name="settings_source_error">Error: %1$s</string>
+    <string name="settings_source_muted">Shown less in “For you” · tap to restore</string>
+    <plurals name="settings_source_stories">
+        <item quantity="one">%1$d story · %2$s</item>
+        <item quantity="other">%1$d stories · %2$s</item>
+    </plurals>
+    <string name="settings_stop_alerts">Stop alerts from %1$s</string>
+    <string name="settings_start_alerts">Alert me about %1$s</string>
+    <string name="settings_suggestions">Suggestions</string>
+    <string name="settings_reading">Reading</string>
+    <string name="settings_default_order">Default order</string>
+    <string name="settings_order_for_you">For you (learns what you open)</string>
+    <string name="settings_order_latest">Latest first</string>
+    <string name="settings_open_in">Open stories in</string>
+    <string name="settings_open_reader">Reader view (clean text, falls back to a browser tab)</string>
+    <string name="settings_open_custom_tab">In-app browser tab</string>
+    <string name="settings_open_browser">Browser app</string>
+    <string name="settings_fetch_images">Fetch article images</string>
+    <string name="settings_fetch_images_summary">For stories whose feed has no picture</string>
+    <string name="settings_muted_keywords">Muted keywords</string>
+    <string name="settings_hide_mentioning">Hide stories mentioning…</string>
+    <string name="settings_hide_mentioning_hint">e.g. a team, a celebrity, a spoiler</string>
+    <string name="settings_remove_keyword">Remove %1$s</string>
+    <string name="settings_breaking_news">Breaking news alerts</string>
+    <string name="settings_alerts_need_refresh">Needs background refresh (below) to be on</string>
+    <string name="settings_alerts_summary">Checked during background refresh · max 3 per check</string>
+    <string name="settings_notifications_off">Notifications are off for Nbeta</string>
+    <string name="settings_alert_sources">Alert sources</string>
+    <plurals name="settings_alert_sources_summary">
+        <item quantity="one">Tap the bell next to a source above · %d selected</item>
+        <item quantity="other">Tap the bell next to a source above · %d selected</item>
+    </plurals>
+    <string name="settings_check_now">Check now</string>
+    <string name="settings_check_now_summary">Fetch feeds and alert about anything new that matches</string>
+    <string name="settings_checked">Checked for new stories</string>
+    <string name="settings_alert_me_about">Alert me about…</string>
+    <string name="settings_alert_me_about_hint">Notify for any source that mentions these</string>
+    <string name="settings_background_refresh">Background refresh</string>
+    <string name="settings_refresh_every">Refresh every</string>
+    <string name="settings_refresh_manual">Only when opened</string>
+    <plurals name="settings_refresh_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <string name="settings_wifi_only">Wi‑Fi only</string>
+    <string name="settings_opml" translatable="false">OPML</string>
+    <string name="settings_import_opml">Import OPML</string>
+    <string name="settings_import_opml_summary">From another reader</string>
+    <string name="settings_export_opml">Export OPML</string>
+    <plurals name="settings_source_count">
+        <item quantity="one">%d source</item>
+        <item quantity="other">%d sources</item>
+    </plurals>
+    <plurals name="settings_imported_feeds">
+        <item quantity="one">Imported %d feed</item>
+        <item quantity="other">Imported %d feeds</item>
+    </plurals>
+    <string name="settings_clear_stories">Clear stories</string>
+    <string name="settings_clear_stories_summary">Keeps saved stories</string>
+    <string name="settings_add_source">Add a source</string>
+    <string name="settings_add_source_summary">Website, feed URL, YouTube channel or subreddit</string>
+    <string name="settings_add_source_title">Add source</string>
+    <string name="settings_add_source_hint">e.g. theverge.com</string>
+    <string name="settings_looking_for_feed">Looking for a feed…</string>
+    <string name="settings_already_added">Already added</string>
+    <string name="settings_no_feed_found">Couldn\'t find a feed</string>
+
+    <!-- Settings: weather -->
+    <string name="settings_units">Units</string>
+    <string name="settings_celsius">Celsius</string>
+    <string name="settings_fahrenheit">Fahrenheit</string>
+    <string name="settings_weather_data">Weather data</string>
+    <string name="settings_weather_data_summary">Open-Meteo (no account, no tracking)</string>
+    <string name="settings_device_location">Device location</string>
+    <string name="settings_weather_location">Weather location</string>
+    <string name="settings_city">City</string>
+    <string name="settings_use_city">Use city</string>
+    <string name="settings_use_device_location">Use device location</string>
+    <string name="settings_city_not_found">City not found</string>
+
+    <!-- Settings: hidden apps, backup -->
+    <string name="settings_hidden_explainer">Hidden apps stay installed but no longer appear in the drawer or in search.</string>
+    <string name="settings_restored">Settings restored</string>
+    <string name="settings_not_a_backup">That file isn\'t an Nbeta backup</string>
+    <string name="settings_export">Export settings</string>
+    <string name="settings_export_summary">Layout, sources, hidden apps and preferences</string>
+    <string name="settings_import">Import settings</string>
+    <string name="settings_reset_everything">Reset everything</string>
+    <string name="settings_reset_everything_summary">Back to defaults</string>
+    <string name="settings_reset_confirm_title">Reset all settings?</string>
+    <string name="settings_reset_confirm_body">Your home layout, feed sources and preferences will return to their defaults.</string>
+
+    <!-- Reddit -->
+    <string name="reddit_section" translatable="false">Reddit</string>
+    <string name="reddit_no_browser">No browser available</string>
+    <string name="reddit_signed_in_as">Signed in as u/%1$s</string>
+    <string name="reddit_signed_in_summary">Reddit sources load through the official API (100 requests/min)</string>
+    <string name="reddit_add_home">Add your Reddit home feed</string>
+    <string name="reddit_add_home_summary">Posts from the communities you follow</string>
+    <string name="reddit_home_title">Reddit home</string>
+    <string name="reddit_sign_out">Sign out of Reddit</string>
+    <string name="reddit_sign_out_summary">Revokes Nbeta\'s access token</string>
+    <string name="reddit_sign_in">Sign in with Reddit</string>
+    <string name="reddit_sign_in_setup">Stops subreddit feeds being rate-limited. One-time setup needed.</string>
+    <string name="reddit_using_client">Using client ID %1$s…</string>
+    <string name="reddit_change_client">Change Reddit client ID</string>
+    <string name="reddit_connect_title">Connect Reddit</string>
+    <string name="reddit_setup_intro">Reddit approves API access per app, so this is a one-time setup with your own Reddit app.</string>
+    <string name="reddit_setup_step1">1. Request API access. Describe Nbeta as a personal, non-commercial feed reader.</string>
+    <string name="reddit_open_access_form">Open access request form</string>
+    <string name="reddit_setup_step2">2. Once approved, create an app: type “installed app”, redirect URI below.</string>
+    <string name="reddit_open_prefs">Open reddit.com/prefs/apps</string>
+    <string name="reddit_setup_step3">3. Paste the client ID (the short code under the app\'s name).</string>
+    <string name="reddit_client_id">Client ID</string>
+    <string name="reddit_save_sign_in">Save &amp; sign in</string>
+    <string name="reddit_signed_in_toast">Signed in to Reddit as %1$s</string>
+    <string name="reddit_sign_in_failed">Reddit sign-in failed</string>
+    <string name="reddit_your_account">your account</string>
+    <string name="reddit_error_declined">You declined access on Reddit.</string>
+    <string name="reddit_error_returned">Reddit returned: %1$s</string>
+    <string name="reddit_error_expired_retry">Sign-in expired, try again.</string>
+    <string name="reddit_error_state">Sign-in link didn\'t match. Try again.</string>
+    <string name="reddit_error_no_code">Reddit didn\'t return a code.</string>
+    <string name="reddit_error_no_offline">Reddit didn\'t grant offline access.</string>
+    <string name="reddit_error_not_signed_in">Not signed in to Reddit</string>
+    <string name="reddit_error_client_rejected">Reddit rejected the client ID. Check it\'s an “installed app”.</string>
+    <string name="reddit_error_grant_expired">Reddit sign-in expired. Sign in again.</string>
+    <string name="reddit_error_failed">Reddit sign-in failed (%1$s)</string>
+    <string name="reddit_error_private">Private or banned community</string>
+    <string name="reddit_error_not_found">Community not found</string>
+    <string name="reddit_error_http">Reddit HTTP %1$d</string>
 </resources>

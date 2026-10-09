@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings">إعدادات Nbeta</string>
+    <string name="notification_dots">نقاط إشعارات Nbeta</string>
+    <string name="accessibility_label">إيماءات Nbeta</string>
+    <string name="accessibility_description">تتيح لتطبيق Nbeta قفل الشاشة عند النقر مرّتين على الشاشة الرئيسية وفتح التطبيقات الحديثة بإيماءة. لا تقرأ هذه الخدمة أي محتوى على شاشتك ولا تجمعه.</string>
+
+    <!-- Shared -->
+    <string name="common_cancel">إلغاء</string>
+    <string name="common_add">إضافة</string>
+    <string name="common_save">حفظ</string>
+    <string name="common_remove">إزالة</string>
+    <string name="common_reset">إعادة الضبط</string>
+    <string name="common_close">إغلاق</string>
+    <string name="common_back">رجوع</string>
+    <string name="common_copy">نسخ</string>
+    <string name="common_clear">محو</string>
+    <string name="common_share">مشاركة</string>
+    <string name="common_more">المزيد</string>
+    <string name="common_done">تم</string>
+    <string name="common_options">الخيارات</string>
+    <string name="common_rename">إعادة التسمية</string>
+    <string name="common_app_info">معلومات التطبيق</string>
+    <string name="common_uninstall">إلغاء التثبيت</string>
+    <string name="common_search">البحث</string>
+    <string name="common_settings">الإعدادات</string>
+    <string name="common_launcher_settings">إعدادات المشغّل</string>
+    <string name="common_contacts">جهات الاتصال</string>
+    <string name="common_notifications">الإشعارات</string>
+    <string name="common_location">الموقع الجغرافي</string>
+    <string name="common_wallpaper">الخلفية</string>
+    <string name="common_widget">أداة</string>
+    <string name="common_today">اليوم</string>
+
+    <!-- Home screen -->
+    <string name="home_add_widget">إضافة أداة</string>
+    <string name="home_add_page">إضافة صفحة</string>
+    <string name="home_search_hint">البحث في التطبيقات وجهات الاتصال والويب…</string>
+    <string name="home_folder_default_name">مجلد</string>
+    <string name="home_no_app">لا يتوفّر تطبيق يمكنه تنفيذ هذا الإجراء</string>
+    <string name="home_not_allowed">غير مسموح: %1$s</string>
+    <plurals name="home_dock_full">
+        <item quantity="zero">لا يتّسع شريط التثبيت لأي تطبيق</item>
+        <item quantity="one">يتّسع شريط التثبيت لتطبيق واحد فقط</item>
+        <item quantity="two">يتّسع شريط التثبيت لتطبيقين فقط</item>
+        <item quantity="few">يتّسع شريط التثبيت لـ %d تطبيقات فقط</item>
+        <item quantity="many">يتّسع شريط التثبيت لـ %d تطبيقًا فقط</item>
+        <item quantity="other">يتّسع شريط التثبيت لـ %d تطبيق فقط</item>
+    </plurals>
+    <string name="home_app_hidden">تم إخفاء %1$s. يمكنك إظهاره من الإعدادات › درج التطبيقات.</string>
+    <string name="home_set_default_first">يجب تعيين Nbeta تطبيقًا للشاشة الرئيسية أولاً</string>
+    <string name="home_couldnt_open">تعذّر فتح %1$s</string>
+    <string name="home_shortcut_unavailable">الاختصار غير متاح</string>
+    <string name="home_enable_gestures">فعِّل «إيماءات Nbeta» في إعدادات تسهيل الاستخدام لاستخدام هذه الإيماءة</string>
+
+    <!-- At a glance -->
+    <string name="glance_now">الآن</string>
+    <plurals name="glance_in_minutes">
+        <item quantity="zero">بعد %d دقيقة</item>
+        <item quantity="one">بعد دقيقة</item>
+        <item quantity="two">بعد دقيقتين</item>
+        <item quantity="few">بعد %d دقائق</item>
+        <item quantity="many">بعد %d دقيقة</item>
+        <item quantity="other">بعد %d دقيقة</item>
+    </plurals>
+    <string name="glance_no_title">(بلا عنوان)</string>
+    <string name="weather_clear">صافٍ</string>
+    <string name="weather_mostly_clear">صافٍ في الغالب</string>
+    <string name="weather_partly_cloudy">غائم جزئيًا</string>
+    <string name="weather_cloudy">غائم</string>
+    <string name="weather_fog">ضباب</string>
+    <string name="weather_drizzle">رذاذ</string>
+    <string name="weather_rain">مطر</string>
+    <string name="weather_snow">ثلج</string>
+    <string name="weather_thunderstorm">عاصفة رعدية</string>
+
+    <!-- Pin requests from other apps -->
+    <string name="pin_shortcut">اختصار</string>
+    <string name="pin_add_to_home">هل تريد الإضافة إلى الشاشة الرئيسية؟</string>
+    <string name="pin_add_widget">هل تريد إضافة الأداة؟</string>
+
+    <!-- App drawer -->
+    <string name="drawer_personal">شخصي</string>
+    <string name="drawer_work">العمل</string>
+    <string name="drawer_work_paused">تطبيقات العمل متوقفة مؤقتًا</string>
+    <string name="drawer_resume">استئناف</string>
+    <string name="drawer_pause_work">إيقاف تطبيقات العمل مؤقتًا</string>
+    <string name="drawer_private">المساحة الخاصة</string>
+    <string name="drawer_unlock">فتح القفل</string>
+    <string name="drawer_lock">قفل</string>
+
+    <!-- Search results -->
+    <string name="search_shortcuts">الاختصارات</string>
+    <string name="search_web">الويب</string>
+    <string name="search_web_hit">البحث في %1$s عن «%2$s»</string>
+    <string name="search_store_hit">البحث في متجر Play عن «%1$s»</string>
+    <string name="search_message">مراسلة</string>
+    <string name="search_call">اتصال</string>
+    <string name="search_copied">تم نسخ %1$s</string>
+    <string name="search_setting_wifi">Wi‑Fi</string>
+    <string name="search_setting_bluetooth">البلوتوث</string>
+    <string name="search_setting_mobile_network">شبكة الجوّال</string>
+    <string name="search_setting_network">الشبكة والإنترنت</string>
+    <string name="search_setting_hotspot">نقطة الاتصال والتوصيل</string>
+    <string name="search_setting_airplane">وضع الطيران</string>
+    <string name="search_setting_display">الشاشة والسطوع</string>
+    <string name="search_setting_sound">الصوت والاهتزاز</string>
+    <string name="search_setting_battery">البطارية</string>
+    <string name="search_setting_apps">التطبيقات</string>
+    <string name="search_setting_default_apps">التطبيقات التلقائية</string>
+    <string name="search_setting_storage">مساحة التخزين</string>
+    <string name="search_setting_security">الأمان والخصوصية</string>
+    <string name="search_setting_privacy">الخصوصية</string>
+    <string name="search_setting_accessibility">تسهيل الاستخدام</string>
+    <string name="search_setting_date">التاريخ والوقت</string>
+    <string name="search_setting_language">اللغات والإدخال</string>
+    <string name="search_setting_keyboard">لوحة المفاتيح</string>
+    <string name="search_setting_developer">خيارات المطوّرين</string>
+    <string name="search_setting_about">لمحة عن الهاتف</string>
+    <string name="search_setting_nfc">NFC</string>
+    <string name="search_setting_cast">البث</string>
+    <string name="search_setting_data_usage">استخدام البيانات</string>
+    <string name="search_setting_vpn">شبكة VPN</string>
+    <string name="search_setting_dnd">عدم الإزعاج</string>
+    <string name="search_setting_night_light">الإضاءة الليلية</string>
+    <string name="search_setting_users">المستخدمون</string>
+    <string name="search_setting_accounts">الحسابات</string>
+    <string name="search_setting_system_update">تحديث النظام</string>
+
+    <!-- Menus -->
+    <string name="menu_open_rename">فتح وإعادة التسمية</string>
+    <string name="menu_ungroup">فك التجميع</string>
+    <string name="menu_remove_folder">إزالة المجلد</string>
+    <string name="menu_remove_from_home">إزالة من الشاشة الرئيسية</string>
+    <string name="menu_off_home">إزالة من الرئيسية</string>
+    <string name="menu_to_home">إلى الرئيسية</string>
+    <string name="menu_off_dock">إزالة من الشريط</string>
+    <string name="menu_to_dock">إلى الشريط</string>
+    <string name="menu_remove_from_folder">إزالة من المجلد</string>
+    <string name="menu_change_icon">تغيير الرمز</string>
+    <string name="menu_hide_from_drawer">إخفاء من الدرج</string>
+    <string name="menu_add_to_home">إضافة إلى الشاشة الرئيسية</string>
+    <string name="menu_pin_needs_default">لتثبيت الاختصارات، عيِّن Nbeta تطبيقًا للشاشة الرئيسية</string>
+    <string name="menu_set_wallpaper">تعيين الخلفية</string>
+    <string name="menu_widgets">الأدوات</string>
+    <string name="menu_edit_home">تعديل الشاشة الرئيسية</string>
+    <string name="menu_label">الاسم</string>
+    <string name="menu_reset_to">إعادة التعيين إلى «%1$s»</string>
+    <string name="menu_choose_icon">اختيار رمز</string>
+    <string name="menu_no_icon_packs">لا توجد حزم رموز مثبّتة. ثبِّت حزمة من متجر Play (ابحث عن «icon pack»)، ثم ارجع إلى هنا لاختيار رمز لكل تطبيق.</string>
+    <string name="menu_search_icons">البحث في الرموز</string>
+
+    <!-- Widgets -->
+    <string name="widget_unavailable">الأداة غير متاحة · انقر لإزالتها</string>
+    <string name="widget_size">%1$d × %2$d</string>
+    <string name="widget_taller">زيادة الارتفاع</string>
+    <string name="widget_shorter">تقليل الارتفاع</string>
+    <string name="widget_move_up">نقل للأعلى</string>
+    <string name="widget_move_down">نقل للأسفل</string>
+    <string name="widget_move_to_feed">نقل إلى صفحة الموجز</string>
+    <string name="widget_move_to_home">نقل إلى الشاشة الرئيسية</string>
+    <string name="widget_reconfigure">إعادة الإعداد</string>
+    <string name="widget_reset_size">إعادة ضبط الحجم</string>
+    <string name="widget_cant_set_up">يتعذّر إعداد هذه الأداة</string>
+    <string name="widget_cant_reconfigure">يتعذّر إعادة إعداد هذه الأداة</string>
+
+    <!-- Feed -->
+    <string name="feed_empty_no_sources">لا توجد مصادر في موجزك بعد.</string>
+    <string name="feed_add_sources">إضافة مصادر</string>
+    <string name="feed_load_failed">تعذّر تحميل الأخبار. تحقّق من اتصالك بالإنترنت.</string>
+    <string name="feed_try_again">إعادة المحاولة</string>
+    <string name="feed_nothing_saved">لا توجد أخبار محفوظة بعد. انقر على ♡ في أي خبر لحفظه.</string>
+    <string name="feed_caught_up">لقد اطّلعت على كل الأخبار.</string>
+    <string name="feed_not_updated">لم يتم التحديث بعد</string>
+    <string name="feed_updated_now">تم التحديث للتو</string>
+    <string name="feed_updated">تم التحديث %1$s</string>
+    <string name="feed_updating">جارٍ التحديث…</string>
+    <string name="feed_refresh">تحديث</string>
+    <string name="feed_mark_all_read">تعليم الكل كمقروء</string>
+    <string name="feed_add_widget_here">إضافة أداة هنا</string>
+    <string name="feed_settings">إعدادات الموجز</string>
+    <string name="feed_weather_high_low">العظمى %1$s · الصغرى %2$s</string>
+    <string name="feed_all_day">طوال اليوم</string>
+    <string name="feed_show_weather">عرض الطقس</string>
+    <string name="feed_show_calendar">عرض التقويم</string>
+    <string name="feed_for_you">مختارات لك</string>
+    <string name="feed_latest">الأحدث</string>
+    <string name="feed_unread">غير المقروءة</string>
+    <string name="feed_saved">المحفوظة</string>
+    <string name="feed_unsave">إزالة من المحفوظات</string>
+    <string name="feed_open_in_browser">فتح في المتصفح</string>
+    <string name="feed_hide_story">إخفاء هذا الخبر</string>
+    <string name="feed_mute_keyword_menu">كتم كلمة…</string>
+    <string name="feed_more_from">المزيد من %1$s</string>
+    <string name="feed_fewer_from">أخبار أقل من %1$s</string>
+    <string name="feed_mute_keyword_title">كتم كلمة</string>
+    <string name="feed_mute_keyword_body">سيتم إخفاء الأخبار التي تذكر هذه الكلمة من موجزك.</string>
+    <string name="feed_keyword">الكلمة</string>
+    <string name="feed_mute">كتم</string>
+    <string name="feed_error_rate_limited">يقيّد Reddit عدد الطلبات. سجّل الدخول من الموجز › Reddit.</string>
+    <string name="feed_error_no_feed">لم يتم العثور على موجز في %1$s</string>
+    <string name="news_channel_name">الأخبار العاجلة</string>
+    <string name="news_channel_description">أخبار جديدة من المصادر والكلمات التي اخترتها في إعدادات موجز Nbeta</string>
+    <plurals name="news_new_stories">
+        <item quantity="zero">لا توجد أخبار جديدة</item>
+        <item quantity="one">خبر جديد واحد</item>
+        <item quantity="two">خبران جديدان</item>
+        <item quantity="few">%d أخبار جديدة</item>
+        <item quantity="many">%d خبرًا جديدًا</item>
+        <item quantity="other">%d خبر جديد</item>
+    </plurals>
+
+    <!-- Reader -->
+    <plurals name="reader_min_read">
+        <item quantity="zero">أقل من دقيقة للقراءة</item>
+        <item quantity="one">دقيقة واحدة للقراءة</item>
+        <item quantity="two">دقيقتان للقراءة</item>
+        <item quantity="few">%d دقائق للقراءة</item>
+        <item quantity="many">%d دقيقة للقراءة</item>
+        <item quantity="other">%d دقيقة للقراءة</item>
+    </plurals>
+    <string name="reader_view_original">عرض الصفحة الأصلية</string>
+
+    <!-- Settings: main page -->
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_appearance_summary">السمة والألوان وتعتيم الخلفية</string>
+    <string name="settings_home">الشاشة الرئيسية</string>
+    <string name="settings_home_summary">الشبكة وشريط التثبيت وشريط البحث ولمحة سريعة</string>
+    <string name="settings_drawer">درج التطبيقات</string>
+    <string name="settings_drawer_summary">الأعمدة والترتيب ولوحة المفاتيح والتطبيقات المخفية</string>
+    <string name="settings_icons">الرموز</string>
+    <string name="settings_icons_summary">الشكل وحزم الرموز والرموز ذات السمة والنقاط</string>
+    <string name="settings_gestures">الإيماءات</string>
+    <string name="settings_gestures_summary">التمرير للأسفل والنقر مرّتين</string>
+    <string name="settings_search_summary">جهات الاتصال والآلة الحاسبة والاختصارات والويب</string>
+    <string name="settings_feed">الموجز</string>
+    <string name="settings_feed_summary">المصادر والتحديث والقراءة</string>
+    <string name="settings_weather">الطقس ولمحة سريعة</string>
+    <string name="settings_weather_summary">الموقع الجغرافي والوحدات</string>
+    <string name="settings_hidden_apps">التطبيقات المخفية</string>
+    <string name="settings_backup">النسخ الاحتياطي والاستعادة</string>
+    <string name="settings_backup_summary">تصدير إعداداتك أو استيرادها</string>
+    <string name="settings_about">حول التطبيق</string>
+    <string name="settings_about_summary">Nbeta %1$s</string>
+    <string name="settings_default_title">اجعل Nbeta تطبيق الشاشة الرئيسية</string>
+    <string name="settings_default_body">تتطلّب الاختصارات وعناصر التحكّم في ملف العمل والتثبيت على الشاشة الرئيسية أن يكون Nbeta تطبيق الشاشة الرئيسية التلقائي.</string>
+    <string name="settings_default_action">تعيين كتطبيق تلقائي</string>
+
+    <!-- Settings: shared values -->
+    <string name="settings_percent">%1$d٪</string>
+    <string name="settings_dp">%1$d dp</string>
+    <string name="settings_number">%1$d</string>
+    <string name="settings_light">فاتح</string>
+    <string name="settings_dark">داكن</string>
+    <string name="settings_nothing">بلا إجراء</string>
+    <string name="settings_columns">الأعمدة</string>
+
+    <!-- Settings: appearance -->
+    <string name="settings_theme">السمة</string>
+    <string name="settings_theme_system">حسب النظام</string>
+    <string name="settings_wallpaper_colours">ألوان الخلفية</string>
+    <string name="settings_wallpaper_colours_summary">استخدام ألوان Material You المستمدّة من الخلفية</string>
+    <string name="settings_text_on_wallpaper">النص فوق الخلفية</string>
+    <string name="settings_text_auto">تلقائي (حسب الخلفية)</string>
+    <string name="settings_dim_wallpaper">تعتيم الخلفية</string>
+    <string name="settings_drawer_opacity">عتامة الدرج</string>
+    <string name="settings_language">اللغة</string>
+
+    <!-- Settings: home screen -->
+    <string name="settings_icon_size">حجم الرموز</string>
+    <string name="settings_home_labels">أسماء التطبيقات على الشاشة الرئيسية</string>
+    <string name="settings_dock">شريط التثبيت</string>
+    <string name="settings_dock_summary">صف من تطبيقاتك المفضّلة فوق شريط التنقّل</string>
+    <string name="settings_search_bar">شريط البحث</string>
+    <string name="settings_at_a_glance">لمحة سريعة</string>
+    <string name="settings_clock">الساعة</string>
+    <string name="settings_glance_weather">الطقس</string>
+    <string name="settings_next_event">الحدث التالي في التقويم</string>
+    <string name="settings_next_alarm">المنبّه التالي</string>
+    <string name="settings_layout">التخطيط</string>
+    <string name="settings_reset_layout">إعادة ضبط تخطيط الشاشة الرئيسية</string>
+    <string name="settings_reset_layout_summary">استعادة شريط التثبيت والتطبيقات المفضّلة التلقائية</string>
+
+    <!-- Settings: app drawer -->
+    <string name="settings_labels">أسماء التطبيقات</string>
+    <string name="settings_sort">ترتيب التطبيقات</string>
+    <string name="settings_sort_az">أبجديًا</string>
+    <string name="settings_sort_most_used">الأكثر استخدامًا</string>
+    <string name="settings_auto_keyboard">فتح لوحة المفاتيح تلقائيًا</string>
+    <string name="settings_auto_keyboard_summary">ابدأ الكتابة فور فتح الدرج</string>
+    <string name="settings_suggestions_row">صف التطبيقات المقترحة</string>
+    <string name="settings_suggestions_row_summary">تطبيقاتك الأكثر استخدامًا، ويتم التعرّف عليها على الجهاز</string>
+    <plurals name="settings_hidden_count">
+        <item quantity="zero">لا توجد تطبيقات مخفية</item>
+        <item quantity="one">تطبيق واحد مخفي</item>
+        <item quantity="two">تطبيقان مخفيان</item>
+        <item quantity="few">%d تطبيقات مخفية</item>
+        <item quantity="many">%d تطبيقًا مخفيًا</item>
+        <item quantity="other">%d تطبيق مخفي</item>
+    </plurals>
+
+    <!-- Settings: icons -->
+    <string name="settings_icon_shape">شكل الرموز</string>
+    <string name="settings_shape_system">الإعداد التلقائي للنظام</string>
+    <string name="settings_shape_circle">دائرة</string>
+    <string name="settings_shape_squircle">مربّع منحني الأضلاع</string>
+    <string name="settings_shape_rounded_square">مربّع بزوايا دائرية</string>
+    <string name="settings_shape_teardrop">قطرة</string>
+    <string name="settings_icon_pack">حزمة الرموز</string>
+    <string name="settings_icon_pack_system">رموز النظام</string>
+    <string name="settings_icon_pack_none">رموز النظام (لا توجد حزم مثبّتة)</string>
+    <string name="settings_themed_icons">رموز ذات سمة</string>
+    <string name="settings_themed_icons_summary">تلوين الرموز المتوافقة بألوان الخلفية</string>
+    <string name="settings_dots">نقاط الإشعارات</string>
+    <string name="settings_dots_on">عرض نقطة على التطبيقات التي لديها إشعارات</string>
+    <string name="settings_dots_needs_access">يتطلّب الوصول إلى الإشعارات — انقر لمنحه</string>
+    <string name="settings_clear_icon_cache">محو ذاكرة التخزين المؤقت للرموز</string>
+    <string name="settings_clear_icon_cache_summary">إعادة رسم جميع الرموز</string>
+    <string name="settings_icons_redrawn">ستتم إعادة رسم الرموز</string>
+
+    <!-- Settings: gestures -->
+    <string name="settings_swipe_up">التمرير للأعلى</string>
+    <string name="settings_swipe_up_summary">فتح درج التطبيقات</string>
+    <string name="settings_swipe_down">التمرير للأسفل</string>
+    <string name="settings_quick_settings">الإعدادات السريعة</string>
+    <string name="settings_double_tap">النقر مرّتين</string>
+    <string name="settings_lock_screen">قفل الشاشة</string>
+    <string name="settings_lock_permission">إذن قفل الشاشة</string>
+    <string name="settings_enabled">مفعّل</string>
+    <string name="settings_lock_permission_needed">يتطلّب القفل بالنقر مرّتين تفعيل خدمة تسهيل الاستخدام «إيماءات Nbeta»</string>
+    <string name="settings_swipe_to_feed">التمرير لليسار</string>
+    <string name="settings_swipe_to_feed_summary">فتح الموجز</string>
+
+    <!-- Settings: search -->
+    <string name="settings_contacts_on">الاتصال أو المراسلة من نتائج البحث</string>
+    <string name="settings_contacts_off">انقر للسماح بالوصول إلى جهات الاتصال</string>
+    <string name="settings_calculator">الآلة الحاسبة</string>
+    <string name="settings_calculator_summary">اكتب 12*7 أو sqrt(2)</string>
+    <string name="settings_app_shortcuts">اختصارات التطبيقات</string>
+    <string name="settings_app_shortcuts_summary">العثور على إجراءات مثل «رسالة جديدة» أو «مسح رمز QR»</string>
+    <string name="settings_system_settings">إعدادات النظام</string>
+    <string name="settings_system_settings_summary">الانتقال إلى Wi‑Fi والبلوتوث والبطارية…</string>
+    <string name="settings_web_search">البحث على الويب</string>
+
+    <!-- Settings: feed -->
+    <string name="settings_feed_page">صفحة الموجز</string>
+    <string name="settings_feed_page_summary">مرِّر لليسار من الشاشة الرئيسية لعرض الموجز</string>
+    <string name="settings_sources">المصادر</string>
+    <string name="settings_source_error">خطأ: %1$s</string>
+    <string name="settings_source_muted">يظهر بشكل أقل في «مختارات لك» · انقر للاستعادة</string>
+    <plurals name="settings_source_stories">
+        <item quantity="zero">لا توجد أخبار · %2$s</item>
+        <item quantity="one">خبر واحد · %2$s</item>
+        <item quantity="two">خبران · %2$s</item>
+        <item quantity="few">%1$d أخبار · %2$s</item>
+        <item quantity="many">%1$d خبرًا · %2$s</item>
+        <item quantity="other">%1$d خبر · %2$s</item>
+    </plurals>
+    <string name="settings_stop_alerts">إيقاف التنبيهات من %1$s</string>
+    <string name="settings_start_alerts">تلقّي تنبيهات من %1$s</string>
+    <string name="settings_suggestions">اقتراحات</string>
+    <string name="settings_reading">القراءة</string>
+    <string name="settings_default_order">الترتيب التلقائي</string>
+    <string name="settings_order_for_you">مختارات لك (يتعلّم مما تفتحه)</string>
+    <string name="settings_order_latest">الأحدث أولاً</string>
+    <string name="settings_open_in">فتح الأخبار في</string>
+    <string name="settings_open_reader">عرض القارئ (نص واضح، مع الرجوع إلى علامة تبويب في المتصفح عند الحاجة)</string>
+    <string name="settings_open_custom_tab">علامة تبويب متصفح داخل التطبيق</string>
+    <string name="settings_open_browser">تطبيق المتصفح</string>
+    <string name="settings_fetch_images">جلب صور المقالات</string>
+    <string name="settings_fetch_images_summary">للأخبار التي لا يتضمّن مصدرها صورة</string>
+    <string name="settings_muted_keywords">الكلمات المكتومة</string>
+    <string name="settings_hide_mentioning">إخفاء الأخبار التي تذكر…</string>
+    <string name="settings_hide_mentioning_hint">مثلاً: فريق أو شخصية مشهورة أو حرق للأحداث</string>
+    <string name="settings_remove_keyword">إزالة %1$s</string>
+    <string name="settings_breaking_news">تنبيهات الأخبار العاجلة</string>
+    <string name="settings_alerts_need_refresh">يتطلّب تفعيل التحديث في الخلفية (أدناه)</string>
+    <string name="settings_alerts_summary">يتم التحقق أثناء التحديث في الخلفية · 3 تنبيهات كحدّ أقصى في كل مرة</string>
+    <string name="settings_notifications_off">الإشعارات متوقفة لتطبيق Nbeta</string>
+    <string name="settings_alert_sources">مصادر التنبيهات</string>
+    <plurals name="settings_alert_sources_summary">
+        <item quantity="zero">انقر على الجرس بجانب أحد المصادر أعلاه · لم يتم تحديد أي مصدر</item>
+        <item quantity="one">انقر على الجرس بجانب أحد المصادر أعلاه · تم تحديد مصدر واحد</item>
+        <item quantity="two">انقر على الجرس بجانب أحد المصادر أعلاه · تم تحديد مصدرين</item>
+        <item quantity="few">انقر على الجرس بجانب أحد المصادر أعلاه · تم تحديد %d مصادر</item>
+        <item quantity="many">انقر على الجرس بجانب أحد المصادر أعلاه · تم تحديد %d مصدرًا</item>
+        <item quantity="other">انقر على الجرس بجانب أحد المصادر أعلاه · تم تحديد %d مصدر</item>
+    </plurals>
+    <string name="settings_check_now">التحقق الآن</string>
+    <string name="settings_check_now_summary">جلب المصادر والتنبيه بأي جديد يطابق اختياراتك</string>
+    <string name="settings_checked">تم التحقق من وجود أخبار جديدة</string>
+    <string name="settings_alert_me_about">تنبيهي بشأن…</string>
+    <string name="settings_alert_me_about_hint">إرسال إشعار عند ذكرها في أي مصدر</string>
+    <string name="settings_background_refresh">التحديث في الخلفية</string>
+    <string name="settings_refresh_every">التحديث كل</string>
+    <string name="settings_refresh_manual">عند الفتح فقط</string>
+    <plurals name="settings_refresh_hours">
+        <item quantity="zero">%d ساعة</item>
+        <item quantity="one">ساعة واحدة</item>
+        <item quantity="two">ساعتان</item>
+        <item quantity="few">%d ساعات</item>
+        <item quantity="many">%d ساعة</item>
+        <item quantity="other">%d ساعة</item>
+    </plurals>
+    <string name="settings_wifi_only">عبر Wi‑Fi فقط</string>
+    <string name="settings_import_opml">استيراد OPML</string>
+    <string name="settings_import_opml_summary">من قارئ آخر</string>
+    <string name="settings_export_opml">تصدير OPML</string>
+    <plurals name="settings_source_count">
+        <item quantity="zero">لا توجد مصادر</item>
+        <item quantity="one">مصدر واحد</item>
+        <item quantity="two">مصدران</item>
+        <item quantity="few">%d مصادر</item>
+        <item quantity="many">%d مصدرًا</item>
+        <item quantity="other">%d مصدر</item>
+    </plurals>
+    <plurals name="settings_imported_feeds">
+        <item quantity="zero">لم يتم استيراد أي مصدر</item>
+        <item quantity="one">تم استيراد مصدر واحد</item>
+        <item quantity="two">تم استيراد مصدرين</item>
+        <item quantity="few">تم استيراد %d مصادر</item>
+        <item quantity="many">تم استيراد %d مصدرًا</item>
+        <item quantity="other">تم استيراد %d مصدر</item>
+    </plurals>
+    <string name="settings_clear_stories">محو الأخبار</string>
+    <string name="settings_clear_stories_summary">مع الاحتفاظ بالأخبار المحفوظة</string>
+    <string name="settings_add_source">إضافة مصدر</string>
+    <string name="settings_add_source_summary">موقع ويب أو رابط موجز أو قناة YouTube أو مجتمع Reddit</string>
+    <string name="settings_add_source_title">إضافة مصدر</string>
+    <string name="settings_add_source_hint">مثلاً: theverge.com</string>
+    <string name="settings_looking_for_feed">جارٍ البحث عن موجز…</string>
+    <string name="settings_already_added">تمت إضافته من قبل</string>
+    <string name="settings_no_feed_found">تعذّر العثور على موجز</string>
+
+    <!-- Settings: weather -->
+    <string name="settings_units">الوحدات</string>
+    <string name="settings_celsius">درجة مئوية</string>
+    <string name="settings_fahrenheit">فهرنهايت</string>
+    <string name="settings_weather_data">بيانات الطقس</string>
+    <string name="settings_weather_data_summary">Open-Meteo (بدون حساب أو تتبّع)</string>
+    <string name="settings_device_location">موقع الجهاز</string>
+    <string name="settings_weather_location">موقع الطقس</string>
+    <string name="settings_city">المدينة</string>
+    <string name="settings_use_city">استخدام المدينة</string>
+    <string name="settings_use_device_location">استخدام موقع الجهاز</string>
+    <string name="settings_city_not_found">لم يتم العثور على المدينة</string>
+
+    <!-- Settings: hidden apps, backup -->
+    <string name="settings_hidden_explainer">تظل التطبيقات المخفية مثبّتة، لكنها لا تظهر في الدرج أو في نتائج البحث.</string>
+    <string name="settings_restored">تمت استعادة الإعدادات</string>
+    <string name="settings_not_a_backup">هذا الملف ليس نسخة احتياطية من Nbeta</string>
+    <string name="settings_export">تصدير الإعدادات</string>
+    <string name="settings_export_summary">التخطيط والمصادر والتطبيقات المخفية والتفضيلات</string>
+    <string name="settings_import">استيراد الإعدادات</string>
+    <string name="settings_reset_everything">إعادة ضبط كل شيء</string>
+    <string name="settings_reset_everything_summary">الرجوع إلى الإعدادات التلقائية</string>
+    <string name="settings_reset_confirm_title">هل تريد إعادة ضبط كل الإعدادات؟</string>
+    <string name="settings_reset_confirm_body">سيعود تخطيط الشاشة الرئيسية ومصادر الموجز والتفضيلات إلى إعداداتها التلقائية.</string>
+
+    <!-- Reddit -->
+    <string name="reddit_no_browser">لا يتوفّر متصفح</string>
+    <string name="reddit_signed_in_as">تم تسجيل الدخول باسم u/%1$s</string>
+    <string name="reddit_signed_in_summary">يتم تحميل مصادر Reddit عبر الواجهة البرمجية الرسمية (100 طلب في الدقيقة)</string>
+    <string name="reddit_add_home">إضافة موجزك الرئيسي على Reddit</string>
+    <string name="reddit_add_home_summary">منشورات من المجتمعات التي تتابعها</string>
+    <string name="reddit_home_title">الصفحة الرئيسية على Reddit</string>
+    <string name="reddit_sign_out">تسجيل الخروج من Reddit</string>
+    <string name="reddit_sign_out_summary">إبطال رمز الوصول الخاص بتطبيق Nbeta</string>
+    <string name="reddit_sign_in">تسجيل الدخول باستخدام Reddit</string>
+    <string name="reddit_sign_in_setup">يمنع تقييد عدد الطلبات لمصادر Reddit. يلزم إعداد لمرة واحدة.</string>
+    <string name="reddit_using_client">يتم استخدام معرّف العميل %1$s…</string>
+    <string name="reddit_change_client">تغيير معرّف عميل Reddit</string>
+    <string name="reddit_connect_title">ربط Reddit</string>
+    <string name="reddit_setup_intro">يمنح Reddit إذن الوصول إلى واجهته البرمجية لكل تطبيق على حدة، لذا يلزم إعداد لمرة واحدة باستخدام تطبيق Reddit خاص بك.</string>
+    <string name="reddit_setup_step1">الخطوة 1: اطلب الوصول إلى الواجهة البرمجية، وصِف Nbeta بأنه قارئ موجزات شخصي وغير تجاري.</string>
+    <string name="reddit_open_access_form">فتح نموذج طلب الوصول</string>
+    <string name="reddit_setup_step2">الخطوة 2: بعد الموافقة، أنشئ تطبيقًا من النوع «installed app» واستخدم عنوان إعادة التوجيه أدناه.</string>
+    <string name="reddit_open_prefs">فتح reddit.com/prefs/apps</string>
+    <string name="reddit_setup_step3">الخطوة 3: الصق معرّف العميل (الرمز القصير أسفل اسم التطبيق).</string>
+    <string name="reddit_client_id">معرّف العميل</string>
+    <string name="reddit_save_sign_in">حفظ وتسجيل الدخول</string>
+    <string name="reddit_signed_in_toast">تم تسجيل الدخول إلى Reddit باسم %1$s</string>
+    <string name="reddit_sign_in_failed">تعذّر تسجيل الدخول إلى Reddit</string>
+    <string name="reddit_your_account">حسابك</string>
+    <string name="reddit_error_declined">لقد رفضت منح الإذن على Reddit.</string>
+    <string name="reddit_error_returned">ردّ Reddit بالخطأ: %1$s</string>
+    <string name="reddit_error_expired_retry">انتهت صلاحية تسجيل الدخول، يُرجى المحاولة مرة أخرى.</string>
+    <string name="reddit_error_state">رابط تسجيل الدخول غير مطابق. يُرجى المحاولة مرة أخرى.</string>
+    <string name="reddit_error_no_code">لم يُرجع Reddit رمز التفويض.</string>
+    <string name="reddit_error_no_offline">لم يمنح Reddit إذن الوصول المستمر.</string>
+    <string name="reddit_error_not_signed_in">لم يتم تسجيل الدخول إلى Reddit</string>
+    <string name="reddit_error_client_rejected">رفض Reddit معرّف العميل. تأكّد من أن التطبيق من النوع «installed app».</string>
+    <string name="reddit_error_grant_expired">انتهت صلاحية تسجيل الدخول إلى Reddit. يُرجى تسجيل الدخول مرة أخرى.</string>
+    <string name="reddit_error_failed">تعذّر تسجيل الدخول إلى Reddit ‏(%1$s)</string>
+    <string name="reddit_error_private">المجتمع خاص أو محظور</string>
+    <string name="reddit_error_not_found">لم يتم العثور على المجتمع</string>
+    <string name="reddit_error_http">خطأ HTTP ‏%1$d من Reddit</string>
+</resources>

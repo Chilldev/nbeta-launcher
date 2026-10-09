@@ -7,6 +7,7 @@ import android.content.Intent
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import com.mali.nbeta.R
 
 object GlobalActions {
     @SuppressLint("WrongConstant")
@@ -31,7 +32,7 @@ object GlobalActions {
     private fun perform(context: Context, action: Int): Boolean {
         val svc = GestureAccessibilityService.instance
         if (svc != null) return svc.performGlobalAction(action)
-        Toast.makeText(context, "Turn on “Nbeta gestures” in Accessibility to use this gesture", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, R.string.home_enable_gestures, Toast.LENGTH_LONG).show()
         context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         return false
     }

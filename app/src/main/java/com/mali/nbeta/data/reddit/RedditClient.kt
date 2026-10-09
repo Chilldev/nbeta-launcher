@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import com.mali.nbeta.BuildConfig
+import com.mali.nbeta.R
 import com.mali.nbeta.data.JsonStore
 import com.mali.nbeta.data.feed.FeedItem
 import com.mali.nbeta.data.feed.FeedParser
@@ -82,13 +83,13 @@ class RedditClient(
     /** Handles nbeta://reddit-auth?state=…&code=… (or ?error=…). Returns the signed-in username. */
     suspend fun completeSignIn(redirect: Uri): String = withContext(Dispatchers.IO) {
         redirect.getQueryParameter("error")?.let {
-            throw RedditAuthException(if (it == "access_denied") "You declined access on Reddit." else "Reddit returned: $it")
+            throw RedditAuthException(if (it == "access_denied") context.getString(R.string.reddit_error_declined) else context.getString(R.string.reddit_error_returned, it))
         }
         val expected = prefs.getString("state", null)
-        val clientId = prefs.getString("client_id", null) ?: throw RedditAuthException("Sign-in expired, try again.")
+        val clientId = prefs.getString("client_id", null) ?: throw RedditAuthException(context.getString(R.string.reddit_error_expired_retry))
         // The state ties this redirect to a sign-in we started; anything else could be a forged link.
-        if (expected == null || redirect.getQueryParameter("state") != expected) throw RedditAuthException("Sign-in link didn't match. Try again.")
-        val code = redirect.getQueryParameter("code") ?: throw RedditAuthException("Reddit didn't return a code.")
+        if (expected == null || redirect.getQueryParameter("state") != expected) throw RedditAuthException(context.getString(R.string.reddit_error_state))
+        val code = redirect.getQueryParameter("code") ?: throw RedditAuthException(context.getString(R.string.reddit_error_no_code))
         prefs.edit().remove("state").apply()
 
         val tokens = tokenRequest(
@@ -99,13 +100,13 @@ class RedditClient(
                 .add("redirect_uri", REDIRECT_URI)
                 .build(),
         )
-        val refresh = tokens.string("refresh_token") ?: throw RedditAuthException("Reddit didn't grant offline access.")
+        val refresh = tokens.string("refresh_token") ?: throw RedditAuthException(context.getString(R.string.reddit_error_no_offline))
         var s = RedditSession(clientId, tokens.string("access_token")!!, refresh, expiry(tokens))
         store.replace(s)
         val name = runCatching { get("https://oauth.reddit.com/api/v1/me").use { r -> json(r).string("name") } }.getOrNull()
         s = s.copy(username = name)
         store.replace(s)
-        name ?: "your account"
+        name ?: context.getString(R.string.reddit_your_account)
     }
 
     suspend fun signOut() = withContext(Dispatchers.IO) {
@@ -124,7 +125,7 @@ class RedditClient(
 
     @Synchronized
     private fun accessToken(forceRefresh: Boolean = false): String {
-        val s = session.value ?: throw RedditAuthException("Not signed in to Reddit")
+        val s = session.value ?: throw RedditAuthException(context.getString(R.string.reddit_error_not_signed_in))
         if (!forceRefresh && System.currentTimeMillis() < s.expiresAt - 60_000) return s.accessToken
         val tokens = tokenRequest(
             s.clientId,
@@ -152,9 +153,9 @@ class RedditClient(
                 if (r.code == 400 || err == "invalid_grant") store.replace(null) // refresh token revoked: sign out
                 throw RedditAuthException(
                     when {
-                        r.code == 401 -> "Reddit rejected the client ID. Check it's an “installed app”."
-                        err == "invalid_grant" -> "Reddit sign-in expired. Sign in again."
-                        else -> "Reddit sign-in failed (${err ?: "HTTP ${r.code}"})"
+                        r.code == 401 -> context.getString(R.string.reddit_error_client_rejected)
+                        err == "invalid_grant" -> context.getString(R.string.reddit_error_grant_expired)
+                        else -> context.getString(R.string.reddit_error_failed, err ?: "HTTP ${r.code}")
                     },
                 )
             }
@@ -197,9 +198,9 @@ class RedditClient(
     fun fetchListing(url: String, sourceId: String): ParsedFeed {
         val path = listingPath(url) ?: throw IllegalArgumentException("Not a Reddit listing: $url")
         get("https://oauth.reddit.com$path").use { r ->
-            if (r.code == 403) throw IllegalStateException("Private or banned community")
-            if (r.code == 404) throw IllegalStateException("Community not found")
-            if (!r.isSuccessful) throw IllegalStateException("Reddit HTTP ${r.code}")
+            if (r.code == 403) throw IllegalStateException(context.getString(R.string.reddit_error_private))
+            if (r.code == 404) throw IllegalStateException(context.getString(R.string.reddit_error_not_found))
+            if (!r.isSuccessful) throw IllegalStateException(context.getString(R.string.reddit_error_http, r.code))
             val items = RedditListing.parse(r.body.string(), sourceId)
             return ParsedFeed(null, null, items)
         }
@@ -209,7 +210,7 @@ class RedditClient(
     fun describe(url: String): String? {
         val path = listingPath(url) ?: return null
         return when {
-            path.startsWith("/best") -> "Reddit home"
+            path.startsWith("/best") -> context.getString(R.string.reddit_home_title)
             path.startsWith("/r/") -> "r/" + path.removePrefix("/r/").substringBefore('/')
             path.startsWith("/user/") -> "u/" + path.removePrefix("/user/").substringBefore('/')
             else -> null

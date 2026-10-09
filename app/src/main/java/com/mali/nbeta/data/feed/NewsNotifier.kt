@@ -51,7 +51,7 @@ class NewsNotifier(private val context: Context) {
         if (items.size > 1) {
             val summary = NotificationCompat.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_stat_news)
-                .setContentTitle("${items.size} new stories")
+                .setContentTitle(context.resources.getQuantityString(R.plurals.news_new_stories, items.size, items.size))
                 .setGroup(GROUP)
                 .setGroupSummary(true)
                 .setAutoCancel(true)
@@ -61,14 +61,12 @@ class NewsNotifier(private val context: Context) {
     }
 
     private fun ensureChannel() {
-        val nm = context.getSystemService(NotificationManager::class.java)
-        if (nm.getNotificationChannel(CHANNEL) == null) {
-            nm.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Breaking news", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "New stories from sources and keywords you chose in Nbeta's feed settings"
-                },
-            )
-        }
+        // Re-registering an existing channel only updates its name and description (e.g. after a language change).
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL, context.getString(R.string.news_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = context.getString(R.string.news_channel_description)
+            },
+        )
     }
 
     companion object {

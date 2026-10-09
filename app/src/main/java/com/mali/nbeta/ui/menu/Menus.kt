@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -63,6 +64,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.mali.nbeta.data.Container
+import com.mali.nbeta.R
 import com.mali.nbeta.data.HomeItem
 import com.mali.nbeta.data.Layout
 import com.mali.nbeta.data.homePages
@@ -115,15 +117,15 @@ fun AppMenuPopup(c: LauncherController, req: MenuRequest) {
                     when (val t = req.target) {
                         is MenuTarget.App -> AppMenuContent(c, t.app, t.origin, t.container, dismiss)
                         is MenuTarget.Folder -> {
-                            MenuRow(Icons.Default.Edit, "Open & rename") { c.openFolder = t.folder.id; dismiss() }
-                            MenuRow(Icons.Default.Share, "Ungroup") {
+                            MenuRow(Icons.Default.Edit, stringResource(R.string.menu_open_rename)) { c.openFolder = t.folder.id; dismiss() }
+                            MenuRow(Icons.Default.Share, stringResource(R.string.menu_ungroup)) {
                                 c.graph.settings.update { Layout.ungroup(it, t.folder.id) }
                                 dismiss()
                             }
-                            MenuRow(Icons.Default.Close, "Remove folder") { c.removeItem(t.folder); dismiss() }
+                            MenuRow(Icons.Default.Close, stringResource(R.string.menu_remove_folder)) { c.removeItem(t.folder); dismiss() }
                         }
                         is MenuTarget.PinnedShortcut -> {
-                            MenuRow(Icons.Default.Close, "Remove from home") {
+                            MenuRow(Icons.Default.Close, stringResource(R.string.menu_remove_from_home)) {
                                 c.removeItem(t.item)
                                 c.graph.shortcuts.unpin(t.item.packageName, t.item.id, t.item.userSerial)
                                 dismiss()
@@ -151,13 +153,13 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
     val onHome = c.isOnHome(app.key)
     val inDock = c.isInDock(app.key)
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-        QuickAction(Icons.Default.Info, "App info") { graph.apps.openAppInfo(app); dismiss() }
-        QuickAction(if (onHome) Icons.Default.Close else Icons.Default.Home, if (onHome) "Off home" else "To home") { c.toggleHome(app.key); dismiss() }
-        QuickAction(if (inDock) Icons.Default.KeyboardArrowDown else Icons.Default.Star, if (inDock) "Off dock" else "To dock") { c.toggleDock(app.key); dismiss() }
+        QuickAction(Icons.Default.Info, stringResource(R.string.common_app_info)) { graph.apps.openAppInfo(app); dismiss() }
+        QuickAction(if (onHome) Icons.Default.Close else Icons.Default.Home, stringResource(if (onHome) R.string.menu_off_home else R.string.menu_to_home)) { c.toggleHome(app.key); dismiss() }
+        QuickAction(if (inDock) Icons.Default.KeyboardArrowDown else Icons.Default.Star, stringResource(if (inDock) R.string.menu_off_dock else R.string.menu_to_dock)) { c.toggleDock(app.key); dismiss() }
     }
     HorizontalDivider(Modifier.padding(vertical = 6.dp, horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
     if (container is Container.Folder) {
-        MenuRow(Icons.Default.Close, "Remove from folder") {
+        MenuRow(Icons.Default.Close, stringResource(R.string.menu_remove_from_folder)) {
             c.graph.settings.update { st ->
                 val page = c.currentHomePage.coerceIn(0, st.homePages.lastIndex)
                 Layout.move(st, HomeItem.App(app.key), Container.Page(page), Layout.items(st, Container.Page(page)).size)
@@ -165,13 +167,13 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
             dismiss()
         }
     }
-    MenuRow(Icons.Default.Edit, "Rename") { c.renameTarget = app; dismiss() }
-    MenuRow(Icons.Default.Face, "Change icon") { c.iconPickerFor = app; dismiss() }
+    MenuRow(Icons.Default.Edit, stringResource(R.string.common_rename)) { c.renameTarget = app; dismiss() }
+    MenuRow(Icons.Default.Face, stringResource(R.string.menu_change_icon)) { c.iconPickerFor = app; dismiss() }
     if (origin == Origin.Drawer || origin == Origin.Search) {
-        MenuRow(Icons.Default.Lock, "Hide from drawer") { c.hide(app); dismiss() }
+        MenuRow(Icons.Default.Lock, stringResource(R.string.menu_hide_from_drawer)) { c.hide(app); dismiss() }
     }
     if (loaded?.second == false) {
-        MenuRow(Icons.Default.Delete, "Uninstall") { graph.apps.uninstall(app); dismiss() }
+        MenuRow(Icons.Default.Delete, stringResource(R.string.common_uninstall)) { graph.apps.uninstall(app); dismiss() }
     }
 }
 
@@ -195,7 +197,7 @@ private fun ShortcutMenuRow(c: LauncherController, app: AppEntry, s: AppShortcut
         IconButton(onClick = {
             pinToHome(c, app, s)
             dismiss()
-        }) { Icon(Icons.Default.Add, "Add to home", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }) { Icon(Icons.Default.Add, stringResource(R.string.menu_add_to_home), Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
@@ -216,7 +218,7 @@ private fun pinToHome(c: LauncherController, app: AppEntry, s: AppShortcut) {
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                android.widget.Toast.makeText(c.activity, "Set Nbeta as your home app to pin shortcuts", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(c.activity, R.string.menu_pin_needs_default, android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -254,19 +256,20 @@ fun MenuRow(icon: ImageVector, label: String, onClick: () -> Unit) {
 fun HomeMenuSheet(c: LauncherController) {
     ModalBottomSheet(onDismissRequest = { c.homeMenu = false }) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
-            MenuRow(Icons.Default.Create, "Wallpaper") {
+            val chooserTitle = stringResource(R.string.menu_set_wallpaper)
+            MenuRow(Icons.Default.Create, stringResource(R.string.common_wallpaper)) {
                 c.homeMenu = false
-                c.start(Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), "Set wallpaper").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                c.start(Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
-            MenuRow(Icons.Default.Add, "Widgets") {
+            MenuRow(Icons.Default.Add, stringResource(R.string.menu_widgets)) {
                 c.homeMenu = false
                 c.widgetPicker = WidgetPlacement.Home
             }
-            MenuRow(Icons.Default.Edit, "Edit home screen") {
+            MenuRow(Icons.Default.Edit, stringResource(R.string.menu_edit_home)) {
                 c.homeMenu = false
                 c.editingHome = true
             }
-            MenuRow(Icons.Default.Settings, "Launcher settings") {
+            MenuRow(Icons.Default.Settings, stringResource(R.string.common_launcher_settings)) {
                 c.homeMenu = false
                 c.start(Intent(c.activity, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
@@ -279,12 +282,12 @@ fun RenameDialog(c: LauncherController, app: AppEntry) {
     var text by remember(app.key) { mutableStateOf(app.label) }
     AlertDialog(
         onDismissRequest = { c.renameTarget = null },
-        title = { Text("Rename") },
+        title = { Text(stringResource(R.string.common_rename)) },
         text = {
             Column {
-                OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Label") })
+                OutlinedTextField(text, { text = it }, singleLine = true, label = { Text(stringResource(R.string.menu_label)) })
                 if (app.label != app.originalLabel) {
-                    TextButton(onClick = { text = app.originalLabel }) { Text("Reset to “${app.originalLabel}”") }
+                    TextButton(onClick = { text = app.originalLabel }) { Text(stringResource(R.string.menu_reset_to, app.originalLabel)) }
                 }
             }
         },
@@ -292,8 +295,8 @@ fun RenameDialog(c: LauncherController, app: AppEntry) {
             TextButton(onClick = {
                 c.rename(app, text)
                 c.renameTarget = null
-            }) { Text("Save") }
+            }) { Text(stringResource(R.string.common_save)) }
         },
-        dismissButton = { TextButton(onClick = { c.renameTarget = null }) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = { c.renameTarget = null }) { Text(stringResource(R.string.common_cancel)) } },
     )
 }

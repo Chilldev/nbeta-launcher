@@ -37,8 +37,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.mali.nbeta.R
 
 @Composable
 fun SettingsScaffold(title: String, onBack: (() -> Unit)?, content: LazyListScope.() -> Unit) {
@@ -49,7 +51,7 @@ fun SettingsScaffold(title: String, onBack: (() -> Unit)?, content: LazyListScop
             LargeTopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
-                    if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+                    if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back)) }
                 },
                 scrollBehavior = scroll,
             )
@@ -96,7 +98,7 @@ fun SwitchPref(title: String, summary: String? = null, checked: Boolean, enabled
 }
 
 @Composable
-fun <T> ChoicePref(title: String, options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit) {
+fun <T> ChoicePref(title: String, options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
     var open by remember { mutableStateOf(false) }
     ClickPref(title, label(selected)) { open = true }
     if (open) {
@@ -123,13 +125,13 @@ fun <T> ChoicePref(title: String, options: List<T>, selected: T, label: (T) -> S
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { open = false }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.common_close)) } },
         )
     }
 }
 
 @Composable
-fun SliderPref(title: String, value: Float, range: ClosedFloatingPointRange<Float>, steps: Int, format: (Float) -> String, onChange: (Float) -> Unit) {
+fun SliderPref(title: String, value: Float, range: ClosedFloatingPointRange<Float>, steps: Int, format: @Composable (Float) -> String, onChange: (Float) -> Unit) {
     // Local state while dragging so the settings file is written once, on release.
     var local by remember(value) { mutableFloatStateOf(value) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {

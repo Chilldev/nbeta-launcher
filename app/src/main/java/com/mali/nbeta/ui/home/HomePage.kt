@@ -11,6 +11,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onPlaced
 import com.mali.nbeta.data.Container
+import com.mali.nbeta.R
 import com.mali.nbeta.data.homePages
 import com.mali.nbeta.data.stableKey
 import com.mali.nbeta.ui.common.IconImage
@@ -73,10 +74,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -110,7 +114,6 @@ import com.mali.nbeta.ui.widgets.WidgetColumn
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Swipe up/down, double-tap, long-press and the "recede as the drawer rises" effect, shared by pages and the dock. */
@@ -212,9 +215,9 @@ fun HomePageContent(c: LauncherController, settings: LauncherSettings, page: Int
                             .padding(horizontal = 4.dp),
                     ) {
                         val color = MaterialTheme.colorScheme.primary
-                        TextButton(onClick = { c.widgetPicker = WidgetPlacement.Home }) { Text("Add widget", color = color) }
-                        TextButton(onClick = { c.addPage() }) { Text("Add page", color = color) }
-                        TextButton(onClick = { c.editingHome = false }) { Text("Done", color = color) }
+                        TextButton(onClick = { c.widgetPicker = WidgetPlacement.Home }) { Text(stringResource(R.string.home_add_widget), color = color) }
+                        TextButton(onClick = { c.addPage() }) { Text(stringResource(R.string.home_add_page), color = color) }
+                        TextButton(onClick = { c.editingHome = false }) { Text(stringResource(R.string.common_done), color = color) }
                     }
                 }
             }
@@ -234,6 +237,7 @@ fun DockArea(
     modifier: Modifier = Modifier,
 ) {
     val onWallpaperScrim = LocalOnWallpaper.current.scrim
+    val awayFromFeed = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
     Column(
         modifier
             .fillMaxWidth()
@@ -242,8 +246,8 @@ fun DockArea(
                 c.dockHeightPx = it.size.height
             }
             .graphicsLayer {
-                // Off to the right as the feed slides in (hit-testing follows the translation).
-                translationX = (firstHomePage - position()).coerceAtLeast(0f) * size.width
+                // Off to the side as the feed slides in (hit-testing follows the translation).
+                translationX = (firstHomePage - position()).coerceAtLeast(0f) * size.width * awayFromFeed
             }
             .drawBehind {
                 val scrim = onWallpaperScrim
@@ -304,7 +308,7 @@ private fun SearchPill(onClick: () -> Unit) {
     ) {
         Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(12.dp))
-        Text("Search apps, contacts, web…", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.home_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
@@ -409,7 +413,7 @@ fun ItemGrid(
                                     .clickable { c.removeItem(item) },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(Icons.Default.Close, "Remove", Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurface)
+                                Icon(Icons.Default.Close, stringResource(R.string.common_remove), Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -522,7 +526,7 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
     val events by graph.glance.events.collectAsStateWithLifecycle()
     val alarm by graph.glance.nextAlarm.collectAsStateWithLifecycle()
     val is24 = DateFormat.is24HourFormat(context)
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
 
     Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 28.dp, bottom = 12.dp)) {
         if (s.glanceClock) {
@@ -535,7 +539,7 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
             )
         }
         Text(
-            SimpleDateFormat("EEEE, MMMM d", locale).format(Date(now)),
+            SimpleDateFormat(DateFormat.getBestDateTimePattern(locale, "EEEEMMMMd"), locale).format(Date(now)),
             style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = w.text, shadow = w.shadow),
             modifier = Modifier.clickable(interactionSource = null, indication = null) {
                 val uri = CalendarContract.CONTENT_URI.buildUpon().appendPath("time").appendPath(now.toString()).build()
@@ -562,9 +566,9 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
         if (s.glanceCalendar && next != null) {
             Spacer(Modifier.height(4.dp))
             val whenText = when {
-                next.allDay -> "Today"
-                next.begin <= now -> "Now"
-                next.begin - now < 3600_000 -> "in ${((next.begin - now) / 60_000).coerceAtLeast(1)} min"
+                next.allDay -> stringResource(R.string.common_today)
+                next.begin <= now -> stringResource(R.string.glance_now)
+                next.begin - now < 3600_000 -> ((next.begin - now) / 60_000).coerceAtLeast(1).toInt().let { pluralStringResource(R.plurals.glance_in_minutes, it, it) }
                 else -> SimpleDateFormat(if (is24) "HH:mm" else "h:mm a", locale).format(Date(next.begin))
             }
             Row(
@@ -583,6 +587,6 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
 }
 
 fun formatTemp(c: Double, unit: TempUnit): String = when (unit) {
-    TempUnit.Celsius -> "${c.roundToInt()}°"
-    TempUnit.Fahrenheit -> "${(c * 9 / 5 + 32).roundToInt()}°"
+    TempUnit.Celsius -> "%d°".format(c.roundToInt())
+    TempUnit.Fahrenheit -> "%d°".format((c * 9 / 5 + 32).roundToInt())
 }

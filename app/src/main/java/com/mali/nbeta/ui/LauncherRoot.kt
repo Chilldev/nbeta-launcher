@@ -111,7 +111,8 @@ fun LauncherRoot(c: LauncherController) {
             }
 
             // Hold an item at the screen edge to move it to the neighbouring page.
-            LaunchedEffect(c.dnd.active, pager, feedOffset) {
+            val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
+            LaunchedEffect(c.dnd.active, pager, feedOffset, rtl) {
                 if (!c.dnd.active) return@LaunchedEffect
                 val edge = c.activity.resources.displayMetrics.widthPixels * 0.07f
                 val width = c.activity.resources.displayMetrics.widthPixels
@@ -121,9 +122,12 @@ fun LauncherRoot(c: LauncherController) {
                     delay(100)
                     c.dnd.tick()
                     val x = c.dnd.pointer.x
+                    // The pager mirrors in right-to-left layouts: the left edge leads to the next page there.
+                    val towardsStart = if (rtl) x > width - edge else x < edge
+                    val towardsEnd = if (rtl) x < edge else x > width - edge
                     val next = when {
-                        x < edge && pager.currentPage > feedOffset -> -1
-                        x > width - edge && pager.currentPage < pager.pageCount - 1 -> 1
+                        towardsStart && pager.currentPage > feedOffset -> -1
+                        towardsEnd && pager.currentPage < pager.pageCount - 1 -> 1
                         else -> 0
                     }
                     if (next != 0 && next == dir) dwell++ else dwell = 0

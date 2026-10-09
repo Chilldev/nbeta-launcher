@@ -9,6 +9,7 @@ import android.os.UserManager
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Immutable
+import com.mali.nbeta.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,7 +121,7 @@ class ShortcutRepository(
             launcherApps.startShortcut(shortcut.info, bounds, options)
         } catch (e: Exception) {
             Log.w(TAG, "Shortcut launch failed", e)
-            Toast.makeText(context, "Shortcut unavailable", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.home_shortcut_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
 

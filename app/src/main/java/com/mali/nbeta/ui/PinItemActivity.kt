@@ -24,9 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.mali.nbeta.NbetaApp
+import com.mali.nbeta.R
 import com.mali.nbeta.data.Container
 import com.mali.nbeta.data.HomeItem
 import com.mali.nbeta.data.Layout
@@ -61,8 +63,8 @@ class PinItemActivity : ComponentActivity() {
         val shortcut = req.shortcutInfo
         val widget = req.getAppWidgetProviderInfo(this)
         val label = when {
-            isShortcut -> (shortcut?.shortLabel ?: shortcut?.longLabel ?: "Shortcut").toString()
-            else -> widget?.loadLabel(packageManager) ?: "Widget"
+            isShortcut -> (shortcut?.shortLabel ?: shortcut?.longLabel ?: getString(R.string.pin_shortcut)).toString()
+            else -> widget?.loadLabel(packageManager) ?: getString(R.string.common_widget)
         }
         val density = resources.displayMetrics.densityDpi
 
@@ -79,7 +81,7 @@ class PinItemActivity : ComponentActivity() {
                 }
                 AlertDialog(
                     onDismissRequest = { finish() },
-                    title = { Text(if (isShortcut) "Add to home screen?" else "Add widget?") },
+                    title = { Text(stringResource(if (isShortcut) R.string.pin_add_to_home else R.string.pin_add_widget)) },
                     text = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             icon?.let { Image(it, null, Modifier.size(if (isShortcut) 64.dp else 160.dp)) }
@@ -94,9 +96,9 @@ class PinItemActivity : ComponentActivity() {
                                 widget != null -> startWidget(widget)
                                 else -> finish()
                             }
-                        }) { Text("Add") }
+                        }) { Text(stringResource(R.string.common_add)) }
                     },
-                    dismissButton = { TextButton(onClick = { finish() }) { Text("Cancel") } },
+                    dismissButton = { TextButton(onClick = { finish() }) { Text(stringResource(R.string.common_cancel)) } },
                 )
             }
         }

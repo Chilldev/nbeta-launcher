@@ -19,6 +19,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Immutable
 import androidx.core.content.ContextCompat
+import com.mali.nbeta.R
 import com.mali.nbeta.data.HomeItem
 import com.mali.nbeta.data.JsonStore
 import com.mali.nbeta.data.SettingsRepository
@@ -263,7 +264,7 @@ class AppRepository(
         userManager.requestQuietModeEnabled(quiet, profile.user).also { requestRefresh() }
     } catch (e: Exception) {
         Log.w(TAG, "Quiet mode change refused", e)
-        Toast.makeText(context, "Set Nbeta as your home app first", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, R.string.home_set_default_first, Toast.LENGTH_SHORT).show()
         false
     }
 
@@ -273,7 +274,7 @@ class AppRepository(
             recordLaunch(app.key)
         } catch (e: Exception) {
             Log.w(TAG, "Launch failed for ${app.key}", e)
-            Toast.makeText(context, "Couldn't open ${app.label}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.home_couldnt_open, app.label), Toast.LENGTH_SHORT).show()
         }
     }
 
