@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.glance
 
+import com.mali.nbeta.system.DiagLog
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -9,7 +10,6 @@ import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.provider.CalendarContract
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import com.mali.nbeta.R
 import com.mali.nbeta.data.JsonStore
@@ -102,7 +102,7 @@ class GlanceRepository(
         }
         val w = weather.value
         if (s.glanceWeather && (forceWeather || w == null || System.currentTimeMillis() - w.fetched > 30 * 60_000)) {
-            scope.launch(Dispatchers.IO) { runCatching { fetchWeather() }.onFailure { Log.w(TAG, "Weather failed: ${it.message}") } }
+            scope.launch(Dispatchers.IO) { runCatching { fetchWeather() }.onFailure { DiagLog.w(TAG, "Weather failed: ${it.message}") } }
         }
     }
 
@@ -197,7 +197,7 @@ class GlanceRepository(
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Calendar query failed", e)
+            DiagLog.w(TAG, "Calendar query failed", e)
         }
         return out.sortedWith(compareBy({ it.allDay }, { it.begin })).take(4)
     }

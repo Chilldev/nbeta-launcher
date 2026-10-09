@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.reader
 
+import com.mali.nbeta.system.DiagLog
 import android.content.Context
 import android.net.ConnectivityManager
 import android.util.LruCache
@@ -67,7 +68,7 @@ class ReaderRepository(
                     if (it == null) android.util.Log.i("Reader", "No article found in ${body.length} chars at $url")
                 }
             }
-        }.onFailure { android.util.Log.w("Reader", "Extraction failed for $url", it) }
+        }.onFailure { DiagLog.w("Reader", "Extraction failed for $url", it) }
             .getOrNull().also { if (it != null) cache.put(url, it) else synchronized(failed) { failed += url } }
     }
 

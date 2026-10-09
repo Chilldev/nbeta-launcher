@@ -17,6 +17,7 @@ class NbetaApp : Application(), Configuration.Provider, SingletonImageLoader.Fac
 
     override fun onCreate() {
         super.onCreate()
+        com.mali.nbeta.system.DiagLog.init(this)
         graph = AppGraph(this)
         graph.start()
     }

@@ -45,7 +45,7 @@ object AppLock {
         }
         // A failure to even show the prompt must never open the app (or crash the launcher).
         runCatching { prompt(builder, activity, onSuccess) }.onFailure {
-            android.util.Log.w("AppLock", "Prompt unavailable", it)
+            DiagLog.w("AppLock", "Prompt unavailable", it)
             Toast.makeText(activity, R.string.lock_needs_screen_lock, Toast.LENGTH_LONG).show()
         }
     }

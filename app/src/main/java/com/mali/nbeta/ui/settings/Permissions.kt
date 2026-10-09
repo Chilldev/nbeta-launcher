@@ -57,7 +57,10 @@ object Permissions {
 
     private fun start(context: Context, intent: Intent, fallback: Intent? = null) {
         val i = intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        runCatching { context.startActivity(i) }.onFailure { fallback?.let { f -> runCatching { context.startActivity(f.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } } }
+        runCatching { context.startActivity(i) }.onFailure { e ->
+            com.mali.nbeta.system.DiagLog.w("Permissions", "Can't open ${i.action}; using fallback ${fallback?.action}", e)
+            fallback?.let { f -> runCatching { context.startActivity(f.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+        }
     }
 
     fun items(context: Context): List<Item> = buildList {

@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import android.provider.AlarmClock
+import com.mali.nbeta.system.sendFromLauncher
 import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
@@ -540,9 +541,7 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
             Text(
                 SimpleDateFormat(if (is24) "HH:mm" else "h:mm", locale).format(Date(now)),
                 style = TextStyle(fontSize = 64.sp, fontWeight = FontWeight.Normal, color = w.text, shadow = w.shadow, letterSpacing = (-1).sp),
-                modifier = Modifier.clickable(interactionSource = null, indication = null) {
-                    c.start(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                },
+                modifier = Modifier.clickable(interactionSource = null, indication = null) { openAlarms(c, exact = false) },
             )
         }
         Text(
@@ -564,9 +563,7 @@ private fun Glance(c: LauncherController, s: LauncherSettings) {
             val a = alarm
             if (s.glanceAlarm && a != null && a - now < 24 * 3600_000L) {
                 Text("⏰ " + SimpleDateFormat(if (is24) "HH:mm" else "h:mm a", locale).format(Date(a)), style = chip,
-                    modifier = Modifier.clickable(interactionSource = null, indication = null) {
-                        c.start(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    })
+                    modifier = Modifier.clickable(interactionSource = null, indication = null) { openAlarms(c, exact = true) })
             }
         }
         val next = events.firstOrNull { !it.allDay } ?: events.firstOrNull()
@@ -638,4 +635,16 @@ private fun Modifier.multiFingerGestures(enabled: Boolean, onGesture: (Gesture) 
             dy > threshold -> onGesture(Gesture.TwoFingerDown)
         }
     }
+}
+
+/**
+ * The clock's alarm list. For the next-alarm chip, the alarm's own "show" intent first: it opens that exact alarm in
+ * whichever app set it (Samsung Clock, Google Clock, Sleep as Android…).
+ */
+private fun openAlarms(c: LauncherController, exact: Boolean) {
+    if (exact) {
+        val show = c.activity.getSystemService(android.app.AlarmManager::class.java).nextAlarmClock?.showIntent
+        if (show?.sendFromLauncher(c.activity) == true) return
+    }
+    c.start(Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }

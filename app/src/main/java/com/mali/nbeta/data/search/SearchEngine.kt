@@ -3,6 +3,7 @@ package com.mali.nbeta.data.search
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import com.mali.nbeta.system.canStart
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
@@ -99,7 +100,8 @@ class SearchEngine(
             val cfg = android.content.res.Configuration(context.resources.configuration).apply { setLocale(java.util.Locale.ENGLISH) }
             context.createConfigurationContext(cfg)
         }
-        return SYSTEM_SETTINGS.map { hit ->
+        // Only pages this phone has and lets Nbeta open.
+        return SYSTEM_SETTINGS.filter { context.canStart(Intent(it.action)) }.map { hit ->
             hit to listOfNotNull(Searchable(context.getString(hit.label)), english?.let { Searchable(it.getString(hit.label)) })
         }.also { settingsIndex = locale to it }
     }

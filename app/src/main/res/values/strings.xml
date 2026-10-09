@@ -467,6 +467,16 @@
     <string name="wallpaper_live">Live wallpapers</string>
     <string name="wallpaper_apps">Wallpaper apps</string>
     <string name="wallpaper_cant_set">Can\'t set this picture as wallpaper</string>
+    <string name="logs_title">Logs</string>
+    <string name="logs_summary">Errors and blocked actions, to share when something goes wrong</string>
+    <string name="logs_explain">When something doesn\'t work (a tap that shows an error, a crash), share this log so it can be fixed. It stays on your phone until you share it, and it never includes your messages or notifications. Review it before sending.</string>
+    <string name="logs_include_system">Include system log for Nbeta</string>
+    <string name="logs_share">Share log</string>
+    <string name="logs_copy">Copy</string>
+    <string name="logs_copied">Log copied</string>
+    <string name="logs_clear">Clear</string>
+    <string name="logs_recent">Recent events: %1$d</string>
+    <string name="logs_empty">Nothing logged yet.</string>
     <string name="media_widget">Media player</string>
     <string name="media_widget_summary">What\'s playing, from any app</string>
     <string name="media_style">Style</string>

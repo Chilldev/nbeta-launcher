@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.apps
 
+import com.mali.nbeta.system.DiagLog
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -19,7 +20,6 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Process
 import android.os.UserHandle
-import android.util.Log
 import android.util.LruCache
 import android.util.Xml
 import androidx.compose.runtime.Immutable
@@ -153,7 +153,7 @@ class IconRepository(
             }
             tmp.renameTo(file)
         } catch (e: Exception) {
-            Log.w(TAG, "Icon cache write failed", e)
+            DiagLog.w(TAG, "Icon cache write failed", e)
         }
         return bmp.toHardware()
     }
@@ -399,7 +399,7 @@ class IconPack private constructor(
             }
             IconPack(res, pkg, map, backs, upon, scale.coerceIn(0.3f, 1f))
         } catch (e: Exception) {
-            Log.w("IconPack", "Could not load $pkg", e)
+            DiagLog.w("IconPack", "Could not load $pkg", e)
             null
         }
     }

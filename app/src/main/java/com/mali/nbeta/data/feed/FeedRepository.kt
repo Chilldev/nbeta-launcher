@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.feed
 
+import com.mali.nbeta.system.DiagLog
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.Immutable
@@ -195,7 +196,7 @@ class FeedRepository(
                     }
                     status[src.id] = SourceStatus(now, null, feed.items.size)
                 }.onFailure { e ->
-                    Log.w(TAG, "Feed ${src.url} failed: ${e.message}")
+                    DiagLog.w(TAG, "Feed ${src.url} failed: ${e.message}")
                     status[src.id] = (status[src.id] ?: SourceStatus()).copy(lastFetch = now, error = e.message ?: e.javaClass.simpleName)
                 }
             }

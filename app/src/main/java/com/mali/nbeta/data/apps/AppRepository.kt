@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.apps
 
+import com.mali.nbeta.system.DiagLog
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -192,7 +193,7 @@ class AppRepository(
             }
             if (raw.value.isEmpty()) raw.value = list
         } catch (e: Exception) {
-            Log.w(TAG, "Bad app snapshot", e)
+            DiagLog.w(TAG, "Bad app snapshot", e)
         }
     }
 
@@ -210,7 +211,7 @@ class AppRepository(
             val activities = try {
                 launcherApps.getActivityList(null, p.user)
             } catch (e: Exception) {
-                Log.w(TAG, "Cannot list apps for ${p.user}", e)
+                DiagLog.w(TAG, "Cannot list apps for ${p.user}", e)
                 continue
             }
             for (info in activities) {
@@ -240,7 +241,7 @@ class AppRepository(
             tmp.writeText(json)
             tmp.renameTo(snapshotFile)
         } catch (e: Exception) {
-            Log.w(TAG, "Could not save app snapshot", e)
+            DiagLog.w(TAG, "Could not save app snapshot", e)
         }
     }
 
@@ -265,7 +266,7 @@ class AppRepository(
     fun setQuietMode(profile: ProfileState, quiet: Boolean): Boolean = try {
         userManager.requestQuietModeEnabled(quiet, profile.user).also { requestRefresh() }
     } catch (e: Exception) {
-        Log.w(TAG, "Quiet mode change refused", e)
+        DiagLog.w(TAG, "Quiet mode change refused", e)
         Toast.makeText(context, R.string.home_set_default_first, Toast.LENGTH_SHORT).show()
         false
     }
@@ -275,7 +276,7 @@ class AppRepository(
             launcherApps.startMainActivity(app.component, app.user, bounds, options)
             recordLaunch(app.key)
         } catch (e: Exception) {
-            Log.w(TAG, "Launch failed for ${app.key}", e)
+            DiagLog.w(TAG, "Launch failed for ${app.key}", e)
             Toast.makeText(context, context.getString(R.string.home_couldnt_open, app.label), Toast.LENGTH_SHORT).show()
         }
     }
@@ -318,7 +319,7 @@ class AppRepository(
         try {
             launcherApps.startAppDetailsActivity(app.component, app.user, null, null)
         } catch (e: Exception) {
-            Log.w(TAG, "App info failed", e)
+            DiagLog.w(TAG, "App info failed", e)
         }
     }
 
@@ -329,7 +330,7 @@ class AppRepository(
         try {
             context.startActivity(intent)
         } catch (e: Exception) {
-            Log.w(TAG, "Uninstall failed", e)
+            DiagLog.w(TAG, "Uninstall failed", e)
         }
     }
 

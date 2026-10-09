@@ -1,8 +1,8 @@
 package com.mali.nbeta.data
 
+import com.mali.nbeta.system.DiagLog
 import android.content.Context
 import android.util.AtomicFile
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -222,7 +222,7 @@ class JsonStore<T>(
             AppJson.decodeFromString(serializer, atomic.readFully().decodeToString())
         } catch (e: Exception) {
             // Never silently overwrite a file we failed to read: keep it for recovery, then start from defaults.
-            Log.e("JsonStore", "Unreadable ${file.name}; keeping it as ${file.name}.corrupt", e)
+            DiagLog.e("JsonStore", "Unreadable ${file.name}; keeping it as ${file.name}.corrupt", e)
             file.renameTo(File(file.path + ".corrupt"))
             null
         }
@@ -238,7 +238,7 @@ class JsonStore<T>(
             a.finishWrite(out)
         } catch (e: Exception) {
             out?.let { a.failWrite(it) }
-            Log.e("JsonStore", "Could not save ${file.name}", e)
+            DiagLog.e("JsonStore", "Could not save ${file.name}", e)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.media
 
+import com.mali.nbeta.system.DiagLog
 import android.app.WallpaperColors
 import android.content.ComponentName
 import android.content.Context
@@ -15,7 +16,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
-import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
@@ -98,7 +98,7 @@ class MediaRepository(private val context: Context) {
             started = true
             track(msm.getActiveSessions(listener))
         } catch (e: SecurityException) {
-            Log.w(TAG, "No notification access yet", e)
+            DiagLog.w(TAG, "No notification access yet", e)
         }
     }
 
@@ -218,7 +218,7 @@ class MediaRepository(private val context: Context) {
                     ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let(context::startActivity)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Can't open player", e)
+            DiagLog.w(TAG, "Can't open player", e)
         }
     }
 

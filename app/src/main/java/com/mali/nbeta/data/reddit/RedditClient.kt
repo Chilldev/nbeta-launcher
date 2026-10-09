@@ -1,9 +1,9 @@
 package com.mali.nbeta.data.reddit
 
+import com.mali.nbeta.system.DiagLog
 import android.content.Context
 import android.net.Uri
 import android.util.Base64
-import android.util.Log
 import com.mali.nbeta.BuildConfig
 import com.mali.nbeta.R
 import com.mali.nbeta.data.JsonStore
@@ -181,7 +181,7 @@ class RedditClient(
             r.close()
             return get(url, retried = true)
         }
-        r.header("X-Ratelimit-Remaining")?.toDoubleOrNull()?.let { if (it < 10) Log.w(TAG, "Reddit rate limit nearly used: $it left") }
+        r.header("X-Ratelimit-Remaining")?.toDoubleOrNull()?.let { if (it < 10) DiagLog.w(TAG, "Reddit rate limit nearly used: $it left") }
         return r
     }
 

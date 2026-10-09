@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.widgets
 
+import com.mali.nbeta.system.DiagLog
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
@@ -8,7 +9,6 @@ import android.content.Context
 import android.content.pm.LauncherApps
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.util.SizeF
 import android.view.ViewGroup
 import androidx.compose.runtime.Immutable
@@ -73,7 +73,7 @@ class WidgetRepository(private val context: Context, private val settings: Setti
     fun bindIfAllowed(id: Int, info: AppWidgetProviderInfo): Boolean = try {
         manager.bindAppWidgetIdIfAllowed(id, info.profile, info.provider, null)
     } catch (e: Exception) {
-        Log.w(TAG, "bind failed", e)
+        DiagLog.w(TAG, "bind failed", e)
         false
     }
 
@@ -152,7 +152,7 @@ class WidgetRepository(private val context: Context, private val settings: Setti
                 v.updateAppWidgetSize(null, widthDp.toInt(), heightDp.toInt(), widthDp.toInt(), heightDp.toInt())
             }
         } catch (e: Exception) {
-            Log.w(TAG, "size update failed", e)
+            DiagLog.w(TAG, "size update failed", e)
         }
     }
 

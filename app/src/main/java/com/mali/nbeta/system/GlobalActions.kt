@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 import com.mali.nbeta.R
 
@@ -21,7 +20,7 @@ object GlobalActions {
             val service = context.getSystemService("statusbar")
             Class.forName("android.app.StatusBarManager").getMethod(method).invoke(service)
         } catch (e: Exception) {
-            Log.w("GlobalActions", "$method unavailable", e)
+            DiagLog.w("GlobalActions", "$method unavailable", e)
         }
     }
 

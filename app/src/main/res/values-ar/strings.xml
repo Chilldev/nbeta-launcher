@@ -502,6 +502,16 @@
     <string name="wallpaper_live">الخلفيات الحية</string>
     <string name="wallpaper_apps">تطبيقات الخلفيات</string>
     <string name="wallpaper_cant_set">تعذّر تعيين هذه الصورة كخلفية</string>
+    <string name="logs_title">السجلات</string>
+    <string name="logs_summary">الأخطاء والإجراءات المحظورة لمشاركتها عند حدوث مشكلة</string>
+    <string name="logs_explain">عندما لا يعمل شيء ما (نقرة تُظهر خطأ، أو توقف مفاجئ)، شارك هذا السجل لإصلاحه. يبقى على هاتفك حتى تشاركه، ولا يتضمن رسائلك أو إشعاراتك أبدًا. راجعه قبل الإرسال.</string>
+    <string name="logs_include_system">تضمين سجل النظام الخاص بـ Nbeta</string>
+    <string name="logs_share">مشاركة السجل</string>
+    <string name="logs_copy">نسخ</string>
+    <string name="logs_copied">تم نسخ السجل</string>
+    <string name="logs_clear">مسح</string>
+    <string name="logs_recent">الأحداث الأخيرة: %1$d</string>
+    <string name="logs_empty">لا يوجد شيء في السجل بعد.</string>
     <string name="media_widget">مشغّل الوسائط</string>
     <string name="media_widget_summary">ما يتم تشغيله الآن من أي تطبيق</string>
     <string name="media_style">النمط</string>

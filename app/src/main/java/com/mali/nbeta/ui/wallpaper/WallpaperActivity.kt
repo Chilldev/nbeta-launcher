@@ -1,5 +1,6 @@
 package com.mali.nbeta.ui.wallpaper
 
+import com.mali.nbeta.system.DiagLog
 import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Context
@@ -8,7 +9,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,7 +38,7 @@ class WallpaperActivity : ComponentActivity() {
         try {
             pick.launch(request)
         } catch (e: Exception) {
-            Log.w(TAG, "No picker", e)
+            DiagLog.w(TAG, "No picker", e)
             finish()
         }
     }
@@ -62,7 +62,7 @@ class WallpaperActivity : ComponentActivity() {
                 startActivity(i)
                 return
             } catch (e: Exception) {
-                Log.w(TAG, "Can't open $i", e)
+                DiagLog.w(TAG, "Can't open $i", e)
             }
         }
         Toast.makeText(this, R.string.wallpaper_cant_set, Toast.LENGTH_SHORT).show()

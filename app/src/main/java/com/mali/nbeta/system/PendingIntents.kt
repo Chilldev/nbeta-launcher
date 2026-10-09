@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 
 /**
  * Sends another app's PendingIntent from the visible launcher. Since Android 14 a sender targeting 34+ has to opt in to
@@ -21,6 +20,18 @@ fun PendingIntent.sendFromLauncher(context: Context, fill: Intent? = null): Bool
     send(context, 0, fill, null, null, null, opts)
     true
 } catch (e: Exception) {
-    Log.w("PendingIntents", "PendingIntent failed", e)
+    DiagLog.w("PendingIntents", "PendingIntent failed", e)
     false
+}
+
+/**
+ * Whether an activity for [intent] exists that Nbeta is allowed to start. Some targets are guarded by a permission
+ * (Samsung's Eye comfort screen needs a Samsung-only one), and offering them would only end in "Permission Denial".
+ */
+fun Context.canStart(intent: Intent): Boolean {
+    val info = packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo ?: return false
+    if (info.packageName == packageName) return true
+    if (!info.exported) return false
+    val perm = info.permission ?: return true
+    return checkSelfPermission(perm) == android.content.pm.PackageManager.PERMISSION_GRANTED
 }

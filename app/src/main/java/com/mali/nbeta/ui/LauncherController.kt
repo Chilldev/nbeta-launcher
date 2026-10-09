@@ -1,5 +1,6 @@
 package com.mali.nbeta.ui
 
+import com.mali.nbeta.system.DiagLog
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.ActivityNotFoundException
@@ -119,10 +120,19 @@ class LauncherController(
         try {
             val r = bounds?.rect()
             activity.startActivity(intent, launchOptions(view, r))
-        } catch (_: ActivityNotFoundException) {
+        } catch (e: ActivityNotFoundException) {
+            DiagLog.w("Launch", "No app for ${intent.toUri(0)}", e)
             Toast.makeText(activity, R.string.home_no_app, Toast.LENGTH_SHORT).show()
         } catch (e: SecurityException) {
-            Toast.makeText(activity, activity.getString(R.string.home_not_allowed, e.message), Toast.LENGTH_SHORT).show()
+            DiagLog.w("Launch", "Blocked: ${e.message}")
+            // The target screen is guarded by a permission Nbeta can't have; open its app instead when possible.
+            val pkg = intent.component?.packageName ?: intent.`package`
+                ?: activity.packageManager.resolveActivity(intent, 0)?.activityInfo?.packageName
+            val app = pkg?.let { activity.packageManager.getLaunchIntentForPackage(it) }?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (app != null) DiagLog.i("Launch", "Opened ${app.`package` ?: pkg} instead")
+            if (app == null || runCatching { activity.startActivity(app) }.isFailure) {
+                Toast.makeText(activity, activity.getString(R.string.home_not_allowed, e.message), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

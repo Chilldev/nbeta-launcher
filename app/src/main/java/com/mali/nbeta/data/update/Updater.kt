@@ -1,5 +1,6 @@
 package com.mali.nbeta.data.update
 
+import com.mali.nbeta.system.DiagLog
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -7,7 +8,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import com.mali.nbeta.BuildConfig
 import com.mali.nbeta.system.UpdateReceiver
@@ -69,7 +69,7 @@ class Updater(private val context: Context, httpProvider: () -> OkHttpClient) {
             _state.value = if (newer != null) UpdateState.Available(newer) else UpdateState.UpToDate
             newer
         } catch (e: Exception) {
-            Log.w(TAG, "Update check failed", e)
+            DiagLog.w(TAG, "Update check failed", e)
             _state.value = UpdateState.Failed(e.message ?: e.javaClass.simpleName)
             null
         }
@@ -102,7 +102,7 @@ class Updater(private val context: Context, httpProvider: () -> OkHttpClient) {
             _state.value = UpdateState.Installing(release)
             commit(apk)
         } catch (e: Exception) {
-            Log.w(TAG, "Update install failed", e)
+            DiagLog.w(TAG, "Update install failed", e)
             _state.value = UpdateState.Failed(e.message ?: e.javaClass.simpleName)
         }
     }

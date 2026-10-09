@@ -16,8 +16,8 @@ android {
         minSdk = 29
         targetSdk = 36
         // -Pnbeta.versionCode=N overrides (used to test the updater against a published release).
-        versionCode = (project.findProperty("nbeta.versionCode") as String?)?.toInt() ?: 5
-        versionName = "1.4"
+        versionCode = (project.findProperty("nbeta.versionCode") as String?)?.toInt() ?: 6
+        versionName = "1.5"
         buildConfigField("String", "UPDATE_REPO", "\"Chilldev/nbeta-launcher\"")
     }
 

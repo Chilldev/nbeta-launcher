@@ -1,12 +1,12 @@
 package com.mali.nbeta.data.apps
 
+import com.mali.nbeta.system.DiagLog
 import android.content.Context
 import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.Rect
 import android.os.Bundle
 import android.os.UserManager
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Immutable
 import com.mali.nbeta.R
@@ -99,7 +99,7 @@ class ShortcutRepository(
             AppShortcut(it, (it.longLabel?.takeIf { l -> l.length <= 28 } ?: it.shortLabel ?: "").toString(), "")
         }
     } catch (e: Exception) {
-        if (e !is SecurityException && e !is IllegalStateException) Log.w(TAG, "Shortcut query failed", e)
+        if (e !is SecurityException && e !is IllegalStateException) DiagLog.w(TAG, "Shortcut query failed", e)
         emptyList()
     }
 
@@ -126,7 +126,7 @@ class ShortcutRepository(
         try {
             launcherApps.startShortcut(shortcut.info, bounds, options)
         } catch (e: Exception) {
-            Log.w(TAG, "Shortcut launch failed", e)
+            DiagLog.w(TAG, "Shortcut launch failed", e)
             Toast.makeText(context, R.string.home_shortcut_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
@@ -138,7 +138,7 @@ class ShortcutRepository(
             val remaining = launcherApps.getShortcuts(q, user).orEmpty().map { it.id }.filter { it != id }
             launcherApps.pinShortcuts(packageName, remaining, user)
         } catch (e: Exception) {
-            Log.w(TAG, "Unpin failed", e)
+            DiagLog.w(TAG, "Unpin failed", e)
         }
     }
 

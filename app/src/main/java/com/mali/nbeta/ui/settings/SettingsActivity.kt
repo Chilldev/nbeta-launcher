@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -144,7 +145,7 @@ enum class Page(@StringRes val title: Int) {
     Root(R.string.settings), Appearance(R.string.settings_appearance), Home(R.string.settings_home), Drawer(R.string.settings_drawer),
     Icons(R.string.settings_icons), Gestures(R.string.settings_gestures), Search(R.string.common_search), Feed(R.string.settings_feed),
     Weather(R.string.settings_weather), Hidden(R.string.settings_hidden_apps), Backup(R.string.settings_backup),
-    Permissions(R.string.settings_permissions), Updates(R.string.settings_updates),
+    Permissions(R.string.settings_permissions), Updates(R.string.settings_updates), Logs(R.string.logs_title),
 }
 
 @Composable
@@ -175,6 +176,7 @@ private fun SettingsApp(graph: AppGraph, s: LauncherSettings, requested: Pair<Pa
             Page.Backup -> backup(graph)
             Page.Permissions -> item { PermissionsContent() }
             Page.Updates -> item { UpdatesContent() }
+            Page.Logs -> item { LogsContent() }
         }
     }
 }
@@ -193,6 +195,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.root(go: (Page) -> Un
     item { PageLink(Page.Weather, R.string.settings_weather_summary, Icons.Default.LocationOn, go) }
     item { PageLink(Page.Backup, R.string.settings_backup_summary, Icons.Default.Build, go) }
     item { ClickPref(stringResource(R.string.settings_updates), stringResource(R.string.settings_about_summary, BuildConfig.VERSION_NAME), Icons.Default.Info) { go(Page.Updates) } }
+    item { PageLink(Page.Logs, R.string.logs_summary, Icons.Default.Warning, go) }
 }
 
 @Composable
@@ -1049,5 +1052,99 @@ private fun UpdatesContent() {
         TextButton(onClick = {
             context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/${BuildConfig.UPDATE_REPO}/releases")))
         }) { Text(stringResource(R.string.update_all_releases)) }
+    }
+}
+
+/** What went wrong recently, to read or share (Settings → Logs). Works without developer options or a computer. */
+@Composable
+private fun LogsContent() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var includeSystem by remember { mutableStateOf(true) }
+    var version by remember { mutableStateOf(0) }
+    val events by androidx.compose.runtime.produceState("", version) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.mali.nbeta.system.DiagLog.events() }
+    }
+    val lines = remember(events) { events.lines().filter { it.isNotBlank() } }
+    val shareTitle = stringResource(R.string.logs_share)
+    fun withReport(block: (String) -> Unit) = scope.launch {
+        val report = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.mali.nbeta.system.DiagLog.report(includeSystem) }
+        block(report)
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(stringResource(R.string.logs_explain), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.logs_include_system), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            androidx.compose.material3.Switch(checked = includeSystem, onCheckedChange = { includeSystem = it })
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                withReport { report ->
+                    val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(Intent.EXTRA_SUBJECT, "Nbeta log")
+                        .putExtra(Intent.EXTRA_TEXT, report)
+                    context.startActivity(Intent.createChooser(send, shareTitle))
+                }
+            }) { Text(stringResource(R.string.logs_share)) }
+            androidx.compose.material3.OutlinedButton(onClick = {
+                withReport { report ->
+                    val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("Nbeta log", report))
+                    android.widget.Toast.makeText(context, R.string.logs_copied, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }) { Text(stringResource(R.string.logs_copy)) }
+            TextButton(onClick = {
+                scope.launch {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.mali.nbeta.system.DiagLog.clear() }
+                    version++
+                }
+            }) { Text(stringResource(R.string.logs_clear)) }
+        }
+        Text(
+            stringResource(R.string.logs_recent, lines.count { line -> line.length > 19 && line[19] in "WEI" && line.getOrNull(20) == '/' }),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        if (lines.isEmpty()) {
+            Text(stringResource(R.string.logs_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            // Newest first; stack-trace lines stay under their entry.
+            val entries = remember(lines) {
+                val out = ArrayList<String>()
+                val traceLines = ArrayList<Int>()
+                for (l in lines) {
+                    if (l.startsWith("    ") && out.isNotEmpty()) {
+                        // On screen, the first few trace lines are enough; shared reports keep them all.
+                        traceLines[traceLines.lastIndex]++
+                        val n = traceLines.last()
+                        if (n <= 4) out[out.lastIndex] = out.last() + "\n" + l.trim() else if (n == 5) out[out.lastIndex] = out.last() + "\n…"
+                    } else {
+                        out += l
+                        traceLines += 0
+                    }
+                }
+                out.asReversed().take(200)
+            }
+            androidx.compose.foundation.text.selection.SelectionContainer {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    entries.forEach { entry ->
+                        val color = when {
+                            entry.contains(" E/") -> MaterialTheme.colorScheme.error
+                            entry.contains(" I/") -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                        Text(
+                            entry,
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                            color = color,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .padding(10.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
