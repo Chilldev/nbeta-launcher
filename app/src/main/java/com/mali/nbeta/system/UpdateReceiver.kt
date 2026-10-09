@@ -18,7 +18,12 @@ class UpdateReceiver : BroadcastReceiver() {
             }
             PackageInstaller.STATUS_SUCCESS -> Unit // the process is replaced; nothing to do
             else -> {
-                val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "Install failed ($status)"
+                val raw = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "Install failed ($status)"
+                val msg = when {
+                    "VERIFICATION_FAILURE" in raw -> context.getString(com.mali.nbeta.R.string.update_blocked_play_protect)
+                    status == PackageInstaller.STATUS_FAILURE_ABORTED -> context.getString(com.mali.nbeta.R.string.update_cancelled)
+                    else -> raw
+                }
                 (context.applicationContext as NbetaApp).graph.updater.failed(msg)
             }
         }

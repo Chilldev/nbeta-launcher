@@ -557,4 +557,6 @@
     <string name="update_channel">App updates</string>
     <string name="perm_install">Install updates</string>
     <string name="perm_install_why">Update Nbeta from its GitHub releases, no cable needed</string>
+    <string name="update_blocked_play_protect">Google Play Protect stopped the install. Try again and choose “More details › Install anyway”, or download it from the GitHub release page.</string>
+    <string name="update_cancelled">Update cancelled</string>
 </resources>

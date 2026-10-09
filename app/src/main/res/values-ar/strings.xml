@@ -592,4 +592,6 @@
     <string name="update_channel">تحديثات التطبيق</string>
     <string name="perm_install">تثبيت التحديثات</string>
     <string name="perm_install_why">تحديث Nbeta من إصدارات GitHub دون كابل</string>
+    <string name="update_blocked_play_protect">أوقف Google Play Protect التثبيت. أعد المحاولة واختر «مزيد من التفاصيل › التثبيت على أي حال»، أو نزّله من صفحة الإصدار على GitHub.</string>
+    <string name="update_cancelled">أُلغي التحديث</string>
 </resources>
