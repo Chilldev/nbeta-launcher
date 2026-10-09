@@ -52,7 +52,7 @@ class FeedRefreshWorker(context: Context, params: WorkerParameters) : CoroutineW
     override suspend fun doWork(): Result {
         val graph = (applicationContext as NbetaApp).graph
         if (!graph.settings.value.feedEnabled) return Result.success()
-        graph.feed.refresh()
+        graph.feed.refresh(notify = true)
         return Result.success()
     }
 

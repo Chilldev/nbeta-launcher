@@ -9,6 +9,7 @@ import com.mali.nbeta.data.feed.FeedRefreshWorker
 import com.mali.nbeta.data.feed.FeedRepository
 import com.mali.nbeta.data.glance.GlanceRepository
 import com.mali.nbeta.data.reddit.RedditClient
+import com.mali.nbeta.data.reader.ReaderRepository
 import com.mali.nbeta.data.search.SearchEngine
 import com.mali.nbeta.data.widgets.WidgetRepository
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +52,7 @@ class AppGraph(val app: Application) {
 
     val reddit: RedditClient by lazy { RedditClient(app, scope) { http } }
     val feed: FeedRepository by lazy { FeedRepository(app, scope, settings, { http }, reddit) }
+    val reader: ReaderRepository by lazy { ReaderRepository(app, scope) { http } }
     val glance: GlanceRepository by lazy { GlanceRepository(app, scope, settings) { http } }
     val widgets: WidgetRepository by lazy { WidgetRepository(app, settings) }
 

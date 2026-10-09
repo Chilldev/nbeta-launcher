@@ -39,6 +39,7 @@ benchmark-macro = { module = "androidx.benchmark:benchmark-macro-junit4", versio
 uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-junit" }
 junit = { module = "junit:junit", version = "4.13.2" }
+jsoup = { module = "org.jsoup:jsoup", version = "1.23.2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

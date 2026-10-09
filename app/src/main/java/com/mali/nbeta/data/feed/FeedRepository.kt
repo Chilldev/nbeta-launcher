@@ -64,6 +64,8 @@ data class FeedCache(
     /** How often each source was opened; the "For you" order learns from it. */
     val opens: Map<String, Int> = emptyMap(),
     val lastRefresh: Long = 0,
+    /** Stories already announced in a notification. */
+    val notified: Set<String> = emptySet(),
 )
 
 sealed interface FeedFilter {
@@ -95,11 +97,16 @@ class FeedRepository(
     val arranged: StateFlow<List<FeedItem>> = run {
         var lastKey: Any? = null
         var lastOrder: List<String> = emptyList()
-        combine(cache, filter, settings.flow.map { it.feedOrder }.distinctUntilChanged()) { c, f, o ->
-            val key = listOf(c.items.size, c.items.sumOf { it.id.hashCode().toLong() }, c.dismissed.size, c.mutedSources, f, o, if (f == FeedFilter.Saved) c.saved.size else 0)
+        combine(
+            cache,
+            filter,
+            settings.flow.map { it.feedOrder }.distinctUntilChanged(),
+            settings.flow.map { it.mutedKeywords }.distinctUntilChanged(),
+        ) { c, f, o, muted ->
+            val key = listOf(c.items.size, c.items.sumOf { it.id.hashCode().toLong() }, c.dismissed.size, c.mutedSources, f, o, muted, if (f == FeedFilter.Saved) c.saved.size else 0)
             if (key != lastKey) {
                 lastKey = key
-                lastOrder = arrange(c, o, f).map { it.id }
+                lastOrder = arrange(c, o, f, KeywordMatcher(muted)).map { it.id }
             }
             val byId = HashMap<String, FeedItem>(c.items.size + c.saved.size)
             c.saved.forEach { byId[it.id] = it }
@@ -108,6 +115,7 @@ class FeedRepository(
         }.flowOn(Dispatchers.Default).stateIn(scope, SharingStarted.Eagerly, emptyList())
     }
 
+    private val notifier = NewsNotifier(context)
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing
     private val mutex = Mutex()
@@ -118,7 +126,8 @@ class FeedRepository(
         }
     }
 
-    suspend fun refresh(onlySource: String? = null) {
+    /** [notify]: announce new stories that match the user's alerts (background refreshes only). */
+    suspend fun refresh(onlySource: String? = null, notify: Boolean = false) {
         if (!mutex.tryLock()) return
         _refreshing.value = true
         try {
@@ -128,7 +137,16 @@ class FeedRepository(
                 sources.map { src -> async(Dispatchers.IO) { src to runCatching { fetch(src) } } }.awaitAll()
             }
             Log.d(TAG, "Fetched ${sources.size} feeds in ${System.currentTimeMillis() - start} ms")
+            val before = cache.value.items.mapTo(HashSet()) { it.id }
             withContext(Dispatchers.Default) { merge(results, onlySource == null) }
+            if (notify) {
+                val fresh = cache.value.items.filter { it.id !in before }
+                val picked = NewsNotifier.select(fresh, settings.value, cache.value.notified)
+                if (picked.isNotEmpty()) {
+                    notifier.post(picked, settings.value)
+                    store.update { c -> c.copy(notified = (c.notified + picked.map { it.id }).toList().takeLast(500).toSet()) }
+                }
+            }
         } finally {
             _refreshing.value = false
             mutex.unlock()
@@ -229,12 +247,12 @@ class FeedRepository(
      * Builds the visible list. "For you" is recency with a learnt per-source boost, then a greedy pass that stops one
      * source from dominating a run of cards (Discover-style variety).
      */
-    fun arrange(c: FeedCache, order: FeedOrder, filter: FeedFilter): List<FeedItem> {
+    fun arrange(c: FeedCache, order: FeedOrder, filter: FeedFilter, muted: KeywordMatcher = KeywordMatcher(emptyList())): List<FeedItem> {
         val base = when (filter) {
             FeedFilter.Saved -> return c.saved
-            FeedFilter.Unread -> c.items.filter { it.id !in c.read && it.id !in c.dismissed && it.sourceId !in c.mutedSources }
-            is FeedFilter.Source -> return c.items.filter { it.sourceId == filter.id && it.id !in c.dismissed }
-            FeedFilter.All -> c.items.filter { it.id !in c.dismissed && it.sourceId !in c.mutedSources }
+            FeedFilter.Unread -> c.items.filter { it.id !in c.read && it.id !in c.dismissed && it.sourceId !in c.mutedSources && !muted.matches(it) }
+            is FeedFilter.Source -> return c.items.filter { it.sourceId == filter.id && it.id !in c.dismissed && !muted.matches(it) }
+            FeedFilter.All -> c.items.filter { it.id !in c.dismissed && it.sourceId !in c.mutedSources && !muted.matches(it) }
         }
         if (order == FeedOrder.Latest) return base
         val now = System.currentTimeMillis()

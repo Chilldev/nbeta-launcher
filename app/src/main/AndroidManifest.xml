@@ -18,6 +18,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".NbetaApp"
@@ -65,6 +66,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.reader.ReaderActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|keyboardHidden"
+            android:exported="false"
+            android:taskAffinity="com.mali.nbeta.reader" />
 
         <!-- Reddit OAuth redirect. Must match the redirect URI registered for the Reddit app. -->
         <activity

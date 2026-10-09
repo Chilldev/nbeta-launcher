@@ -44,6 +44,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
@@ -357,6 +359,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
             },
             trailing = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (s.newsAlerts) {
+                        val alerting = src.id in s.alertSources
+                        IconButton(onClick = { set { it.copy(alertSources = if (alerting) it.alertSources - src.id else it.alertSources + src.id) } }) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                if (alerting) "Stop alerts from ${src.title}" else "Alert me about ${src.title}",
+                                tint = if (alerting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            )
+                        }
+                    }
                     IconButton(onClick = { set { it.copy(feedSources = it.feedSources.filterNot { f -> f.id == src.id }) } }) { Icon(Icons.Default.Delete, "Remove") }
                     Switch(src.enabled, { v -> set { it.copy(feedSources = it.feedSources.map { f -> if (f.id == src.id) f.copy(enabled = v) else f }) } })
                 }
@@ -376,8 +388,30 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
     }
     item { SectionHeader("Reading") }
     item { ChoicePref("Default order", FeedOrder.entries, s.feedOrder, { if (it == FeedOrder.ForYou) "For you (learns what you open)" else "Latest first" }) { v -> set { it.copy(feedOrder = v) } } }
-    item { ChoicePref("Open stories in", LinkOpener.entries, s.linkOpener, { if (it == LinkOpener.CustomTab) "In-app browser tab (fastest)" else "Browser app" }) { v -> set { it.copy(linkOpener = v) } } }
+    item { ChoicePref("Open stories in", LinkOpener.entries, s.linkOpener, {
+        when (it) {
+            LinkOpener.Reader -> "Reader view (clean text, falls back to a browser tab)"
+            LinkOpener.CustomTab -> "In-app browser tab"
+            LinkOpener.Browser -> "Browser app"
+        }
+    }) { v -> set { it.copy(linkOpener = v) } } }
     item { SwitchPref("Fetch article images", "For stories whose feed has no picture", s.feedFetchImages) { v -> set { it.copy(feedFetchImages = v) } } }
+    item { SectionHeader("Muted keywords") }
+    item {
+        KeywordListPref(
+            "Hide stories mentioning…",
+            "e.g. a team, a celebrity, a spoiler",
+            s.mutedKeywords,
+        ) { list -> set { it.copy(mutedKeywords = list) } }
+    }
+    item { SectionHeader("Breaking news alerts") }
+    item { NewsAlertsPref(s, set) }
+    if (s.newsAlerts) {
+        item { ClickPref("Alert sources", "Tap the bell next to a source above · ${s.alertSources.size} selected") {} }
+        item {
+            KeywordListPref("Alert me about…", "Notify for any source that mentions these", s.alertKeywords) { list -> set { it.copy(alertKeywords = list) } }
+        }
+    }
     item { SectionHeader("Background refresh") }
     item {
         ChoicePref("Refresh every", listOf(0, 1, 2, 4, 8, 12), s.feedRefreshHours, { if (it == 0) "Only when opened" else "$it hour" + if (it > 1) "s" else "" }) { v ->
@@ -629,5 +663,64 @@ private fun RedditSection(s: LauncherSettings, set: ((LauncherSettings) -> Launc
             },
             dismissButton = { TextButton(onClick = { setup = false }) { Text("Cancel") } },
         )
+    }
+}
+
+@Composable
+private fun KeywordListPref(title: String, hint: String, keywords: List<String>, onChange: (List<String>) -> Unit) {
+    var adding by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            keywords.forEach { k ->
+                androidx.compose.material3.InputChip(
+                    selected = false,
+                    onClick = { onChange(keywords - k) },
+                    label = { Text(k) },
+                    trailingIcon = { Icon(Icons.Default.Close, "Remove $k", Modifier.size(16.dp)) },
+                )
+            }
+            androidx.compose.material3.AssistChip(onClick = { adding = true }, label = { Text("Add") }, leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(16.dp)) })
+        }
+    }
+    if (adding) {
+        var text by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { adding = false },
+            title = { Text(title) },
+            text = { OutlinedTextField(text, { text = it }, singleLine = true, label = { Text(hint) }) },
+            confirmButton = {
+                TextButton(enabled = text.isNotBlank(), onClick = {
+                    val k = text.trim()
+                    if (keywords.none { it.equals(k, ignoreCase = true) }) onChange(keywords + k)
+                    adding = false
+                }) { Text("Add") }
+            },
+            dismissButton = { TextButton(onClick = { adding = false }) { Text("Cancel") } },
+        )
+    }
+}
+
+@Composable
+private fun NewsAlertsPref(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit) {
+    val context = LocalContext.current
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) set { it.copy(newsAlerts = true) }
+        else Toast.makeText(context, "Notifications are off for Nbeta", Toast.LENGTH_SHORT).show()
+    }
+    SwitchPref(
+        "Breaking news alerts",
+        if (s.feedRefreshHours == 0) "Needs background refresh (below) to be on" else "Checked during background refresh · max 3 per check",
+        s.newsAlerts,
+    ) { on ->
+        if (on && Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            set { it.copy(newsAlerts = on) }
+        }
     }
 }

@@ -76,6 +76,7 @@ import com.mali.nbeta.ui.LauncherController
 import com.mali.nbeta.ui.common.LocalGraph
 import com.mali.nbeta.ui.home.formatTemp
 import com.mali.nbeta.ui.settings.SettingsActivity
+import com.mali.nbeta.ui.reader.ReaderActivity
 import com.mali.nbeta.ui.theme.isDark
 import com.mali.nbeta.ui.widgets.WidgetFrame
 import kotlinx.coroutines.Dispatchers
@@ -107,18 +108,33 @@ fun FeedPage(c: LauncherController, active: Boolean) {
         if (active) {
             feed.refreshIfStale()
             graph.glance.refresh()
-            if (settings.linkOpener == LinkOpener.CustomTab) c.activity.customTabs.warmup()
+            if (settings.linkOpener != LinkOpener.Browser) c.activity.customTabs.warmup()
         }
     }
     LaunchedEffect(active, items.firstOrNull()?.link) {
-        val first = items.firstOrNull()
-        if (active && first != null && settings.linkOpener == LinkOpener.CustomTab) c.activity.customTabs.mayLaunch(first.link)
+        val first = items.firstOrNull() ?: return@LaunchedEffect
+        if (!active) return@LaunchedEffect
+        when (settings.linkOpener) {
+            LinkOpener.CustomTab -> c.activity.customTabs.mayLaunch(first.link)
+            // Reader: extract the top stories ahead of time (unmetered networks only) so they open instantly.
+            LinkOpener.Reader -> graph.reader.prefetch(items.take(4).map { it.link })
+            LinkOpener.Browser -> Unit
+        }
     }
 
     val open: (FeedItem) -> Unit = { item ->
         feed.markRead(item)
-        c.activity.customTabs.open(item.link, dark, settings.linkOpener == LinkOpener.CustomTab)
+        when (settings.linkOpener) {
+            LinkOpener.Reader -> c.start(
+                ReaderActivity.intent(c.activity, item.link, item.id, sources[item.sourceId]?.title)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            else -> c.activity.customTabs.open(item.link, dark, settings.linkOpener == LinkOpener.CustomTab)
+        }
     }
+
+    var muteFor by remember { mutableStateOf<FeedItem?>(null) }
+    muteFor?.let { item -> MuteKeywordDialog(item, onDismiss = { muteFor = null }) { k -> graph.settings.update { it.copy(mutedKeywords = (it.mutedKeywords + k).distinct()) } } }
 
     val insets = WindowInsets.systemBars.asPaddingValues()
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))) {
@@ -173,6 +189,7 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                             c.start(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         },
                         onBrowser = { c.start(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(item.link)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
+                        onMuteKeyword = { muteFor = item },
                     )
                 }
             }
@@ -335,6 +352,7 @@ private fun FeedCard(
     onOnlySource: () -> Unit,
     onShare: () -> Unit,
     onBrowser: () -> Unit,
+    onMuteKeyword: () -> Unit,
 ) {
     val titleColor = if (read) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     Column(
@@ -395,6 +413,7 @@ private fun FeedCard(
                     DropdownMenuItem(text = { Text("Share") }, onClick = { menu = false; onShare() })
                     DropdownMenuItem(text = { Text("Open in browser") }, onClick = { menu = false; onBrowser() })
                     DropdownMenuItem(text = { Text("Hide this story") }, onClick = { menu = false; onHide() })
+                    DropdownMenuItem(text = { Text("Mute a keyword…") }, onClick = { menu = false; onMuteKeyword() })
                     source?.let { s ->
                         DropdownMenuItem(text = { Text("More from ${s.title}") }, onClick = { menu = false; onOnlySource() })
                         DropdownMenuItem(text = { Text("Fewer from ${s.title}") }, onClick = { menu = false; onMute() })
@@ -425,4 +444,29 @@ private fun EmptyState(text: String, action: String?, onAction: () -> Unit) {
         Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (action != null) TextButton(onClick = onAction) { Text(action) }
     }
+}
+
+/** Offers the story's longer words as one-tap suggestions, plus free text. */
+@Composable
+private fun MuteKeywordDialog(item: FeedItem, onDismiss: () -> Unit, onMute: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    val suggestions = remember(item.id) {
+        item.title.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.length >= 4 && it.first().isUpperCase() }.distinct().take(6)
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Mute a keyword") },
+        text = {
+            Column {
+                Text("Stories mentioning it will be hidden from your feed.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    suggestions.forEach { w -> AssistChip(onClick = { text = w }, label = { Text(w) }) }
+                }
+                androidx.compose.material3.OutlinedTextField(text, { text = it }, singleLine = true, label = { Text("Keyword") })
+            }
+        },
+        confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onMute(text.trim()); onDismiss() }) { Text("Mute") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
