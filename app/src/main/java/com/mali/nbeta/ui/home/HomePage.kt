@@ -71,6 +71,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -327,11 +329,13 @@ fun ItemGrid(
     val density = LocalDensity.current
     val cellHeight = iconSize + if (labels) 34.dp else 14.dp
     val zone = if (acceptsDrops) remember(container) { dnd.zone(container, columns) } else null
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     SideEffect {
         zone?.let {
             it.columns = columns
             it.items = base
             it.capacity = capacity
+            it.rtl = rtl
         }
     }
 

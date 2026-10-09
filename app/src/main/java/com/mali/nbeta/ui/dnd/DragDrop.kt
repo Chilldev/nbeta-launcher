@@ -87,6 +87,9 @@ class DropZone(val container: Container, var columns: Int) {
     /** What the grid shows, *without* the item being dragged. Indexes of drops refer to this list. */
     var items: List<HomeItem> = emptyList()
     var capacity = Int.MAX_VALUE
+
+    /** Right-to-left layouts place column 0 on the right. */
+    var rtl = false
 }
 
 val LocalDragDrop = staticCompositionLocalOf<DragDrop?> { null }
@@ -165,13 +168,14 @@ class DragDrop(private val c: LauncherController) {
             if (r.width <= 0f || !r.contains(p)) continue
             if (z.container is Container.Folder && d.item is HomeItem.Folder) return null
             val local = p - r.topLeft
-            val col = (local.x / z.cellW).toInt().coerceIn(0, z.columns - 1)
+            val visualCol = (local.x / z.cellW).toInt().coerceIn(0, z.columns - 1)
+            val col = if (z.rtl) z.columns - 1 - visualCol else visualCol
             val row = (local.y / z.cellH).toInt().coerceAtLeast(0)
             val idx = row * z.columns + col
             if (idx < z.items.size && z.container !is Container.Folder && d.item !is HomeItem.Folder) {
                 // Hovering over the middle of an icon for a moment makes (or joins) a folder. Until then nothing
                 // reflows, so the icon stays under the finger; elsewhere in the cell is an insert.
-                val cx = (col + 0.5f) * z.cellW
+                val cx = (visualCol + 0.5f) * z.cellW
                 val cy = row * z.cellH + z.iconCenterY
                 if (abs(local.x - cx) < z.cellW * 0.22f && abs(local.y - cy) < z.cellH * 0.22f) {
                     val key = z.items[idx].stableKey
