@@ -106,6 +106,7 @@ data class LauncherSettings(
     val pages: List<List<HomeItem>> = emptyList(),
     val dockItems: List<HomeItem> = emptyList(),
     val layoutInitialized: Boolean = false,
+    val setupCardDismissed: Boolean = false,
     // Drawer
     val drawerColumns: Int = 5,
     val drawerLabels: Boolean = true,
@@ -129,6 +130,7 @@ data class LauncherSettings(
     val searchCalculator: Boolean = true,
     val searchShortcuts: Boolean = true,
     val searchSettings: Boolean = true,
+    val searchEvents: Boolean = true,
     val webEngine: WebEngine = WebEngine.Google,
     // Feed
     val feedEnabled: Boolean = true,

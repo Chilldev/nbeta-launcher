@@ -460,4 +460,37 @@
     <string name="reddit_error_private">Private or banned community</string>
     <string name="reddit_error_not_found">Community not found</string>
     <string name="reddit_error_http">Reddit HTTP %1$d</string>
+    <string name="media_previous">Previous</string>
+    <string name="media_play">Play</string>
+    <string name="media_pause">Pause</string>
+    <string name="media_next">Next</string>
+    <string name="search_events">Events</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_permissions_summary">What Nbeta may use, and why</string>
+    <string name="perm_intro">Everything below is optional. Each permission turns on a specific feature and is used only on this phone.</string>
+    <string name="perm_allow_all">Allow all standard permissions</string>
+    <string name="perm_allow">Allow</string>
+    <string name="perm_granted">Allowed</string>
+    <string name="perm_home">Default home app</string>
+    <string name="perm_home_why">App shortcuts, pinning, work profile and private space controls</string>
+    <string name="perm_notification_access">Notification access</string>
+    <string name="perm_notification_access_why">Notification dots and the now-playing card</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_why">Breaking-news alerts from your feed</string>
+    <string name="perm_contacts">Contacts</string>
+    <string name="perm_contacts_why">Call or message people straight from search</string>
+    <string name="perm_calendar">Calendar</string>
+    <string name="perm_calendar_why">Next event at a glance, today\'s agenda, events in search</string>
+    <string name="perm_location">Approximate location</string>
+    <string name="perm_location_why">Local weather (or pick a city in Weather settings instead)</string>
+    <string name="perm_usage">Usage access</string>
+    <string name="perm_usage_why">Smarter app suggestions from day one, based on when you use apps</string>
+    <string name="perm_accessibility">Gestures (accessibility)</string>
+    <string name="perm_accessibility_why">Double-tap to lock the screen. Reads nothing on your screen.</string>
+    <plurals name="perm_setup_banner"><item quantity="one">%d permission can unlock more features</item><item quantity="other">%d permissions can unlock more features</item></plurals>
+    <string name="perm_setup_title">Finish setting up Nbeta</string>
+    <string name="perm_setup_review">Review</string>
+    <string name="common_not_now">Not now</string>
+    <string name="settings_search_events">Calendar events</string>
+    <string name="settings_search_events_summary">Find upcoming events by name (needs calendar access)</string>
 </resources>

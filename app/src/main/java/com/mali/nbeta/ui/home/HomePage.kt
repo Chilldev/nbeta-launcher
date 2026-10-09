@@ -201,7 +201,12 @@ fun HomePageContent(c: LauncherController, settings: LauncherSettings, page: Int
                 .padding(horizontal = 12.dp)
                 .padding(bottom = with(density) { c.dockHeightPx.toDp() }),
         ) {
-            if (page == 0) Glance(c, settings) else Spacer(Modifier.height(24.dp))
+            if (page == 0) {
+                Glance(c, settings)
+                MediaCard(Modifier.padding(horizontal = 4.dp, vertical = 4.dp))
+            } else {
+                Spacer(Modifier.height(24.dp))
+            }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 WidgetColumn(c, settings.widgets.filter { it.placement == WidgetPlacement.Home && it.page == page }, editing)
             }

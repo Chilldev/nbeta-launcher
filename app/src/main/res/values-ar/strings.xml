@@ -495,4 +495,37 @@
     <string name="reddit_error_private">المجتمع خاص أو محظور</string>
     <string name="reddit_error_not_found">لم يتم العثور على المجتمع</string>
     <string name="reddit_error_http">خطأ HTTP ‏%1$d من Reddit</string>
+    <string name="media_previous">السابق</string>
+    <string name="media_play">تشغيل</string>
+    <string name="media_pause">إيقاف مؤقت</string>
+    <string name="media_next">التالي</string>
+    <string name="search_events">الأحداث</string>
+    <string name="settings_permissions">الأذونات</string>
+    <string name="settings_permissions_summary">ما يمكن أن يستخدمه Nbeta ولماذا</string>
+    <string name="perm_intro">كل ما يلي اختياري. يفعّل كل إذن ميزة محددة، ويُستخدم على هذا الهاتف فقط.</string>
+    <string name="perm_allow_all">السماح بكل الأذونات العادية</string>
+    <string name="perm_allow">سماح</string>
+    <string name="perm_granted">مسموح</string>
+    <string name="perm_home">تطبيق الشاشة الرئيسية الافتراضي</string>
+    <string name="perm_home_why">اختصارات التطبيقات والتثبيت وعناصر التحكم في ملف العمل والمساحة الخاصة</string>
+    <string name="perm_notification_access">الوصول إلى الإشعارات</string>
+    <string name="perm_notification_access_why">نقاط الإشعارات وبطاقة الوسائط قيد التشغيل</string>
+    <string name="perm_notifications">الإشعارات</string>
+    <string name="perm_notifications_why">تنبيهات الأخبار العاجلة من الموجز</string>
+    <string name="perm_contacts">جهات الاتصال</string>
+    <string name="perm_contacts_why">الاتصال بالأشخاص أو مراسلتهم مباشرة من البحث</string>
+    <string name="perm_calendar">التقويم</string>
+    <string name="perm_calendar_why">الحدث التالي في لمحة، وجدول اليوم، والأحداث في البحث</string>
+    <string name="perm_location">الموقع التقريبي</string>
+    <string name="perm_location_why">الطقس المحلي (أو اختر مدينة من إعدادات الطقس بدلاً من ذلك)</string>
+    <string name="perm_usage">الوصول إلى بيانات الاستخدام</string>
+    <string name="perm_usage_why">اقتراحات تطبيقات أذكى من اليوم الأول حسب أوقات استخدامك لها</string>
+    <string name="perm_accessibility">الإيماءات (تسهيل الاستخدام)</string>
+    <string name="perm_accessibility_why">النقر مرتين لقفل الشاشة. لا يقرأ أي شيء على شاشتك.</string>
+    <plurals name="perm_setup_banner"><item quantity="zero">لا توجد أذونات إضافية</item><item quantity="one">إذن واحد يمكنه تفعيل ميزات إضافية</item><item quantity="two">إذنان يمكنهما تفعيل ميزات إضافية</item><item quantity="few">%d أذونات يمكنها تفعيل ميزات إضافية</item><item quantity="many">%d إذنًا يمكنها تفعيل ميزات إضافية</item><item quantity="other">%d إذن يمكنها تفعيل ميزات إضافية</item></plurals>
+    <string name="perm_setup_title">أكمل إعداد Nbeta</string>
+    <string name="perm_setup_review">مراجعة</string>
+    <string name="common_not_now">ليس الآن</string>
+    <string name="settings_search_events">أحداث التقويم</string>
+    <string name="settings_search_events_summary">ابحث عن الأحداث القادمة بالاسم (يتطلب الوصول إلى التقويم)</string>
 </resources>

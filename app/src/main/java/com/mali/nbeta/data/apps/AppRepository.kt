@@ -76,7 +76,7 @@ object AppKeys {
 private data class CachedApp(val c: String, val s: Long, val l: String, val k: ProfileKind, val v: Long)
 
 @Serializable
-data class LaunchStat(val count: Int = 0, val last: Long = 0)
+data class LaunchStat(val count: Int = 0, val last: Long = 0, /** launches per hour of day */ val hours: List<Int> = emptyList())
 
 class AppRepository(
     private val context: Context,
@@ -279,10 +279,37 @@ class AppRepository(
     }
 
     fun recordLaunch(key: String) {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         stats.update { m ->
             val s = m[key] ?: LaunchStat()
-            m + (key to LaunchStat(s.count + 1, System.currentTimeMillis()))
+            val hours = s.hours.ifEmpty { List(24) { 0 } }.toMutableList().also { it[hour] += 1 }
+            m + (key to LaunchStat(s.count + 1, System.currentTimeMillis(), hours))
         }
+    }
+
+    val usage = UsageHistory(context)
+
+    /**
+     * Predicted apps for right now, like Pixel's suggestion row: how often and how recently you use an app, weighted
+     * by how much of that use falls around this hour of the day. Launch history from Usage access (if granted)
+     * fills in until Nbeta has its own.
+     */
+    fun suggestions(candidates: List<AppEntry>, count: Int, now: Long = System.currentTimeMillis()): List<AppEntry> {
+        val hour = java.util.Calendar.getInstance().apply { timeInMillis = now }.get(java.util.Calendar.HOUR_OF_DAY)
+        val st = stats.value
+        val history = usage.byPackage()
+        fun nearHour(h: List<Int>, total: Int): Double {
+            if (h.size != 24 || total <= 0) return 0.0
+            return (h[(hour + 23) % 24] + h[hour] * 2 + h[(hour + 1) % 24]).toDouble() / (total * 2)
+        }
+        return candidates.mapNotNull { app ->
+            val own = st[app.key]
+            val ownScore = own?.let { frecency(app.key, now) * (0.4 + nearHour(it.hours, it.count)) } ?: 0.0
+            val h = history[app.packageName]
+            val usageScore = h?.let { (it.launches / 14.0) * (0.4 + nearHour(it.hours, it.launches)) * 0.6 } ?: 0.0
+            val score = ownScore + usageScore
+            if (score > 0.0) app to score else null
+        }.sortedByDescending { it.second }.take(count).map { it.first }
     }
 
     fun openAppInfo(app: AppEntry) {

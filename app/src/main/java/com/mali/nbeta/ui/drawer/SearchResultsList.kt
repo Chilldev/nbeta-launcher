@@ -52,6 +52,7 @@ import com.mali.nbeta.R
 import com.mali.nbeta.data.LauncherSettings
 import com.mali.nbeta.data.apps.AppShortcut
 import com.mali.nbeta.data.search.ContactHit
+import com.mali.nbeta.data.search.EventHit
 import com.mali.nbeta.data.search.SearchResults
 import com.mali.nbeta.data.search.WebHit
 import com.mali.nbeta.ui.LauncherController
@@ -94,6 +95,26 @@ fun SearchResultsList(c: LauncherController, r: SearchResults, settings: Launche
                 }
             }
         }
+        r.conversion?.let { text ->
+            item(key = "conversion") {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { copyToClipboard(c, text.substringAfter("= ")) }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(text.substringBefore(" ="), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f), maxLines = 1)
+                        Text("= " + text.substringAfter("= "), fontSize = 28.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    Text(stringResource(R.string.common_copy), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
         if (r.apps.isNotEmpty()) {
             val rows = r.apps.chunked(cols)
             items(rows.size, key = { "apps$it" }) { i ->
@@ -120,6 +141,10 @@ fun SearchResultsList(c: LauncherController, r: SearchResults, settings: Launche
         if (r.shortcuts.isNotEmpty()) {
             item(key = "h-shortcuts") { Header(stringResource(R.string.search_shortcuts)) }
             items(r.shortcuts, key = { "s" + it.key }) { s -> ShortcutRow(c, s) }
+        }
+        if (r.events.isNotEmpty()) {
+            item(key = "h-events") { Header(stringResource(R.string.search_events)) }
+            items(r.events, key = { "e${it.id}-${it.begin}" }) { e -> EventRow(c, e) }
         }
         if (r.contacts.isNotEmpty()) {
             item(key = "h-contacts") { Header(stringResource(R.string.common_contacts)) }
@@ -232,6 +257,36 @@ private fun ContactRow(c: LauncherController, h: ContactHit) {
             IconButton(onClick = { c.start(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) {
                 Icon(Icons.Default.Call, stringResource(R.string.search_call))
             }
+        }
+    }
+}
+
+@Composable
+private fun EventRow(c: LauncherController, e: EventHit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val whenText = remember(e.begin, e.allDay) {
+        val flags = android.text.format.DateUtils.FORMAT_SHOW_DATE or android.text.format.DateUtils.FORMAT_SHOW_WEEKDAY or
+            android.text.format.DateUtils.FORMAT_ABBREV_ALL or (if (e.allDay) 0 else android.text.format.DateUtils.FORMAT_SHOW_TIME)
+        android.text.format.DateUtils.formatDateTime(context, e.begin, flags)
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable {
+                val uri = android.content.ContentUris.withAppendedId(android.provider.CalendarContract.Events.CONTENT_URI, e.id)
+                c.start(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(12.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Color(e.color or 0xFF000000.toInt())))
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(e.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+            Text(whenText, maxLines = 1, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

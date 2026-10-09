@@ -40,6 +40,7 @@ class LauncherActivity : ComponentActivity() {
         super.onResume()
         graph.glance.refresh()
         graph.shortcuts.checkPermission()
+        graph.media.start()
     }
 
     override fun onStop() {

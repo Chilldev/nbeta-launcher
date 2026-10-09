@@ -44,16 +44,22 @@ sealed interface WebHit {
 }
 
 @Immutable
+data class EventHit(val id: Long, val title: String, val begin: Long, val allDay: Boolean, val color: Int)
+
+@Immutable
 data class SearchResults(
     val query: String,
     val apps: List<AppEntry> = emptyList(),
     val calc: String? = null,
+    /** "5 km = 3.10686 mi" */
+    val conversion: String? = null,
+    val events: List<EventHit> = emptyList(),
     val shortcuts: List<AppShortcut> = emptyList(),
     val contacts: List<ContactHit> = emptyList(),
     val settings: List<SettingHit> = emptyList(),
     val web: List<WebHit> = emptyList(),
 ) {
-    val isEmpty get() = apps.isEmpty() && calc == null && shortcuts.isEmpty() && contacts.isEmpty() && settings.isEmpty()
+    val isEmpty get() = apps.isEmpty() && calc == null && conversion == null && events.isEmpty() && shortcuts.isEmpty() && contacts.isEmpty() && settings.isEmpty()
 }
 
 class SearchEngine(
@@ -79,12 +85,19 @@ class SearchEngine(
 
     // Labels are matched in the current language, so the index is rebuilt when the locale changes.
     @Volatile
-    private var settingsIndex: Pair<java.util.Locale, List<Pair<SettingHit, Searchable>>>? = null
+    private var settingsIndex: Pair<java.util.Locale, List<Pair<SettingHit, List<Searchable>>>>? = null
 
-    private fun settingsIndex(): List<Pair<SettingHit, Searchable>> {
+    /** Each setting is findable by its name in the current language and in English ("battery" works in Arabic too). */
+    private fun settingsIndex(): List<Pair<SettingHit, List<Searchable>>> {
         val locale = context.resources.configuration.locales[0]
         settingsIndex?.let { (l, index) -> if (l == locale) return index }
-        return SYSTEM_SETTINGS.map { it to Searchable(context.getString(it.label)) }.also { settingsIndex = locale to it }
+        val english = if (locale.language == "en") null else {
+            val cfg = android.content.res.Configuration(context.resources.configuration).apply { setLocale(java.util.Locale.ENGLISH) }
+            context.createConfigurationContext(cfg)
+        }
+        return SYSTEM_SETTINGS.map { hit ->
+            hit to listOfNotNull(Searchable(context.getString(hit.label)), english?.let { Searchable(it.getString(hit.label)) })
+        }.also { settingsIndex = locale to it }
     }
 
     suspend fun search(raw: String): SearchResults = coroutineScope {
@@ -93,6 +106,7 @@ class SearchEngine(
         val q = TextFold.fold(query)
         val cfg = settings.value
         val contactsJob = if (cfg.searchContacts && query.length >= 2 && hasContacts()) async(Dispatchers.IO) { contacts(query) } else null
+        val eventsJob = if (cfg.searchEvents && query.length >= 3 && hasCalendar()) async(Dispatchers.IO) { events(query) } else null
 
         val now = System.currentTimeMillis()
         val appHits = appIndex.value.mapNotNull { ia ->
@@ -106,11 +120,12 @@ class SearchEngine(
         } else emptyList()
 
         val settingHits = if (cfg.searchSettings && q.length >= 3) {
-            settingsIndex().mapNotNull { (h, s) -> Matcher.score(q, s).takeIf { it >= 600 }?.let { h to it } }
+            settingsIndex().mapNotNull { (h, names) -> names.maxOf { Matcher.score(q, it) }.takeIf { it >= 600 }?.let { h to it } }
                 .sortedByDescending { it.second }.take(3).map { it.first }
         } else emptyList()
 
         val calc = if (cfg.searchCalculator) Calculator.evaluate(query) else null
+        val conversion = if (cfg.searchCalculator && calc == null) Converter.convert(query) else null
 
         val web = buildList {
             if (looksLikeUrl(query)) add(WebHit.Url(if (query.contains("://")) query else "https://$query"))
@@ -123,6 +138,8 @@ class SearchEngine(
             query = raw,
             apps = appHits,
             calc = calc,
+            conversion = conversion,
+            events = eventsJob?.await().orEmpty(),
             shortcuts = shortcutHits,
             contacts = contactsJob?.await().orEmpty(),
             settings = settingHits,
@@ -131,6 +148,37 @@ class SearchEngine(
     }
 
     private fun looksLikeUrl(q: String) = !q.contains(' ') && q.contains('.') && Patterns.WEB_URL.matcher(q).matches()
+
+    private fun hasCalendar() = context.checkSelfPermission(Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+
+    /** Upcoming (and the last day's) calendar events whose title matches, soonest first. */
+    private fun events(query: String): List<EventHit> {
+        val now = System.currentTimeMillis()
+        val uri = android.provider.CalendarContract.Instances.CONTENT_URI.buildUpon().also {
+            android.content.ContentUris.appendId(it, now - 86_400_000L)
+            android.content.ContentUris.appendId(it, now + 60L * 86_400_000L)
+        }.build()
+        val proj = arrayOf(
+            android.provider.CalendarContract.Instances.EVENT_ID,
+            android.provider.CalendarContract.Instances.TITLE,
+            android.provider.CalendarContract.Instances.BEGIN,
+            android.provider.CalendarContract.Instances.ALL_DAY,
+            android.provider.CalendarContract.Instances.DISPLAY_COLOR,
+        )
+        val out = ArrayList<EventHit>()
+        try {
+            context.contentResolver.query(
+                uri, proj, "${android.provider.CalendarContract.Instances.TITLE} LIKE ?", arrayOf("%$query%"),
+                "${android.provider.CalendarContract.Instances.BEGIN} ASC",
+            )?.use { c ->
+                while (c.moveToNext() && out.size < 4) {
+                    out += EventHit(c.getLong(0), c.getString(1) ?: continue, c.getLong(2), c.getInt(3) == 1, c.getInt(4))
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return out
+    }
 
     private fun hasContacts() = context.checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
 

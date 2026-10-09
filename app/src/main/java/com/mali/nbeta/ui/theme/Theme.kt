@@ -64,8 +64,17 @@ fun rememberWallpaperPrefersDarkText(): Boolean {
         val wm = WallpaperManager.getInstance(context)
         val main = Handler(Looper.getMainLooper())
         fun apply(colors: WallpaperColors?) {
-            val hint = colors?.colorHints ?: 0
-            main.post { darkText = hint and WallpaperColors.HINT_SUPPORTS_DARK_TEXT != 0 }
+            // The system hint describes the wallpaper as a whole; a mostly dark picture with a bright patch can still
+            // claim "supports dark text". Only go dark when every dominant colour is light too, since text sits on
+            // more than one region (glance at the top, grid and dock at the bottom).
+            val allLight = colors != null && listOfNotNull(colors.primaryColor, colors.secondaryColor, colors.tertiaryColor)
+                .all { it.luminance() > 0.45f }
+            val dark = when {
+                colors == null -> false
+                Build.VERSION.SDK_INT >= 31 -> colors.colorHints and WallpaperColors.HINT_SUPPORTS_DARK_TEXT != 0 && allLight
+                else -> allLight
+            }
+            main.post { darkText = dark }
         }
         wallpaperExecutor.execute { apply(runCatching { wm.getWallpaperColors(WallpaperManager.FLAG_SYSTEM) }.getOrNull()) }
         val listener = WallpaperManager.OnColorsChangedListener { colors, which ->

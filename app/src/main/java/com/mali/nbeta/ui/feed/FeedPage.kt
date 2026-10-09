@@ -154,6 +154,8 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 item(key = "header", contentType = "header") { FeedHeader(c, cache, refreshing) { scope.launch { feed.refresh() } } }
+                if (!settings.setupCardDismissed) item(key = "setup", contentType = "setup") { SetupCard(c) }
+                item(key = "media", contentType = "media") { com.mali.nbeta.ui.home.MediaCard() }
                 item(key = "today", contentType = "today") { TodayCard(c) }
                 val feedWidgets = settings.widgets.filter { it.placement == WidgetPlacement.Feed }
                 items(feedWidgets, key = { "w${it.id}" }, contentType = { "widget" }) { slot ->
@@ -461,7 +463,9 @@ private fun EmptyState(text: String, action: String?, onAction: () -> Unit) {
 private fun MuteKeywordDialog(item: FeedItem, onDismiss: () -> Unit, onMute: (String) -> Unit) {
     var text by remember { mutableStateOf("") }
     val suggestions = remember(item.id) {
-        item.title.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.length >= 4 && it.first().isUpperCase() }.distinct().take(6)
+        val words = item.title.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.length >= 3 }.distinct()
+        // Capitalised words are the likely names in Latin scripts; scripts without case (Arabic) offer the longest words.
+        words.filter { it.length >= 4 && it.first().isUpperCase() }.ifEmpty { words.sortedByDescending { it.length } }.take(6)
     }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
@@ -479,4 +483,38 @@ private fun MuteKeywordDialog(item: FeedItem, onDismiss: () -> Unit, onMute: (St
         confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onMute(text.trim()); onDismiss() }) { Text(stringResource(R.string.feed_mute)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
+}
+
+@Composable
+private fun SetupCard(c: LauncherController) {
+    val context = c.activity
+    var tick by remember { mutableStateOf(0) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        tick++
+        onPauseOrDispose { }
+    }
+    val missing = remember(tick) { com.mali.nbeta.ui.settings.Permissions.missing(context) }
+    if (missing == 0) return
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(start = 18.dp, end = 8.dp, top = 16.dp, bottom = 4.dp),
+    ) {
+        Text(androidx.compose.ui.res.stringResource(com.mali.nbeta.R.string.perm_setup_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Text(
+            androidx.compose.ui.res.pluralStringResource(com.mali.nbeta.R.plurals.perm_setup_banner, missing, missing),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = { c.graph.settings.update { it.copy(setupCardDismissed = true) } }) {
+                Text(androidx.compose.ui.res.stringResource(com.mali.nbeta.R.string.common_not_now))
+            }
+            TextButton(onClick = {
+                c.start(Intent(context, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_PAGE, "permissions").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }) { Text(androidx.compose.ui.res.stringResource(com.mali.nbeta.R.string.perm_setup_review)) }
+        }
+    }
 }

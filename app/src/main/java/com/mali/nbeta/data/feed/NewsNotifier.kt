@@ -22,7 +22,8 @@ class NewsNotifier(private val context: Context) {
         Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     fun post(items: List<FeedItem>, s: LauncherSettings) {
-        if (items.isEmpty() || !canPost()) return
+        if (items.isEmpty()) return
+        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         ensureChannel()
         val nm = NotificationManagerCompat.from(context)
         val titles = s.feedSources.associate { it.id to it.title }

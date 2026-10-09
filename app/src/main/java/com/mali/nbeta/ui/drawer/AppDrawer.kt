@@ -276,6 +276,7 @@ fun launchTopResult(c: LauncherController, r: SearchResults) {
 @Composable
 private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridState: androidx.compose.foundation.lazy.grid.LazyGridState) {
     val graph = LocalGraph.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val apps by graph.apps.visibleApps.collectAsStateWithLifecycle()
     val profiles by graph.apps.profiles.collectAsStateWithLifecycle()
     val stats by graph.apps.stats.flow.collectAsStateWithLifecycle()
@@ -292,9 +293,9 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
     val personal = remember(sorted) { sorted.filter { it.profile == ProfileKind.Main || it.profile == ProfileKind.Clone } }
     val work = remember(sorted) { sorted.filter { it.profile == ProfileKind.Work } }
     val private = remember(sorted) { sorted.filter { it.profile == ProfileKind.Private } }
-    val suggestions = remember(apps, stats) {
-        if (stats.isEmpty()) emptyList()
-        else personal.sortedByDescending { graph.apps.frecency(it.key) }.filter { (stats[it.key]?.count ?: 0) > 0 }.take(cols)
+    // Ranked off the main thread (usage history is a system query); refreshed when apps or launches change.
+    val suggestions by produceState(emptyList<AppEntry>(), personal, stats, cols) {
+        value = withContext(Dispatchers.Default) { graph.apps.suggestions(personal.filterNot { it.packageName == context.packageName }, cols) }
     }
     val showSuggestions = settings.showSuggestions && tab == 0 && suggestions.size >= cols.coerceAtMost(3)
     val list = if (tab == 0) personal else work

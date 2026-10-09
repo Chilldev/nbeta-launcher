@@ -24,6 +24,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -142,6 +143,7 @@ enum class Page(@StringRes val title: Int) {
     Root(R.string.settings), Appearance(R.string.settings_appearance), Home(R.string.settings_home), Drawer(R.string.settings_drawer),
     Icons(R.string.settings_icons), Gestures(R.string.settings_gestures), Search(R.string.common_search), Feed(R.string.settings_feed),
     Weather(R.string.settings_weather), Hidden(R.string.settings_hidden_apps), Backup(R.string.settings_backup),
+    Permissions(R.string.settings_permissions),
 }
 
 @Composable
@@ -170,12 +172,15 @@ private fun SettingsApp(graph: AppGraph, s: LauncherSettings, requested: Pair<Pa
             Page.Weather -> weather(s, set, graph)
             Page.Hidden -> hidden(s, set, graph)
             Page.Backup -> backup(graph)
+            Page.Permissions -> item { PermissionsContent() }
         }
     }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.root(go: (Page) -> Unit) {
     item { DefaultLauncherBanner() }
+    item { SetupBanner(go) }
+    item { PageLink(Page.Permissions, R.string.settings_permissions_summary, Icons.Default.Lock, go) }
     item { PageLink(Page.Appearance, R.string.settings_appearance_summary, Icons.Default.Face, go) }
     item { PageLink(Page.Home, R.string.settings_home_summary, Icons.Default.Home, go) }
     item { PageLink(Page.Drawer, R.string.settings_drawer_summary, Icons.AutoMirrored.Filled.List, go) }
@@ -353,6 +358,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.search(s: LauncherSet
     item { ContactsPref(s, set) }
     item { SwitchPref(stringResource(R.string.settings_calculator), stringResource(R.string.settings_calculator_summary), s.searchCalculator) { v -> set { it.copy(searchCalculator = v) } } }
     item { SwitchPref(stringResource(R.string.settings_app_shortcuts), stringResource(R.string.settings_app_shortcuts_summary), s.searchShortcuts) { v -> set { it.copy(searchShortcuts = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_search_events), stringResource(R.string.settings_search_events_summary), s.searchEvents) { v -> set { it.copy(searchEvents = v) } } }
     item { SwitchPref(stringResource(R.string.settings_system_settings), stringResource(R.string.settings_system_settings_summary), s.searchSettings) { v -> set { it.copy(searchSettings = v) } } }
     item { ChoicePref(stringResource(R.string.settings_web_search), WebEngine.entries, s.webEngine, { it.label }) { v -> set { it.copy(webEngine = v) } } }
 }
@@ -842,3 +848,41 @@ private val TempUnit.label
         TempUnit.Celsius -> R.string.settings_celsius
         TempUnit.Fahrenheit -> R.string.settings_fahrenheit
     }
+
+/** Shown while optional permissions are still missing (once Nbeta is the home app; that banner comes first). */
+@Composable
+private fun SetupBanner(go: (Page) -> Unit) {
+    val context = LocalContext.current
+    var tick by remember { mutableStateOf(0) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        tick++
+        onPauseOrDispose { }
+    }
+    val missing = remember(tick) { if (Permissions.isDefaultHome(context)) Permissions.missing(context) else 0 }
+    if (missing == 0) return
+    Row(
+        Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .clickable { go(Page.Permissions) }
+            .padding(20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.perm_setup_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            Text(
+                androidx.compose.ui.res.pluralStringResource(R.plurals.perm_setup_banner, missing, missing),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+        FilledTonalButtonCompat(stringResource(R.string.perm_setup_review)) { go(Page.Permissions) }
+    }
+}
+
+@Composable
+private fun FilledTonalButtonCompat(text: String, onClick: () -> Unit) {
+    androidx.compose.material3.FilledTonalButton(onClick = onClick) { Text(text) }
+}
