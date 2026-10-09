@@ -34,6 +34,10 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -105,7 +109,14 @@ fun FeedPage(c: LauncherController, active: Boolean) {
     val sources = remember(settings.feedSources) { settings.feedSources.associateBy { it.id } }
 
     // Ranked off the main thread in the repository; available immediately when the page comes back.
-    val items by feed.arranged.collectAsStateWithLifecycle()
+    val arranged by feed.arranged.collectAsStateWithLifecycle()
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val searchResults by produceState(emptyList<FeedItem>(), query, cache) {
+        value = if (query.isBlank()) emptyList() else withContext(Dispatchers.Default) { feed.search(query) }
+    }
+    val items = if (searching && query.isNotBlank()) searchResults else arranged
+    androidx.activity.compose.BackHandler(enabled = searching) { searching = false; query = "" }
 
     LaunchedEffect(active) {
         if (active) {
@@ -153,7 +164,15 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item(key = "header", contentType = "header") { FeedHeader(c, cache, refreshing) { scope.launch { feed.refresh() } } }
+                if (searching) {
+                    item(key = "search", contentType = "search") {
+                        FeedSearchBar(query, { query = it }) { searching = false; query = "" }
+                    }
+                    if (query.isNotBlank() && items.isEmpty()) {
+                        item(key = "no-results") { EmptyState(stringResource(R.string.feed_search_none), null) {} }
+                    }
+                } else {
+                item(key = "header", contentType = "header") { FeedHeader(c, cache, refreshing, onSearch = { searching = true }) { scope.launch { feed.refresh() } } }
                 if (!settings.setupCardDismissed) item(key = "setup", contentType = "setup") { SetupCard(c) }
                 item(key = "media", contentType = "media") { com.mali.nbeta.ui.home.MediaCard() }
                 item(key = "today", contentType = "today") { TodayCard(c) }
@@ -166,7 +185,10 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                         graph.settings.update { it.copy(feedOrder = order) }
                     }
                 }
-                if (settings.feedSources.none { it.enabled }) {
+                }
+                if (searching) {
+                    // Results only (below).
+                } else if (settings.feedSources.none { it.enabled }) {
                     item(key = "empty") {
                         EmptyState(stringResource(R.string.feed_empty_no_sources), stringResource(R.string.feed_add_sources)) {
                             c.start(Intent(c.activity, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_PAGE, "feed").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -212,7 +234,7 @@ fun FeedPage(c: LauncherController, active: Boolean) {
 }
 
 @Composable
-private fun FeedHeader(c: LauncherController, cache: FeedCache, refreshing: Boolean, onRefresh: () -> Unit) {
+private fun FeedHeader(c: LauncherController, cache: FeedCache, refreshing: Boolean, onSearch: () -> Unit, onRefresh: () -> Unit) {
     val now = System.currentTimeMillis()
     var menu by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -231,6 +253,7 @@ private fun FeedHeader(c: LauncherController, cache: FeedCache, refreshing: Bool
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        IconButton(onClick = onSearch) { Icon(Icons.Default.Search, stringResource(R.string.feed_search)) }
         IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, stringResource(R.string.feed_refresh)) }
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.common_more)) }
@@ -516,5 +539,35 @@ private fun SetupCard(c: LauncherController) {
                 c.start(Intent(context, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_PAGE, "permissions").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }) { Text(androidx.compose.ui.res.stringResource(com.mali.nbeta.R.string.perm_setup_review)) }
         }
+    }
+}
+
+@Composable
+private fun FeedSearchBar(query: String, onQuery: (String) -> Unit, onClose: () -> Unit) {
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .height(52.dp)
+            .clip(RoundedCornerShape(26.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(start = 4.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back)) }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            if (query.isEmpty()) Text(stringResource(R.string.feed_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+            androidx.compose.foundation.text.BasicTextField(
+                value = query,
+                onValueChange = onQuery,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+        }
+        if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Clear, stringResource(R.string.common_clear)) }
     }
 }

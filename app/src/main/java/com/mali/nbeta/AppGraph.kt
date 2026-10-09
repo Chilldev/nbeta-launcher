@@ -52,7 +52,13 @@ class AppGraph(val app: Application) {
     }
 
     val reddit: RedditClient by lazy { RedditClient(app, scope) { http } }
-    val feed: FeedRepository by lazy { FeedRepository(app, scope, settings, { http }, reddit) }
+    val feed: FeedRepository by lazy {
+        FeedRepository(app, scope, settings, { http }, reddit).also { f ->
+            f.onSavedChanged = { item, saved ->
+                if (saved) scope.launch { reader.keepOffline(item.link) } else reader.dropOffline(item.link)
+            }
+        }
+    }
     val media: MediaRepository by lazy { MediaRepository(app) }
     val reader: ReaderRepository by lazy { ReaderRepository(app, scope) { http } }
     val glance: GlanceRepository by lazy { GlanceRepository(app, scope, settings) { http } }
@@ -70,6 +76,8 @@ class AppGraph(val app: Application) {
             val s = settings.value
             FeedRefreshWorker.schedule(app, if (s.feedEnabled) s.feedRefreshHours else 0, s.feedWifiOnly)
             widgets.cleanupOrphans()
+            // Stories saved before offline reading existed (or saved while offline) get stored now.
+            launch(Dispatchers.IO) { feed.cache.value.saved.filterNot { reader.isOffline(it.link) }.forEach { reader.keepOffline(it.link) } }
             settings.flow.map { Triple(it.feedEnabled, it.feedRefreshHours, it.feedWifiOnly) }.distinctUntilChanged().drop(1).collect { (on, h, wifi) ->
                 FeedRefreshWorker.schedule(app, if (on) h else 0, wifi)
             }

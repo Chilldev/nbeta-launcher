@@ -75,6 +75,11 @@ class ReadabilityTest {
         assertEquals(6, a!!.blocks.count { it is Block.Paragraph })
     }
 
+    @Test fun dropsRecirculationHeadings() {
+        val a = Readability.extract(page(body = "<article><h2>What happened</h2>${"<p>$para</p>".repeat(3)}<h2>Recommended Stories</h2>${"<p>$para</p>".repeat(3)}</article>"), "https://example.com/r")!!
+        assertEquals(listOf("What happened"), a.blocks.filterIsInstance<Block.Heading>().map { it.text })
+    }
+
     @Test fun rejectsPagesWithoutArticleText() {
         assertNull(Readability.extract(page(body = "<div><p>Sign in to continue.</p></div>"), "https://example.com/x"))
     }

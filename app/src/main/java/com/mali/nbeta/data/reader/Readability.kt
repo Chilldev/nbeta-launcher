@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 import org.jsoup.safety.Safelist
 
+@kotlinx.serialization.Serializable
 data class Article(
     val title: String,
     val byline: String?,
@@ -18,14 +19,15 @@ data class Article(
     val minutes: Int get() = (words / 220).coerceAtLeast(1)
 }
 
+@kotlinx.serialization.Serializable
 sealed interface Block {
-    data class Heading(val text: String) : Block
+    @kotlinx.serialization.Serializable data class Heading(val text: String) : Block
     /** Inline HTML limited to links and emphasis (already sanitised). */
-    data class Paragraph(val html: String) : Block
-    data class Image(val url: String, val caption: String?) : Block
-    data class Quote(val html: String) : Block
-    data class Bullets(val items: List<String>, val ordered: Boolean) : Block
-    data class Code(val text: String) : Block
+    @kotlinx.serialization.Serializable data class Paragraph(val html: String) : Block
+    @kotlinx.serialization.Serializable data class Image(val url: String, val caption: String?) : Block
+    @kotlinx.serialization.Serializable data class Quote(val html: String) : Block
+    @kotlinx.serialization.Serializable data class Bullets(val items: List<String>, val ordered: Boolean) : Block
+    @kotlinx.serialization.Serializable data class Code(val text: String) : Block
 }
 
 /**
@@ -39,6 +41,11 @@ object Readability {
         RegexOption.IGNORE_CASE,
     )
     private val likely = Regex("article|body|content|main|post|entry|story|text|blog", RegexOption.IGNORE_CASE)
+    /** Section titles sites put around links to other stories, not part of the article. */
+    private val recirculation = Regex(
+        "(?i)^(recommended( stories| for you)?|related( stories| articles| content| coverage)?|read more|more (from|on|stories)\\b.*|" +
+            "you (may|might) also like|most (read|popular|viewed)|trending( now)?|latest (news|stories)|keep reading|editor'?s picks|sponsored|advertisement)$",
+    )
     private val inline = Safelist().addTags("a", "b", "strong", "i", "em", "br", "code", "sub", "sup").addAttributes("a", "href").addProtocols("a", "href", "http", "https")
 
     fun extract(html: String, url: String): Article? {
@@ -130,7 +137,7 @@ object Readability {
     private fun flatten(el: Element, out: MutableList<Block>, doc: Document) {
         for (child in el.children()) {
             when (child.tagName()) {
-                "h1", "h2", "h3", "h4", "h5", "h6" -> child.text().trim().takeIf { it.isNotEmpty() }?.let { out += Block.Heading(it) }
+                "h1", "h2", "h3", "h4", "h5", "h6" -> child.text().trim().takeIf { it.isNotEmpty() && !recirculation.matches(it) }?.let { out += Block.Heading(it) }
                 "p" -> {
                     child.select("img").forEach { img -> imageUrl(img, doc)?.let { out += Block.Image(it, img.attr("alt").ifBlank { null }) } }
                     val text = child.text().trim()

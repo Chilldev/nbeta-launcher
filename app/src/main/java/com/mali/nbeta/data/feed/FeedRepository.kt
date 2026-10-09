@@ -227,9 +227,27 @@ class FeedRepository(
         c.copy(read = c.read + item.id, opens = c.opens + (item.sourceId to (c.opens[item.sourceId] ?: 0) + 1))
     }
 
-    fun toggleSaved(item: FeedItem) = store.update { c ->
-        if (c.saved.any { it.id == item.id }) c.copy(saved = c.saved.filterNot { it.id == item.id })
-        else c.copy(saved = listOf(item) + c.saved)
+    /** Called with (item, saved) after each save/unsave; the app graph uses it to keep saved articles offline. */
+    var onSavedChanged: ((FeedItem, Boolean) -> Unit)? = null
+
+    fun toggleSaved(item: FeedItem) {
+        val wasSaved = cache.value.saved.any { it.id == item.id }
+        store.update { c ->
+            if (c.saved.any { it.id == item.id }) c.copy(saved = c.saved.filterNot { it.id == item.id })
+            else c.copy(saved = listOf(item) + c.saved)
+        }
+        onSavedChanged?.invoke(item, !wasSaved)
+    }
+
+    /** Title/summary search over every cached and saved story, newest first. */
+    fun search(query: String): List<FeedItem> {
+        val q = KeywordMatcher.normalize(query)
+        if (q.length < 2) return emptyList()
+        val c = cache.value
+        return (c.saved + c.items).distinctBy { it.id }
+            .filter { KeywordMatcher.normalize(it.title + " " + it.summary.orEmpty()).contains(q) }
+            .sortedByDescending { it.published }
+            .take(100)
     }
 
     fun dismiss(item: FeedItem) = store.update { c -> c.copy(dismissed = c.dismissed + item.id) }

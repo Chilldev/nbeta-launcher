@@ -558,4 +558,7 @@
     <string name="drawer_folder_added">أُضيف مجلد «%1$s» إلى الشاشة الرئيسية</string>
     <string name="settings_drawer_categories">الفئات</string>
     <string name="settings_drawer_categories_summary">صفّ الدرج حسب النوع. اضغط مطولًا على فئة لتحويلها إلى مجلد في الشاشة الرئيسية.</string>
+    <string name="feed_search">البحث في الأخبار</string>
+    <string name="feed_search_hint">ابحث في الموجز</string>
+    <string name="feed_search_none">لا توجد أخبار مطابقة</string>
 </resources>

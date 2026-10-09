@@ -523,4 +523,7 @@
     <string name="drawer_folder_added">“%1$s” folder added to home</string>
     <string name="settings_drawer_categories">Categories</string>
     <string name="settings_drawer_categories_summary">Filter the drawer by type. Long-press a category to make it a home folder.</string>
+    <string name="feed_search">Search stories</string>
+    <string name="feed_search_hint">Search your feed</string>
+    <string name="feed_search_none">No stories match</string>
 </resources>
