@@ -31,7 +31,10 @@ import org.junit.runner.RunWith
 class MediaSessionFixture {
     @Test
     fun holdMediaSession() {
-        val seconds = InstrumentationRegistry.getArguments().getString("holdMediaSeconds")?.toLongOrNull()
+        val args = InstrumentationRegistry.getArguments()
+        val seconds = args.getString("holdMediaSeconds")?.toLongOrNull()
+        // "long" = titles that overflow every style, for checking that they scroll.
+        val long = args.getString("mediaLongText") != null
         assumeTrue(seconds != null)
         val context = InstrumentationRegistry.getInstrumentation().context
         val main = Handler(Looper.getMainLooper())
@@ -76,9 +79,9 @@ class MediaSessionFixture {
             )
             session.setMetadata(
                 MediaMetadata.Builder()
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, "Midnight City")
-                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "M83")
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM, "Hurry Up, We're Dreaming")
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, if (long) "Midnight City (Eric Prydz Private Remix) – Extended Live Version" else "Midnight City")
+                    .putString(MediaMetadata.METADATA_KEY_ARTIST, if (long) "M83 featuring Anthony Gonzalez and the Orchestra" else "M83")
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM, if (long) "Hurry Up, We're Dreaming (Deluxe 10th Anniversary Edition)" else "Hurry Up, We're Dreaming")
                     .putString(MediaMetadata.METADATA_KEY_GENRE, "Electronic")
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, 243_000)
                     .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, cover())

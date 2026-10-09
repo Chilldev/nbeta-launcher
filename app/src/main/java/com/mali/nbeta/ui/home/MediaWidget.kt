@@ -2,7 +2,9 @@ package com.mali.nbeta.ui.home
 
 import android.os.SystemClock
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -56,7 +58,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -156,9 +157,8 @@ private fun PillLayout(np: NowPlaying, appIcon: ImageBitmap?, controls: MediaCon
         Spacer(Modifier.width(10.dp))
         Text(
             listOfNotNull(np.title, np.artist).joinToString(" · "),
-            Modifier.weight(1f),
+            Modifier.weight(1f).scrolling(np.playing),
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -184,14 +184,15 @@ private fun PillLayout(np: NowPlaying, appIcon: ImageBitmap?, controls: MediaCon
 private fun CompactLayout(np: NowPlaying, appLabel: String?, appIcon: ImageBitmap?, controls: MediaControls, modifier: Modifier) {
     val tint = MaterialTheme.colorScheme.onSurface
     val pos by rememberPosition(np)
-    Box(
+    Column(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(tinted(np))
             .clickable(onClick = controls.open),
     ) {
-        Row(Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        val seekable = np.duration > 0
+        Row(Modifier.padding(start = 8.dp, top = 8.dp, bottom = if (seekable) 0.dp else 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Box {
                 Artwork(np, Modifier.size(48.dp).clip(RoundedCornerShape(10.dp)))
                 // Which app is playing, on the corner of the artwork.
@@ -199,10 +200,10 @@ private fun CompactLayout(np: NowPlaying, appLabel: String?, appIcon: ImageBitma
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(np.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium, color = tint)
+                Text(np.title, Modifier.scrolling(np.playing), maxLines = 1, fontWeight = FontWeight.Medium, color = tint)
                 val sub = listOfNotNull(np.artist, appLabel).joinToString(" · ")
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(sub, Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(sub, Modifier.weight(1f, fill = false).scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (np.duration > 0) {
                         Text(
                             "  " + timeLeft(np.duration - pos),
@@ -217,20 +218,11 @@ private fun CompactLayout(np: NowPlaying, appLabel: String?, appIcon: ImageBitma
             PlayPauseButton(np, controls, tint)
             if (np.canSkipNext) IconButton(onClick = controls.next) { Icon(MediaIcons.Next, stringResource(R.string.media_next), tint = tint) }
         }
-        if (np.duration > 0) {
-            // A hairline of progress along the bottom edge.
-            val color = accent(np)
-            val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-            Box(
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .drawBehind {
-                        val w = size.width * (pos.toFloat() / np.duration).coerceIn(0f, 1f)
-                        drawRect(color, topLeft = Offset(if (rtl) size.width - w else 0f, 0f), size = size.copy(width = w))
-                    },
-            )
+        if (seekable) {
+            // Inset from the rounded corners so the whole bar shows; time left is already next to the artist.
+            Box(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 4.dp)) {
+                SeekBar(np, controls, accent(np), accent(np), MaterialTheme.colorScheme.onSurfaceVariant, compact = true)
+            }
         }
     }
 }
@@ -252,9 +244,9 @@ private fun LargeLayout(np: NowPlaying, appLabel: String?, appIcon: ImageBitmap?
             Artwork(np, Modifier.size(88.dp).clip(RoundedCornerShape(14.dp)))
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(np.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = tint)
-                np.artist?.let { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                details(np)?.let { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Text(np.title, Modifier.scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = tint)
+                np.artist?.let { Text(it, Modifier.scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                details(np)?.let { Text(it, Modifier.scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -281,9 +273,9 @@ private fun ArtworkLayout(np: NowPlaying, appLabel: String?, appIcon: ImageBitma
             Column(Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)) {
                 AppHeader(np, appLabel, appIcon, controls, Color.White.copy(alpha = 0.9f))
                 Spacer(Modifier.weight(1f))
-                Text(np.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(np.title, Modifier.scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Color.White)
                 val sub = listOfNotNull(np.artist, details(np)).joinToString(" · ")
-                if (sub.isNotEmpty()) Text(sub, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
+                if (sub.isNotEmpty()) Text(sub, Modifier.scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
                 Spacer(Modifier.height(4.dp))
                 SeekBar(np, controls, Color.White, Color.White, Color.White.copy(alpha = 0.85f))
                 TransportRow(np, controls, Color.White, Color.White)
@@ -300,7 +292,7 @@ private fun AppHeader(np: NowPlaying, appLabel: String?, appIcon: ImageBitmap?, 
     Row(Modifier.fillMaxWidth().height(28.dp), verticalAlignment = Alignment.CenterVertically) {
         AppBadge(appIcon, 18.dp)
         Spacer(Modifier.width(8.dp))
-        Text(appLabel.orEmpty(), Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelLarge, color = color)
+        Text(appLabel.orEmpty(), Modifier.weight(1f).scrolling(np.playing), maxLines = 1, style = MaterialTheme.typography.labelLarge, color = color)
         if (np.others.isNotEmpty()) {
             Row(
                 Modifier
@@ -375,8 +367,9 @@ private fun PlayPauseButton(np: NowPlaying, controls: MediaControls, tint: Color
  * while dragging, the time under the finger is shown above it. Players that can't seek get a plain bar.
  */
 @Composable
-private fun SeekBar(np: NowPlaying, controls: MediaControls, active: Color, thumb: Color, text: Color) {
+private fun SeekBar(np: NowPlaying, controls: MediaControls, active: Color, thumb: Color, text: Color, compact: Boolean = false) {
     if (np.duration <= 0) {
+        if (compact) return
         // Live streams and players that don't report a length: just how long it has been playing.
         val pos by rememberPosition(np)
         Text(formatTime(pos), style = MaterialTheme.typography.labelSmall, color = text, modifier = Modifier.padding(vertical = 6.dp))
@@ -396,7 +389,7 @@ private fun SeekBar(np: NowPlaying, controls: MediaControls, active: Color, thum
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(24.dp)
+                    .height(if (compact) 20.dp else 24.dp)
                     .then(
                         if (np.canSeek) Modifier
                             .pointerInput(np.duration, widthPx, rtl) {
@@ -420,13 +413,15 @@ private fun SeekBar(np: NowPlaying, controls: MediaControls, active: Color, thum
                     )
                     .drawBehind {
                         val y = size.height / 2
-                        val stroke = 4.dp.toPx()
+                        val stroke = (if (compact) 3.dp else 4.dp).toPx()
                         val x = size.width * fraction
                         val start = if (rtl) size.width else 0f
                         val end = if (rtl) size.width - x else x
                         drawLine(track, Offset(0f, y), Offset(size.width, y), stroke, StrokeCap.Round)
                         drawLine(active, Offset(start, y), Offset(end, y), stroke, StrokeCap.Round)
-                        if (np.canSeek) drawCircle(thumb, radius = (if (dragFraction != null) 8.dp else 6.dp).toPx(), center = Offset(end, y))
+                        if (np.canSeek && (!compact || dragFraction != null)) {
+                            drawCircle(thumb, radius = (if (dragFraction != null) 8.dp else 6.dp).toPx(), center = Offset(end, y))
+                        }
                     },
             )
             // The time under the finger, floating above the thumb while dragging.
@@ -448,7 +443,7 @@ private fun SeekBar(np: NowPlaying, controls: MediaControls, active: Color, thum
                 }
             }
         }
-        Row(Modifier.fillMaxWidth()) {
+        if (!compact) Row(Modifier.fillMaxWidth()) {
             Text(formatTime(shown), style = MaterialTheme.typography.labelSmall, color = text)
             Spacer(Modifier.weight(1f))
             Text(
@@ -509,6 +504,18 @@ private fun accent(np: NowPlaying): Color {
     val surface = MaterialTheme.colorScheme.surfaceContainerHigh
     return if (kotlin.math.abs(c.luminance() - surface.luminance()) < 0.25f) MaterialTheme.colorScheme.primary else c
 }
+
+/**
+ * Text too long for its line scrolls so all of it can be read: continuously while playing, once when paused. Text that
+ * fits stays still (the marquee only moves when the content overflows).
+ */
+private fun Modifier.scrolling(playing: Boolean) = basicMarquee(
+    iterations = if (playing) Int.MAX_VALUE else 1,
+    initialDelayMillis = 1500,
+    repeatDelayMillis = 2500,
+    spacing = MarqueeSpacing(40.dp),
+    velocity = 36.dp,
+)
 
 private fun details(np: NowPlaying): String? = listOfNotNull(np.album, np.genre).joinToString(" · ").ifEmpty { null }
 
