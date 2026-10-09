@@ -11,6 +11,7 @@ import com.mali.nbeta.data.glance.GlanceRepository
 import com.mali.nbeta.data.reddit.RedditClient
 import com.mali.nbeta.data.reader.ReaderRepository
 import com.mali.nbeta.data.media.MediaRepository
+import com.mali.nbeta.data.update.Updater
 import com.mali.nbeta.data.search.SearchEngine
 import com.mali.nbeta.data.widgets.WidgetRepository
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +60,7 @@ class AppGraph(val app: Application) {
             }
         }
     }
+    val updater: Updater by lazy { Updater(app) { http } }
     val media: MediaRepository by lazy { MediaRepository(app) }
     val reader: ReaderRepository by lazy { ReaderRepository(app, scope) { http } }
     val glance: GlanceRepository by lazy { GlanceRepository(app, scope, settings) { http } }
@@ -76,6 +78,10 @@ class AppGraph(val app: Application) {
             val s = settings.value
             FeedRefreshWorker.schedule(app, if (s.feedEnabled) s.feedRefreshHours else 0, s.feedWifiOnly)
             widgets.cleanupOrphans()
+            // Daily, quiet update check; a notification only when there's something new.
+            if (System.currentTimeMillis() - updater.lastCheck > 24 * 3600_000L) {
+                launch { updater.check()?.let { com.mali.nbeta.system.UpdateNotifier.notify(app, it) } }
+            }
             // Stories saved before offline reading existed (or saved while offline) get stored now.
             launch(Dispatchers.IO) { feed.cache.value.saved.filterNot { reader.isOffline(it.link) }.forEach { reader.keepOffline(it.link) } }
             settings.flow.map { Triple(it.feedEnabled, it.feedRefreshHours, it.feedWifiOnly) }.distinctUntilChanged().drop(1).collect { (on, h, wifi) ->

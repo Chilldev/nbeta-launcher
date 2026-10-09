@@ -541,4 +541,20 @@
     <string name="gesture_edit_home">Edit home screen</string>
     <string name="gesture_open_app">Open an app…</string>
     <string name="gesture_open_app_named">Open %1$s</string>
+    <string name="settings_updates">Updates &amp; about</string>
+    <string name="update_current">Installed: %1$s (build %2$d)</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_up_to_date">You\'re up to date</string>
+    <string name="update_failed">Couldn\'t update: %1$s</string>
+    <string name="update_available_title">Nbeta %1$s is available</string>
+    <string name="update_available_text">Tap to update. It installs in a few seconds.</string>
+    <string name="update_allow_installs">To install updates, allow Nbeta to install apps (one time).</string>
+    <string name="update_install">Download &amp; install</string>
+    <string name="update_downloading">Downloading…</string>
+    <string name="update_installing">Installing…</string>
+    <string name="update_check">Check now</string>
+    <string name="update_all_releases">All releases on GitHub</string>
+    <string name="update_channel">App updates</string>
+    <string name="perm_install">Install updates</string>
+    <string name="perm_install_why">Update Nbeta from its GitHub releases, no cable needed</string>
 </resources>

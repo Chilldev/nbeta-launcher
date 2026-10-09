@@ -144,7 +144,7 @@ enum class Page(@StringRes val title: Int) {
     Root(R.string.settings), Appearance(R.string.settings_appearance), Home(R.string.settings_home), Drawer(R.string.settings_drawer),
     Icons(R.string.settings_icons), Gestures(R.string.settings_gestures), Search(R.string.common_search), Feed(R.string.settings_feed),
     Weather(R.string.settings_weather), Hidden(R.string.settings_hidden_apps), Backup(R.string.settings_backup),
-    Permissions(R.string.settings_permissions),
+    Permissions(R.string.settings_permissions), Updates(R.string.settings_updates),
 }
 
 @Composable
@@ -174,6 +174,7 @@ private fun SettingsApp(graph: AppGraph, s: LauncherSettings, requested: Pair<Pa
             Page.Hidden -> hidden(s, set, graph)
             Page.Backup -> backup(graph)
             Page.Permissions -> item { PermissionsContent() }
+            Page.Updates -> item { UpdatesContent() }
         }
     }
 }
@@ -191,7 +192,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.root(go: (Page) -> Un
     item { PageLink(Page.Feed, R.string.settings_feed_summary, Icons.Default.DateRange, go) }
     item { PageLink(Page.Weather, R.string.settings_weather_summary, Icons.Default.LocationOn, go) }
     item { PageLink(Page.Backup, R.string.settings_backup_summary, Icons.Default.Build, go) }
-    item { ClickPref(stringResource(R.string.settings_about), stringResource(R.string.settings_about_summary, BuildConfig.VERSION_NAME), Icons.Default.Info) {} }
+    item { ClickPref(stringResource(R.string.settings_updates), stringResource(R.string.settings_about_summary, BuildConfig.VERSION_NAME), Icons.Default.Info) { go(Page.Updates) } }
 }
 
 @Composable
@@ -289,7 +290,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.drawer(s: LauncherSet
     item { SwitchPref(stringResource(R.string.settings_suggestions_row), stringResource(R.string.settings_suggestions_row_summary), s.showSuggestions) { v -> set { it.copy(showSuggestions = v) } } }
     item { SwitchPref(stringResource(R.string.settings_drawer_categories), stringResource(R.string.settings_drawer_categories_summary), s.drawerCategories) { v -> set { it.copy(drawerCategories = v) } } }
     item {
-        val activity = LocalContext.current as android.app.Activity
+        val activity = androidx.activity.compose.LocalActivity.current!!
         val title = stringResource(R.string.settings_hidden_apps)
         // Hidden apps are only revealed after the same check as locked apps (when the phone has a screen lock).
         ClickPref(title, pluralStringResource(R.plurals.settings_hidden_count, s.hiddenApps.size, s.hiddenApps.size), Icons.Default.Lock) {
@@ -998,4 +999,55 @@ private fun AppPickerDialog(title: String, onDismiss: () -> Unit, onPick: (com.m
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
+}
+
+@Composable
+private fun UpdatesContent() {
+    val graph = LocalGraph.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val updater = graph.updater
+    val state by updater.state.collectAsStateWithLifecycle()
+    var canInstall by remember { mutableStateOf(updater.canInstall()) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        canInstall = updater.canInstall()
+        onPauseOrDispose { }
+    }
+    androidx.compose.runtime.LaunchedEffect(Unit) { if (state is com.mali.nbeta.data.update.UpdateState.Idle) updater.check() }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(stringResource(R.string.update_current, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE), style = MaterialTheme.typography.bodyLarge)
+        when (val st = state) {
+            com.mali.nbeta.data.update.UpdateState.Idle, com.mali.nbeta.data.update.UpdateState.Checking ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.update_checking))
+                }
+            com.mali.nbeta.data.update.UpdateState.UpToDate -> Text(stringResource(R.string.update_up_to_date), color = MaterialTheme.colorScheme.primary)
+            is com.mali.nbeta.data.update.UpdateState.Failed -> Text(stringResource(R.string.update_failed, st.message), color = MaterialTheme.colorScheme.error)
+            is com.mali.nbeta.data.update.UpdateState.Available -> {
+                Text(stringResource(R.string.update_available_title, st.release.versionName), style = MaterialTheme.typography.titleMedium)
+                st.release.notes?.let { Text(it.take(1200), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (!canInstall) {
+                    Text(stringResource(R.string.update_allow_installs), style = MaterialTheme.typography.bodyMedium)
+                    Button(onClick = {
+                        context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:${context.packageName}")))
+                    }) { Text(stringResource(R.string.perm_allow)) }
+                } else {
+                    Button(onClick = { scope.launch { updater.install(st.release) } }) { Text(stringResource(R.string.update_install)) }
+                }
+            }
+            is com.mali.nbeta.data.update.UpdateState.Downloading -> {
+                Text(stringResource(R.string.update_downloading))
+                androidx.compose.material3.LinearProgressIndicator(progress = { st.progress }, modifier = Modifier.fillMaxWidth())
+            }
+            is com.mali.nbeta.data.update.UpdateState.Installing -> Text(stringResource(R.string.update_installing))
+        }
+        if (state !is com.mali.nbeta.data.update.UpdateState.Downloading && state !is com.mali.nbeta.data.update.UpdateState.Installing) {
+            TextButton(onClick = { scope.launch { updater.check() } }) { Text(stringResource(R.string.update_check)) }
+        }
+        TextButton(onClick = {
+            context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/${BuildConfig.UPDATE_REPO}/releases")))
+        }) { Text(stringResource(R.string.update_all_releases)) }
+    }
 }

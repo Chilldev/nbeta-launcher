@@ -81,6 +81,11 @@ object Permissions {
             },
         )
         add(
+            Item(R.string.perm_install, R.string.perm_install_why, context.packageManager.canRequestPackageInstalls(), null) { c ->
+                start(c, Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, pkg))
+            },
+        )
+        add(
             Item(R.string.perm_accessibility, R.string.perm_accessibility_why, accessibilityOn(context), null) { c ->
                 val detail = if (Build.VERSION.SDK_INT >= 33) Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS")
                     .putExtra(Intent.EXTRA_COMPONENT_NAME, ComponentName(c, GestureAccessibilityService::class.java).flattenToString())

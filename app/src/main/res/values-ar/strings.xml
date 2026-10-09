@@ -576,4 +576,20 @@
     <string name="gesture_edit_home">تعديل الشاشة الرئيسية</string>
     <string name="gesture_open_app">فتح تطبيق…</string>
     <string name="gesture_open_app_named">فتح %1$s</string>
+    <string name="settings_updates">التحديثات وحول التطبيق</string>
+    <string name="update_current">المثبّت: %1$s (إصدار %2$d)</string>
+    <string name="update_checking">جارٍ البحث عن تحديثات…</string>
+    <string name="update_up_to_date">لديك أحدث إصدار</string>
+    <string name="update_failed">تعذّر التحديث: %1$s</string>
+    <string name="update_available_title">يتوفر Nbeta %1$s</string>
+    <string name="update_available_text">انقر للتحديث. يُثبَّت خلال ثوانٍ.</string>
+    <string name="update_allow_installs">لتثبيت التحديثات، اسمح لـ Nbeta بتثبيت التطبيقات (مرة واحدة).</string>
+    <string name="update_install">تنزيل وتثبيت</string>
+    <string name="update_downloading">جارٍ التنزيل…</string>
+    <string name="update_installing">جارٍ التثبيت…</string>
+    <string name="update_check">التحقق الآن</string>
+    <string name="update_all_releases">كل الإصدارات على GitHub</string>
+    <string name="update_channel">تحديثات التطبيق</string>
+    <string name="perm_install">تثبيت التحديثات</string>
+    <string name="perm_install_why">تحديث Nbeta من إصدارات GitHub دون كابل</string>
 </resources>

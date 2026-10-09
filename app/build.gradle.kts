@@ -15,8 +15,10 @@ android {
         applicationId = "com.mali.nbeta"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // -Pnbeta.versionCode=N overrides (used to test the updater against a published release).
+        versionCode = (project.findProperty("nbeta.versionCode") as String?)?.toInt() ?: 2
+        versionName = "1.1"
+        buildConfigField("String", "UPDATE_REPO", "\"Chilldev/nbeta-launcher\"")
     }
 
     // signing/keystore.properties (git-ignored) holds the release key. Without it, release builds fall back to the

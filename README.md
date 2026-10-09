@@ -98,6 +98,14 @@ Optional permissions are requested only when you turn on the matching feature:
 - notification access (dots)
 - the "Nbeta gestures" accessibility service (double-tap to lock). It reads no screen content.
 
+## Updates
+
+Nbeta checks this repository's [latest release](../../releases/latest) once a day and from Settings › Updates & about.
+A release's APK asset must be named `nbeta-<versionCode>.apk`. Nbeta only installs it if it's signed with the same
+key as the installed app.
+
+To publish one, bump `versionCode`/`versionName` in `app/build.gradle.kts`, commit, then run `./scripts/release.sh`.
+
 ## Reddit
 
 Reddit now requires OAuth and approves Data API access per app ([Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy)). Nbeta signs in the sanctioned way, with your own "installed app" client ID:
