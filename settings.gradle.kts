@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "newsfeed"
+rootProject.name = "nbeta"
 include(":app")

@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Newsfeed</string>
+    <string name="app_name">Nbeta</string>
+    <string name="settings">Nbeta settings</string>
+    <string name="notification_dots">Nbeta notification dots</string>
+    <string name="accessibility_label">Nbeta gestures</string>
+    <string name="accessibility_description">Lets Nbeta lock the screen when you double-tap the home screen and open recent apps from a gesture. It does not read or collect anything on your screen.</string>
 </resources>
