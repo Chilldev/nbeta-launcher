@@ -120,6 +120,8 @@ data class LauncherSettings(
     val feedWifiOnly: Boolean = false,
     val feedFetchImages: Boolean = true,
     val linkOpener: LinkOpener = LinkOpener.CustomTab,
+    /** Client ID of the user's own Reddit "installed app" (public by design, not a secret). */
+    val redditClientId: String? = null,
     // Weather
     val tempUnit: TempUnit = TempUnit.Celsius,
     val weatherCity: String? = null, // null = device location

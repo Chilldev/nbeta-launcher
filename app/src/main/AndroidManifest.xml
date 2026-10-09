@@ -66,6 +66,23 @@
             </intent-filter>
         </activity>
 
+        <!-- Reddit OAuth redirect. Must match the redirect URI registered for the Reddit app. -->
+        <activity
+            android:name=".ui.RedditAuthActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:taskAffinity="com.mali.nbeta.settings"
+            android:theme="@style/Theme.Nbeta.Dialog">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="nbeta" android:host="reddit-auth" />
+            </intent-filter>
+        </activity>
+
         <!-- Default-launcher confirmation for "Add to home screen" shortcuts and widgets -->
         <activity
             android:name=".ui.PinItemActivity"

@@ -10,6 +10,11 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.mali.nbeta.data.FeedSource
+import com.mali.nbeta.data.reddit.RedditClient
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -358,6 +363,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
             },
         ) { if (muted) graph.feed.muteSource(src.id, false) }
     }
+    item { RedditSection(s, set, graph) }
     val suggestions = DefaultFeeds.catalog.filter { c -> s.feedSources.none { it.url == c.url } }
     if (suggestions.isNotEmpty()) {
         item { SectionHeader("Suggestions") }
@@ -549,6 +555,79 @@ private fun BackupPrefs(graph: AppGraph) {
                 }) { Text("Reset") }
             },
             dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } },
+        )
+    }
+}
+
+@Composable
+private fun RedditSection(s: LauncherSettings, set: ((LauncherSettings) -> LauncherSettings) -> Unit, graph: AppGraph) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val session by graph.reddit.session.collectAsStateWithLifecycle()
+    var setup by remember { mutableStateOf(false) }
+    val clientId = s.redditClientId?.takeIf { it.isNotBlank() }
+    val signIn: (String) -> Unit = { id ->
+        runCatching { CustomTabsIntent.Builder().build().launchUrl(context, graph.reddit.authorizeUri(id)) }
+            .onFailure { Toast.makeText(context, "No browser available", Toast.LENGTH_SHORT).show() }
+    }
+
+    Column {
+        SectionHeader("Reddit")
+        val current = session
+        if (current != null) {
+            ClickPref("Signed in as u/${current.username ?: "…"}", "Reddit sources load through the official API (100 requests/min)", Icons.Default.AccountBox) {}
+            val hasHome = s.feedSources.any { graph.reddit.listingPath(it.url)?.startsWith("/best") == true }
+            if (!hasHome) {
+                ClickPref("Add your Reddit home feed", "Posts from the communities you follow", Icons.Default.Add) {
+                    val url = RedditClient.HOME_FEED_URL
+                    val src = FeedSource(com.mali.nbeta.data.feed.FeedParser.hash(url), url, "Reddit home", "https://www.reddit.com")
+                    set { it.copy(feedSources = it.feedSources + src) }
+                    graph.scope.launch { graph.feed.refresh(src.id) }
+                }
+            }
+            ClickPref("Sign out of Reddit", "Revokes Nbeta's access token") { scope.launch { graph.reddit.signOut() } }
+        } else {
+            ClickPref(
+                "Sign in with Reddit",
+                if (clientId == null) "Stops subreddit feeds being rate-limited. One-time setup needed." else "Using client ID ${clientId.take(6)}…",
+                Icons.Default.AccountBox,
+            ) { if (clientId == null) setup = true else signIn(clientId) }
+            if (clientId != null) ClickPref("Change Reddit client ID") { setup = true }
+        }
+    }
+
+    if (setup) {
+        var text by remember { mutableStateOf(clientId.orEmpty()) }
+        val open: (String) -> Unit = { url -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))) } }
+        AlertDialog(
+            onDismissRequest = { setup = false },
+            title = { Text("Connect Reddit") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Reddit approves API access per app, so this is a one-time setup with your own Reddit app.", style = MaterialTheme.typography.bodyMedium)
+                    Text("1. Request API access. Describe Nbeta as a personal, non-commercial feed reader.", style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = { open(RedditClient.ACCESS_REQUEST_URL) }) { Text("Open access request form") }
+                    Text("2. Once approved, create an app: type “installed app”, redirect URI below.", style = MaterialTheme.typography.bodyMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(RedditClient.REDIRECT_URI, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                        TextButton(onClick = {
+                            context.getSystemService(android.content.ClipboardManager::class.java)
+                                .setPrimaryClip(android.content.ClipData.newPlainText("Redirect URI", RedditClient.REDIRECT_URI))
+                        }) { Text("Copy") }
+                    }
+                    TextButton(onClick = { open(RedditClient.APPS_URL) }) { Text("Open reddit.com/prefs/apps") }
+                    Text("3. Paste the client ID (the short code under the app's name).", style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(text, { text = it.trim() }, singleLine = true, label = { Text("Client ID") })
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = text.length >= 10, onClick = {
+                    set { it.copy(redditClientId = text) }
+                    setup = false
+                    signIn(text)
+                }) { Text("Save & sign in") }
+            },
+            dismissButton = { TextButton(onClick = { setup = false }) { Text("Cancel") } },
         )
     }
 }

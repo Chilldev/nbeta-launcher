@@ -7,6 +7,7 @@ import com.mali.nbeta.data.FeedOrder
 import com.mali.nbeta.data.FeedSource
 import com.mali.nbeta.data.JsonStore
 import com.mali.nbeta.data.SettingsRepository
+import com.mali.nbeta.data.reddit.RedditClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -77,6 +78,7 @@ class FeedRepository(
     private val scope: CoroutineScope,
     private val settings: SettingsRepository,
     httpProvider: () -> OkHttpClient,
+    private val reddit: RedditClient,
 ) {
     // Built on first network use (always on an IO thread), never on the main thread at startup.
     private val http by lazy(httpProvider)
@@ -134,13 +136,19 @@ class FeedRepository(
     }
 
     private fun fetch(src: FeedSource): ParsedFeed {
+        if (reddit.handles(src.url)) return reddit.fetchListing(src.url, src.id)
         val req = Request.Builder().url(src.url)
             // Revalidate through OkHttp's cache: unchanged feeds come back as a cheap 304.
             .header("Cache-Control", "no-cache")
             .header("Accept", "application/rss+xml, application/atom+xml, application/feed+json, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5")
             .build()
         http.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) throw IllegalStateException("HTTP ${resp.code}")
+            if (!resp.isSuccessful) {
+                if (resp.code == 429 && reddit.listingPath(src.url) != null) {
+                    throw IllegalStateException("Reddit is rate-limiting. Sign in under Feed › Reddit.")
+                }
+                throw IllegalStateException("HTTP ${resp.code}")
+            }
             return FeedParser.parse(resp.body.byteStream(), src.id, resp.request.url.toString(), resp.header("Content-Type"))
         }
     }
@@ -154,6 +162,9 @@ class FeedRepository(
             val status = c.status.toMutableMap()
             for ((src, res) in results) {
                 res.onSuccess { feed ->
+                    // Reddit content must not outlive its deletion on Reddit: a successful fetch replaces the source's
+                    // items wholesale, so removed posts disappear on the next refresh.
+                    if (reddit.listingPath(src.url) != null) byId.values.removeAll { it.sourceId == src.id }
                     for (item in feed.items) {
                         val old = byId[item.id]
                         // Keep a resolved og:image and the original timestamp across refreshes.
@@ -170,9 +181,11 @@ class FeedRepository(
                 }
             }
             val cutoff = now - 21L * 24 * 3600_000
+            val redditCutoff = now - 48L * 3600_000 // Reddit asks clients to drop stored content within 48 hours
+            val redditSources = settings.value.feedSources.filter { reddit.listingPath(it.url) != null }.mapTo(HashSet()) { it.id }
             val seenLinks = HashSet<String>()
             val items = byId.values
-                .filter { it.published > cutoff }
+                .filter { it.published > if (it.sourceId in redditSources) redditCutoff else cutoff }
                 .sortedByDescending { it.published }
                 .filter { seenLinks.add(canonical(it.link)) }
                 .groupBy { it.sourceId }.values.flatMap { it.take(60) }
@@ -298,8 +311,14 @@ class FeedRepository(
     suspend fun discover(input: String): FeedSource = withContext(Dispatchers.IO) {
         var url = input.trim()
         if (!url.contains("://")) url = "https://$url"
-        val reddit = Regex("^https?://(www\\.|old\\.)?reddit\\.com/r/([^/?#]+)").find(url)
-        if (reddit != null) url = "https://www.reddit.com/r/${reddit.groupValues[2]}/.rss"
+        val sub = Regex("^https?://(www\\.|old\\.|new\\.)?reddit\\.com/r/([^/?#]+)").find(url)
+        if (sub != null) url = "https://www.reddit.com/r/${sub.groupValues[2]}/.rss"
+        if (reddit.handles(url)) {
+            // Signed in: validate through the API instead of the throttled public RSS.
+            val id = FeedParser.hash(url)
+            reddit.fetchListing(url, id)
+            return@withContext FeedSource(id, url, reddit.describe(url) ?: "Reddit", "https://www.reddit.com" + (reddit.listingPath(url)?.substringBefore('?')?.substringBeforeLast('/') ?: ""))
+        }
 
         tryFeed(url)?.let { return@withContext it }
         val html = http.newCall(Request.Builder().url(url).header("Accept", "text/html").build()).execute().use { r ->

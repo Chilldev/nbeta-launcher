@@ -87,6 +87,20 @@ Optional permissions are requested only when you turn on the matching feature:
 - notification access (dots)
 - the "Nbeta gestures" accessibility service (double-tap to lock). It reads no screen content.
 
+## Reddit
+
+Reddit now requires OAuth and approves Data API access per app ([Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy)). Nbeta signs in the sanctioned way, with your own "installed app" client ID:
+
+1. Request API access with Reddit's [form](https://support.reddithelp.com/hc/en-us/requests/new?ticket_form_id=14868593862164) (personal, non-commercial feed reader).
+2. Once approved, create an **installed app** at <https://www.reddit.com/prefs/apps> with redirect URI `nbeta://reddit-auth`.
+3. In Nbeta: Settings › Feed › Reddit › Sign in with Reddit, then paste the client ID.
+
+Once signed in:
+- Subreddit, user and front-page sources load from `oauth.reddit.com` (100 requests/min, with a policy-compliant User-Agent).
+- You can add your Reddit home feed in one tap.
+- Reddit posts are kept for at most 48 hours, and each refresh replaces them, so posts deleted on Reddit disappear.
+- Tokens are stored in `noBackupFilesDir`, so they are never backed up or exported. Sign-out revokes them.
+
 ## Layout
 
 ```
@@ -101,5 +115,5 @@ baselineprofile/                profile generator + macrobenchmarks
 ## Known limits
 
 - Recents (Overview) and the swipe-up-to-home animation belong to the system launcher (Quickstep). No third-party launcher can replace them without root.
-- Some feeds rate-limit unauthenticated readers (Reddit in particular). Cached stories stay visible when that happens.
+- Reddit blocks or throttles unauthenticated feed requests. See "Reddit" below.
 - UI strings are inline English.
