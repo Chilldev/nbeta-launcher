@@ -143,7 +143,7 @@ class SearchEngine(
         )
         val out = ArrayList<ContactHit>()
         try {
-            context.contentResolver.query(uri, proj, null, null, ContactsContract.Contacts.TIMES_CONTACTED + " DESC")?.use { c ->
+            context.contentResolver.query(uri, proj, null, null, null)?.use { c ->
                 while (c.moveToNext() && out.size < 4) {
                     val id = c.getLong(0)
                     val phone = if (c.getInt(4) > 0) firstPhone(id) else null

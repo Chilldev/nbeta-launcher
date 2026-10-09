@@ -5,7 +5,8 @@ import java.text.Normalizer
 /** Folds case, accents, Arabic diacritics/letter variants and punctuation so "cafe" finds "Café" and "احمد" finds "أحمد". */
 object TextFold {
     private val marks = Regex("\\p{Mn}+")
-    private val sep = Regex("[\\s\\p{Punct}·•–—_]+")
+    // Unicode-aware: anything that is not a letter or digit separates words (ASCII \p{Punct} misses "‑", "’", etc).
+    private val sep = Regex("[^\\p{L}\\p{N}]+")
 
     fun fold(s: String): String {
         var t = Normalizer.normalize(s.lowercase(), Normalizer.Form.NFD)
@@ -27,12 +28,14 @@ object TextFold {
     }
 
     fun words(folded: String): List<String> = folded.split(sep).filter { it.isNotEmpty() }
+
+    fun compact(folded: String): String = sep.replace(folded, "")
 }
 
 /** Precomputed, folded forms of one searchable label. Build once per data change, not per keystroke. */
 class Searchable(label: String, extra: String? = null) {
     val folded = TextFold.fold(label)
-    val compact = folded.replace(" ", "")
+    val compact = TextFold.compact(folded)
     val words = TextFold.words(folded) + splitCamel(label)
     val initials = TextFold.words(folded).joinToString("") { it.take(1) }
     val extra = extra?.let { TextFold.fold(it) }
@@ -56,7 +59,7 @@ object Matcher {
             f == query -> 1000
             f.startsWith(query) -> 900 - (f.length - query.length).coerceAtMost(50)
             target.words.any { it.startsWith(query) } -> 800 - (f.length - query.length).coerceAtMost(50)
-            target.compact.startsWith(query) -> 760
+            TextFold.compact(query).let { it.isNotEmpty() && target.compact.startsWith(it) } -> 760
             query.length >= 2 && target.initials.startsWith(query) -> 720
             f.contains(query) -> 600 - f.indexOf(query).coerceAtMost(50)
             target.extra != null && target.extra.contains(query) -> 400

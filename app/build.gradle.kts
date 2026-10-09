@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.mali.nbeta"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mali.nbeta"
@@ -71,4 +71,5 @@ dependencies {
     implementation(libs.coil.network)
     implementation(libs.okhttp)
     debugImplementation(libs.compose.ui.tooling)
+    testImplementation(libs.junit)
 }

@@ -1,0 +1,151 @@
+package com.mali.nbeta.ui
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mali.nbeta.data.TextOnWallpaper
+import com.mali.nbeta.data.apps.IconStyle
+import com.mali.nbeta.system.NotificationDotsService
+import com.mali.nbeta.ui.common.LocalDots
+import com.mali.nbeta.ui.common.LocalGraph
+import com.mali.nbeta.ui.common.LocalIconStyle
+import com.mali.nbeta.ui.common.LocalOnWallpaper
+import com.mali.nbeta.ui.common.OnWallpaper
+import com.mali.nbeta.ui.drawer.AppDrawer
+import com.mali.nbeta.ui.feed.FeedPage
+import com.mali.nbeta.ui.home.HomePage
+import com.mali.nbeta.ui.menu.AppMenuPopup
+import com.mali.nbeta.ui.menu.HomeMenuSheet
+import com.mali.nbeta.ui.menu.RenameDialog
+import com.mali.nbeta.ui.theme.NbetaTheme
+import com.mali.nbeta.ui.theme.isDark
+import com.mali.nbeta.ui.theme.rememberWallpaperPrefersDarkText
+import com.mali.nbeta.ui.widgets.WidgetMenuSheet
+import com.mali.nbeta.ui.widgets.WidgetPickerSheet
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+
+@Composable
+fun LauncherRoot(c: LauncherController) {
+    val graph = c.graph
+    val settings by graph.settings.flow.collectAsStateWithLifecycle()
+    val dots by NotificationDotsService.packagesWithDots.collectAsStateWithLifecycle()
+
+    NbetaTheme(settings) {
+        val dark = isDark(settings)
+        val iconStyle = remember(settings.iconShape, settings.iconPack, settings.themedIcons, dark) {
+            IconStyle(settings.iconShape, settings.iconPack, settings.themedIcons, dark)
+        }
+        val prefersDark = rememberWallpaperPrefersDarkText()
+        val darkText = when (settings.textOnWallpaper) {
+            TextOnWallpaper.Auto -> prefersDark && settings.wallpaperDim < 0.2f
+            TextOnWallpaper.Light -> false
+            TextOnWallpaper.Dark -> true
+        }
+        val onWallpaper = remember(darkText) {
+            if (darkText) OnWallpaper(Color(0xFF1B1B1F), Color(0xFF1B1B1F).copy(alpha = 0.75f), null)
+            else OnWallpaper(Color.White, Color.White.copy(alpha = 0.85f), Shadow(Color.Black.copy(alpha = 0.45f), Offset(0f, 1.5f), 6f))
+        }
+
+        // Warm icons for the whole drawer as soon as the list or style is known; home and dock first.
+        val apps by graph.apps.visibleApps.collectAsStateWithLifecycle()
+        LaunchedEffect(apps, iconStyle) {
+            val s = graph.settings.value
+            val firstKeys = (s.dockItems + s.homeItems).mapNotNull { (it as? com.mali.nbeta.data.HomeItem.App)?.key }.toSet()
+            val (first, rest) = apps.partition { it.key in firstKeys }
+            graph.icons.prewarm(first, iconStyle)
+            graph.icons.prewarm(rest, iconStyle)
+        }
+
+        CompositionLocalProvider(
+            LocalGraph provides graph,
+            LocalIconStyle provides iconStyle,
+            LocalDots provides if (settings.notificationDots) dots else emptySet(),
+            LocalOnWallpaper provides onWallpaper,
+        ) {
+            val feedOn = settings.feedEnabled
+            val homePage = if (feedOn) 1 else 0
+            val pager = rememberPagerState(initialPage = homePage) { if (feedOn) 2 else 1 }
+            val scope = rememberCoroutineScope()
+            val drawerClosed by remember { derivedStateOf { c.drawer.isClosed } }
+            val onFeed by remember(feedOn) { derivedStateOf { feedOn && pager.currentPage == 0 } }
+
+            // Status bar icons follow whatever is under them: wallpaper text colour on home, theme on drawer/feed.
+            val view = LocalView.current
+            val window = c.activity.window
+            LaunchedEffect(darkText, dark, feedOn) {
+                snapshotFlow { c.drawer.progress > 0.5f || (feedOn && pager.currentPage == 0) }
+                    .distinctUntilChanged()
+                    .collect { onSurface ->
+                        val light = if (onSurface) !dark else darkText
+                        WindowCompat.getInsetsController(window, view).apply {
+                            isAppearanceLightStatusBars = light
+                            isAppearanceLightNavigationBars = light
+                        }
+                    }
+            }
+
+            LaunchedEffect(Unit) {
+                c.homeEvents.collect { animate ->
+                    if (animate) {
+                        if (!c.drawer.isClosed) c.drawer.close()
+                        else if (pager.currentPage != homePage) pager.animateScrollToPage(homePage)
+                    } else {
+                        c.drawer.snapClosed()
+                        c.query = ""
+                        pager.scrollToPage(homePage)
+                    }
+                }
+            }
+
+            BackHandler(enabled = !drawerClosed) { c.drawer.close() }
+            BackHandler(enabled = drawerClosed && onFeed) { scope.launch { pager.animateScrollToPage(homePage) } }
+
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        if (settings.wallpaperDim > 0f) drawRect(Color.Black.copy(alpha = settings.wallpaperDim))
+                    },
+            ) {
+                HorizontalPager(
+                    state = pager,
+                    userScrollEnabled = drawerClosed,
+                    beyondViewportPageCount = 0,
+                    modifier = Modifier.fillMaxSize(),
+                ) { page ->
+                    if (feedOn && page == 0) {
+                        FeedPage(c, active = onFeed)
+                    } else {
+                        HomePage(c, settings)
+                    }
+                }
+                AppDrawer(c, settings)
+            }
+
+            c.menu?.let { AppMenuPopup(c, it) }
+            if (c.homeMenu) HomeMenuSheet(c)
+            c.widgetPicker?.let { WidgetPickerSheet(c, it) }
+            c.widgetMenu?.let { WidgetMenuSheet(c, it) }
+            c.renameTarget?.let { RenameDialog(c, it) }
+        }
+    }
+}
