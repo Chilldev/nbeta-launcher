@@ -329,8 +329,12 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
                         ProfileBanner("Work apps are paused", "Resume") { c.graph.apps.setQuietMode(workProfile, false) }
                     }
                 }
+                val paused = tab == 1 && workProfile?.quiet == true
                 items(list, key = { it.key }, contentType = { "app" }) { app ->
-                    AppTile(app, iconSize, settings.drawerLabels, labelStyle, { onClick(app, it) }, { onLong(app, it) })
+                    AppTile(
+                        app, iconSize, settings.drawerLabels, labelStyle, { onClick(app, it) }, { onLong(app, it) },
+                        modifier = if (paused) Modifier.graphicsLayer { alpha = 0.45f } else Modifier,
+                    )
                 }
                 if (tab == 1 && workProfile != null && !workProfile.quiet) {
                     item(key = "work-pause", span = { GridItemSpan(maxLineSpan) }) {

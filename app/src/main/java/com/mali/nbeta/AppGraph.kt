@@ -31,7 +31,7 @@ class AppGraph(val app: Application) {
 
     val settings = SettingsRepository(app, scope)
     val apps = AppRepository(app, scope, settings)
-    val icons = IconRepository(app)
+    val icons = IconRepository(app) { settings.value.iconOverrides }
     val shortcuts = ShortcutRepository(app, scope, apps)
     val search = SearchEngine(app, scope, apps, shortcuts, settings)
 

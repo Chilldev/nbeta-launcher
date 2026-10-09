@@ -55,7 +55,11 @@ data class IconStyle(
  * Launcher3-style icon pipeline: render once into a shaped bitmap, persist it to disk, and serve hardware bitmaps
  * from memory. After the first run, every icon is a single decode of a tiny file; nothing touches PackageManager.
  */
-class IconRepository(private val context: Context) {
+class IconRepository(
+    private val context: Context,
+    /** App key -> "iconPackPackage/drawableName" chosen by the user. */
+    private val overrides: () -> Map<String, String> = { emptyMap() },
+) {
     private val launcherApps = context.getSystemService(LauncherApps::class.java)
     private val pm = context.packageManager
     private val density = context.resources.displayMetrics.densityDpi
@@ -70,10 +74,10 @@ class IconRepository(private val context: Context) {
 
     @Volatile private var activeStyle: String? = null
 
-    private fun key(app: AppEntry, style: IconStyle) = "${app.key}|${app.version}|${style.id}"
+    private fun key(app: AppEntry, style: IconStyle) = "${app.key}|${app.version}|${style.id}|${overrides()[app.key].orEmpty()}"
 
     /** One file per app and style; the APK version is a suffix so an update replaces, rather than adds, a file. */
-    private fun diskBase(app: AppEntry, style: IconStyle) = hash("${app.key}|${style.id}")
+    private fun diskBase(app: AppEntry, style: IconStyle) = hash("${app.key}|${style.id}|${overrides()[app.key].orEmpty()}")
 
     fun peek(app: AppEntry, style: IconStyle): ImageBitmap? = memory.get(key(app, style))
 
@@ -107,6 +111,21 @@ class IconRepository(private val context: Context) {
             bmp.toHardware().also { memory.put(k, it) }
         }.getOrNull()
     }
+
+    /** Preview of one icon from an icon pack, for the per-app icon picker. */
+    suspend fun packIcon(pkg: String, name: String): ImageBitmap? = withContext(dispatcher) {
+        val k = "pk|$pkg|$name"
+        memory.get(k) ?: runCatching {
+            val d = packFor(pkg)?.drawableNamed(name, density) ?: return@withContext null
+            val bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+            drawFittedPublic(Canvas(bmp), d)
+            bmp.toHardware().also { memory.put(k, it) }
+        }.getOrNull()
+    }
+
+    fun pack(pkg: String): IconPack? = packFor(pkg)
+
+    private fun drawFittedPublic(canvas: Canvas, d: Drawable) = drawFitted(canvas, d, 1f)
 
     fun clearMemory() = memory.evictAll()
 
@@ -142,8 +161,11 @@ class IconRepository(private val context: Context) {
     private fun renderApp(app: AppEntry, style: IconStyle): Bitmap {
         val bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
+        val custom = overrides()[app.key]?.let { o ->
+            packFor(o.substringBefore('/'))?.drawableNamed(o.substringAfter('/'), density)
+        }
         val pack = style.pack?.let { packFor(it) }
-        val packed = pack?.drawableFor(app.component, density)
+        val packed = custom ?: pack?.drawableFor(app.component, density)
         val original: Drawable by lazy {
             try {
                 launcherApps.resolveActivity(Intent().setComponent(app.component), app.user)?.getIcon(density)
@@ -269,8 +291,30 @@ class IconPack private constructor(
     val hasBack get() = backs.isNotEmpty()
 
     fun drawableFor(component: ComponentName, density: Int): Drawable? {
-        val name = map[component] ?: map[ComponentName(component.packageName, "")] ?: return null
+        val name = suggestion(component) ?: return null
         return drawable(name, density)
+    }
+
+    /** The pack's own icon for this app, if it has one. */
+    fun suggestion(component: ComponentName): String? = map[component] ?: map[ComponentName(component.packageName, "")]
+
+    fun drawableNamed(name: String, density: Int): Drawable? = drawable(name, density)
+
+    /** Every icon the pack offers: drawable.xml when present, otherwise everything appfilter references. */
+    val allIcons: List<String> by lazy {
+        val names = LinkedHashSet<String>()
+        runCatching {
+            @Suppress("DiscouragedApi")
+            val id = res.getIdentifier("drawable", "xml", pkg)
+            val p: XmlPullParser = if (id != 0) res.getXml(id) else Xml.newPullParser().apply { setInput(res.assets.open("drawable.xml"), "UTF-8") }
+            var ev = p.eventType
+            while (ev != XmlPullParser.END_DOCUMENT) {
+                if (ev == XmlPullParser.START_TAG && p.name == "item") p.getAttributeValue(null, "drawable")?.let { names += it }
+                ev = p.next()
+            }
+        }
+        if (names.isEmpty()) names += map.values
+        names.toList().sorted()
     }
 
     private fun drawable(name: String, density: Int): Drawable? {

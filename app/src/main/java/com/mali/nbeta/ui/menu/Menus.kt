@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -165,6 +166,7 @@ private fun AppMenuContent(c: LauncherController, app: AppEntry, origin: Origin,
         }
     }
     MenuRow(Icons.Default.Edit, "Rename") { c.renameTarget = app; dismiss() }
+    MenuRow(Icons.Default.Face, "Change icon") { c.iconPickerFor = app; dismiss() }
     if (origin == Origin.Drawer || origin == Origin.Search) {
         MenuRow(Icons.Default.Lock, "Hide from drawer") { c.hide(app); dismiss() }
     }

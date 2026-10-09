@@ -56,10 +56,11 @@ import com.mali.nbeta.data.apps.AppShortcut
 fun rememberAppIcon(app: AppEntry): ImageBitmap? {
     val icons = LocalGraph.current.icons
     val style = LocalIconStyle.current
+    val override = LocalIconOverrides.current[app.key]
     // Synchronous memory hit on the first frame (icons are prewarmed), async only on a miss.
-    var bmp by remember(app.key, app.version, style) { mutableStateOf(icons.peek(app, style)) }
+    var bmp by remember(app.key, app.version, style, override) { mutableStateOf(icons.peek(app, style)) }
     if (bmp == null) {
-        LaunchedEffect(app.key, app.version, style) { bmp = icons.load(app, style) }
+        LaunchedEffect(app.key, app.version, style, override) { bmp = icons.load(app, style) }
     }
     return bmp
 }

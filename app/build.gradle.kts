@@ -57,6 +57,13 @@ android {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    // Lets LocalPageProbe run against a saved page: -Pprobe.html=/path/page.html
+    providers.gradleProperty("probe.html").orNull?.let { systemProperty("probe.html", it) }
+    providers.gradleProperty("probe.url").orNull?.let { systemProperty("probe.url", it) }
+    testLogging { showStandardStreams = true }
+}
+
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)

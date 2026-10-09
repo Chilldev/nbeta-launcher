@@ -55,7 +55,12 @@ object Readability {
         for (el in doc.body()?.select("*").orEmpty().toList()) {
             if (el.tagName() == "body" || el.tagName() == "article" || el.tagName() == "main") continue
             val sig = el.className() + " " + el.id()
-            if (sig.isNotBlank() && unlikely.containsMatchIn(sig) && !likely.containsMatchIn(sig)) el.remove()
+            if (sig.isBlank() || !unlikely.containsMatchIn(sig) || likely.containsMatchIn(sig)) continue
+            // Class names lie ("ContainerWithSidebarWrapper" wraps the whole BBC story): keep anything that holds the
+            // article or a lot of paragraph text.
+            if (el.selectFirst("article, main, [itemprop=articleBody]") != null) continue
+            if (el.select("p").sumOf { it.text().length } > 1000 && linkDensity(el) < 0.3) continue
+            el.remove()
         }
 
         val root = pickRoot(doc) ?: return null

@@ -29,6 +29,7 @@ import kotlin.math.abs
 val LocalGraph = staticCompositionLocalOf<AppGraph> { error("No AppGraph") }
 val LocalIconStyle = compositionLocalOf { IconStyle(IconShape.System, null, false, false) }
 val LocalDots = compositionLocalOf { emptySet<String>() }
+val LocalIconOverrides = compositionLocalOf { emptyMap<String, String>() }
 
 /** Colours for text drawn straight on the wallpaper. */
 data class OnWallpaper(val text: Color, val secondary: Color, val shadow: Shadow?)

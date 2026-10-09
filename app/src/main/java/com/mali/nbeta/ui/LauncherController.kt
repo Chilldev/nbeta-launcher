@@ -56,6 +56,7 @@ class LauncherController(
     var widgetPicker by mutableStateOf<WidgetPlacement?>(null)
     var widgetMenu by mutableStateOf<Int?>(null)
     var renameTarget by mutableStateOf<AppEntry?>(null)
+    var iconPickerFor by mutableStateOf<AppEntry?>(null)
     var editingHome by mutableStateOf(false)
     var openFolder by mutableStateOf<String?>(null)
 

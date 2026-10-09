@@ -62,6 +62,19 @@ class ReadabilityTest {
         assertTrue(a!!.rtl)
     }
 
+    @Test fun keepsArticleInsideMisleadinglyNamedWrapper() {
+        // BBC: the whole story sits in a div whose class contains "Sidebar".
+        val html = page(body = """
+            <div class="ssrcss-js09yk-ContainerWithSidebarWrapper">
+              <article class="ArticleWrapper">${"<p>$para</p>".repeat(6)}</article>
+              <div class="ssrcss-sidebar">${"<a href='/x'>Most read story</a>".repeat(5)}</div>
+            </div>
+        """)
+        val a = Readability.extract(html, "https://example.com/bbc")
+        assertNotNull(a)
+        assertEquals(6, a!!.blocks.count { it is Block.Paragraph })
+    }
+
     @Test fun rejectsPagesWithoutArticleText() {
         assertNull(Readability.extract(page(body = "<div><p>Sign in to continue.</p></div>"), "https://example.com/x"))
     }

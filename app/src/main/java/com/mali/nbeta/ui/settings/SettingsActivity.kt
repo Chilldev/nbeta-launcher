@@ -409,6 +409,15 @@ private fun androidx.compose.foundation.lazy.LazyListScope.feed(s: LauncherSetti
     if (s.newsAlerts) {
         item { ClickPref("Alert sources", "Tap the bell next to a source above · ${s.alertSources.size} selected") {} }
         item {
+            val context = LocalContext.current
+            ClickPref("Check now", "Fetch feeds and alert about anything new that matches") {
+                graph.scope.launch {
+                    graph.feed.refresh(notify = true)
+                    Toast.makeText(context, "Checked for new stories", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        item {
             KeywordListPref("Alert me about…", "Notify for any source that mentions these", s.alertKeywords) { list -> set { it.copy(alertKeywords = list) } }
         }
     }

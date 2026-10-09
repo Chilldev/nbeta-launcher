@@ -31,13 +31,18 @@ class ReaderRepository(
         runCatching {
             val req = Request.Builder().url(url).header("Accept", "text/html,application/xhtml+xml").build()
             http.newCall(req).execute().use { r ->
-                if (!r.isSuccessful) return@use null
                 val type = r.header("Content-Type").orEmpty()
-                if (type.isNotEmpty() && !type.contains("html")) return@use null
+                if (!r.isSuccessful || (type.isNotEmpty() && !type.contains("html"))) {
+                    android.util.Log.i("Reader", "Not readable: HTTP ${r.code} $type for $url")
+                    return@use null
+                }
                 val body = r.body.source().apply { request(3L * 1024 * 1024) }.buffer.readUtf8()
-                Readability.extract(body, r.request.url.toString())
+                Readability.extract(body, r.request.url.toString()).also {
+                    if (it == null) android.util.Log.i("Reader", "No article found in ${body.length} chars at $url")
+                }
             }
-        }.getOrNull().also { if (it != null) cache.put(url, it) else synchronized(failed) { failed += url } }
+        }.onFailure { android.util.Log.w("Reader", "Extraction failed for $url", it) }
+            .getOrNull().also { if (it != null) cache.put(url, it) else synchronized(failed) { failed += url } }
     }
 
     fun prefetch(urls: List<String>) {

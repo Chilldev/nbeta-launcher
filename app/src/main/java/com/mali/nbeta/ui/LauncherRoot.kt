@@ -88,6 +88,7 @@ fun LauncherRoot(c: LauncherController) {
         CompositionLocalProvider(
             LocalGraph provides graph,
             LocalDragDrop provides c.dnd,
+            com.mali.nbeta.ui.common.LocalIconOverrides provides settings.iconOverrides,
             LocalIconStyle provides iconStyle,
             LocalDots provides if (settings.notificationDots) dots else emptySet(),
             LocalOnWallpaper provides onWallpaper,
@@ -201,6 +202,7 @@ fun LauncherRoot(c: LauncherController) {
             c.widgetPicker?.let { WidgetPickerSheet(c, it) }
             c.widgetMenu?.let { WidgetMenuSheet(c, it) }
             c.renameTarget?.let { RenameDialog(c, it) }
+            c.iconPickerFor?.let { com.mali.nbeta.ui.menu.IconPickerSheet(c, it) }
         }
     }
 }
