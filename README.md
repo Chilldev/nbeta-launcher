@@ -8,9 +8,14 @@ Kotlin + Jetpack Compose, minSdk 29, targetSdk 36. The release APK is about 4 MB
 
 **Home**
 - Clock, date, weather, next alarm and next calendar event at a glance. Each one is tappable.
-- Favourites grid and dock. Drag to reorder in edit mode (long-press empty space › Edit home screen).
+- Multiple home pages and a dock. Long-press then drag anything:
+  - to reorder it, or pull it from the drawer or search onto home
+  - drop it on another app to make a folder
+  - hold it at the screen edge to move to (or create) another page
+  - drop it on Remove / App info / Uninstall
+- Folders: tap to open, rename inline, drag apps out of them. A folder with one app left dissolves on its own.
 - App shortcuts pinned from the long-press menu or from other apps' "Add to home screen" requests.
-- App widgets on the home screen or the feed page: resize taller or shorter, reorder, reconfigure, move between pages.
+- App widgets on any home page or the feed page. In edit mode, drag a handle to resize. Reorder, reconfigure, and move widgets between home and feed.
 - Gestures: swipe up for the drawer, swipe down for notifications, quick settings or search, double-tap to lock.
 
 **App drawer and search**
@@ -22,6 +27,7 @@ Kotlin + Jetpack Compose, minSdk 29, targetSdk 36. The release APK is about 4 MB
   - the web (Google, DuckDuckGo, Brave, Bing or Startpage), URLs and the Play Store
 - Long-press menu: app shortcuts, add to home or dock, app info, rename, hide, uninstall.
 - Icon shapes (system, circle, squircle, rounded square, teardrop), ADW/Nova icon packs, Android 13 themed icons and notification dots.
+- Change icon for any single app: choose any icon from any installed pack, with search.
 
 **Feed**
 - RSS 2.0, RSS 1.0, Atom and JSON Feed. You can also paste a website, a YouTube channel or a subreddit, and the feed URL is discovered automatically.
@@ -29,7 +35,9 @@ Kotlin + Jetpack Compose, minSdk 29, targetSdk 36. The release APK is about 4 MB
 - Unread, Saved and per-source filters. Hide a story, or see more or fewer from a source.
 - Article images come from the feed (media:content, enclosures, YouTube thumbnails, inline `<img>`). If the feed has none, the page's `og:image` is fetched, only for cards on screen.
 - A "Today" card with weather (Open-Meteo, no key, no account) and your next events.
-- Stories open in a pre-warmed Custom Tab.
+- **Reader view**: a Readability-style extractor (jsoup) shows the article natively. It handles RTL, adjusts text size, prefetches the top stories on Wi‑Fi, and falls back to a pre-warmed Custom Tab when a page can't be read.
+- Mute keywords: whole-word matching that ignores accents and Arabic letter variants. Mute from settings or from a story's menu.
+- Breaking-news alerts: pick sources (bell icon) and/or keywords, and new matching stories are notified during background refresh, at most 3 per check. "Check now" tests it.
 - Background refresh with WorkManager (interval and Wi‑Fi-only are configurable). OPML import and export.
 
 **Settings**: appearance (Material You, wallpaper dimming, text colour on wallpaper), grid and icon sizes, drawer, icons, gestures, search providers, feed sources, weather location, and JSON backup/restore.
@@ -70,6 +78,7 @@ Macrobenchmark on the Android 16 emulator (host GPU, Apple M4), release build. A
 
 Cold start matters less for a home app than for most apps, because the system keeps the launcher process alive. The usual path is a warm HOME press, which is instant.
 
+
 ## Build
 
 ```bash
@@ -78,6 +87,8 @@ Cold start matters less for a home app than for most apps, because the system ke
 ./gradlew :app:generateReleaseBaselineProfile                 # needs a device/emulator (API 33+)
 ./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest  # startup + frame timing
 ```
+
+Release builds are signed with `signing/nbeta-release.jks` (git-ignored; password in `signing/keystore.properties`). **Back both up somewhere safe.** Without them, future updates can't install over the current app.
 
 Install it, then choose **Nbeta** as the home app (Settings › Apps › Default apps › Home app, or use the banner in Nbeta settings). App shortcuts, pinning, work-profile pause and private space only work while Nbeta is the default home app. That is an Android rule.
 
