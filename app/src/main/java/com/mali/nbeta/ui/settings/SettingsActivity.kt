@@ -93,20 +93,29 @@ import androidx.compose.runtime.CompositionLocalProvider
 import kotlin.math.roundToInt
 
 class SettingsActivity : ComponentActivity() {
+    private var requested by mutableStateOf<Pair<Page?, Long>>(null to 0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val graph = (application as NbetaApp).graph
-        val start = intent.getStringExtra(EXTRA_PAGE)?.let { p -> Page.entries.firstOrNull { it.name.equals(p, true) } }
+        requested = pageOf(intent) to System.nanoTime()
         setContent {
             val s by graph.settings.flow.collectAsStateWithLifecycle()
             NbetaTheme(s) {
                 CompositionLocalProvider(LocalGraph provides graph) {
-                    SettingsApp(graph, s, start) { finish() }
+                    SettingsApp(graph, s, requested) { finish() }
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        requested = pageOf(intent) to System.nanoTime()
+    }
+
+    private fun pageOf(intent: Intent?) = intent?.getStringExtra(EXTRA_PAGE)?.let { p -> Page.entries.firstOrNull { it.name.equals(p, true) } }
 
     companion object {
         const val EXTRA_PAGE = "page"
@@ -119,8 +128,12 @@ enum class Page(val title: String) {
 }
 
 @Composable
-private fun SettingsApp(graph: AppGraph, s: LauncherSettings, start: Page?, finish: () -> Unit) {
-    var stack by remember { mutableStateOf(listOfNotNull(Page.Root, start?.takeIf { it != Page.Root })) }
+private fun SettingsApp(graph: AppGraph, s: LauncherSettings, requested: Pair<Page?, Long>, finish: () -> Unit) {
+    var stack by remember { mutableStateOf(listOf(Page.Root)) }
+    // A deep link (e.g. "Feed settings" from the feed page) always lands on that page, even if settings was open.
+    androidx.compose.runtime.LaunchedEffect(requested) {
+        stack = listOfNotNull(Page.Root, requested.first?.takeIf { it != Page.Root })
+    }
     val page = stack.last()
     val back: () -> Unit = { if (stack.size > 1) stack = stack.dropLast(1) else finish() }
     BackHandler(onBack = back)

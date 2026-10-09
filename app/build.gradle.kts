@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -65,6 +66,7 @@ dependencies {
     implementation(libs.work.runtime)
     implementation(libs.browser)
     implementation(libs.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     implementation(libs.coroutines.android)
     implementation(libs.serialization.json)
     implementation(libs.coil.compose)

@@ -178,6 +178,13 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                 }
             }
         }
+        // Keep the status bar legible over scrolled cards.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(insets.calculateTopPadding())
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)),
+        )
     }
 }
 
@@ -188,7 +195,11 @@ private fun FeedHeader(c: LauncherController, cache: FeedCache, refreshing: Bool
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text("Today", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-            val updated = if (cache.lastRefresh > 0) "Updated " + DateUtils.getRelativeTimeSpanString(cache.lastRefresh, now, DateUtils.MINUTE_IN_MILLIS) else "Not updated yet"
+            val updated = when {
+                cache.lastRefresh == 0L -> "Not updated yet"
+                now - cache.lastRefresh < 60_000 -> "Updated just now"
+                else -> "Updated " + DateUtils.getRelativeTimeSpanString(cache.lastRefresh, now, DateUtils.MINUTE_IN_MILLIS)
+            }
             Text(
                 SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date(now)) + " · " + if (refreshing) "Updating…" else updated,
                 style = MaterialTheme.typography.bodyMedium,

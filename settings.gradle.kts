@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "nbeta"
 include(":app")
+include(":baselineprofile")

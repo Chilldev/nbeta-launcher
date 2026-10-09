@@ -1,0 +1,8 @@
+# Hand-written rules for hot paths the generated journey can miss (background feed refresh, first-run icon rendering).
+HSPLcom/mali/nbeta/data/feed/FeedParser;->**(**)**
+HSPLcom/mali/nbeta/data/feed/FeedRepository;->**(**)**
+HSPLcom/mali/nbeta/data/search/Matcher;->**(**)**
+HSPLcom/mali/nbeta/data/search/TextFold;->**(**)**
+HSPLcom/mali/nbeta/data/search/Searchable;->**(**)**
+HSPLcom/mali/nbeta/data/apps/IconRepository;->**(**)**
+HSPLcom/mali/nbeta/data/apps/AppRepository;->**(**)**

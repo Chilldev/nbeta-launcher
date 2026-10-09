@@ -42,7 +42,7 @@ class AppGraph(val app: Application) {
                 val req = chain.request()
                 chain.proceed(
                     if (req.header("User-Agent") != null) req
-                    else req.newBuilder().header("User-Agent", "Mozilla/5.0 (Linux; Android) NbetaLauncher/${BuildConfig.VERSION_NAME}").build(),
+                    else req.newBuilder().header("User-Agent", "Mozilla/5.0 (compatible; NbetaLauncher/${BuildConfig.VERSION_NAME}; Android)").build(),
                 )
             }
             .build()

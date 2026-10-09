@@ -107,6 +107,8 @@ fun WidgetPickerSheet(c: LauncherController, placement: WidgetPlacement) {
                             .padding(horizontal = 24.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        AppIconSmall(g.packageName)
+                        Spacer(Modifier.width(16.dp))
                         Text(g.appLabel, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                         Text("${g.providers.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -128,6 +130,17 @@ fun WidgetPickerSheet(c: LauncherController, placement: WidgetPlacement) {
             }
         }
     }
+}
+
+@Composable
+private fun AppIconSmall(pkg: String) {
+    val context = LocalContext.current
+    val icon by produceState<ImageBitmap?>(null, pkg) {
+        value = withContext(Dispatchers.IO) {
+            runCatching { context.packageManager.getApplicationIcon(pkg).toBitmap(96, 96).asImageBitmap() }.getOrNull()
+        }
+    }
+    Box(Modifier.size(36.dp)) { icon?.let { Image(it, null, Modifier.size(36.dp)) } }
 }
 
 @Composable
