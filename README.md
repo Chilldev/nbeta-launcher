@@ -78,7 +78,6 @@ Macrobenchmark on the Android 16 emulator (host GPU, Apple M4), release build. A
 
 Cold start matters less for a home app than for most apps, because the system keeps the launcher process alive. The usual path is a warm HOME press, which is instant.
 
-
 ## Build
 
 ```bash
