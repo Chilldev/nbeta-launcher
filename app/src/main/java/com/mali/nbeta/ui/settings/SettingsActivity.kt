@@ -286,6 +286,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.drawer(s: LauncherSet
     item { ChoicePref(stringResource(R.string.settings_sort), DrawerSort.entries, s.drawerSort, { stringResource(it.label) }) { v -> set { it.copy(drawerSort = v) } } }
     item { SwitchPref(stringResource(R.string.settings_auto_keyboard), stringResource(R.string.settings_auto_keyboard_summary), s.autoKeyboard) { v -> set { it.copy(autoKeyboard = v) } } }
     item { SwitchPref(stringResource(R.string.settings_suggestions_row), stringResource(R.string.settings_suggestions_row_summary), s.showSuggestions) { v -> set { it.copy(showSuggestions = v) } } }
+    item { SwitchPref(stringResource(R.string.settings_drawer_categories), stringResource(R.string.settings_drawer_categories_summary), s.drawerCategories) { v -> set { it.copy(drawerCategories = v) } } }
     item {
         val activity = LocalContext.current as android.app.Activity
         val title = stringResource(R.string.settings_hidden_apps)

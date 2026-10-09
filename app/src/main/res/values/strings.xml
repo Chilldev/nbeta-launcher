@@ -507,4 +507,20 @@
     <plurals name="settings_locked_count"><item quantity="one">%d app needs unlock to open · long-press an app to lock it</item><item quantity="other">%d apps need unlock to open · long-press an app to lock it</item></plurals>
     <string name="settings_dot_counts">Show counts</string>
     <string name="settings_dot_counts_summary">Numbers instead of plain dots</string>
+    <string name="category_social">Social</string>
+    <string name="category_communication">Communication</string>
+    <string name="category_media">Music &amp; video</string>
+    <string name="category_photos">Photos</string>
+    <string name="category_games">Games</string>
+    <string name="category_news">News</string>
+    <string name="category_travel">Maps &amp; travel</string>
+    <string name="category_productivity">Productivity</string>
+    <string name="category_finance">Finance</string>
+    <string name="category_shopping">Shopping &amp; food</string>
+    <string name="category_health">Health</string>
+    <string name="category_tools">Tools</string>
+    <string name="drawer_all_apps">All</string>
+    <string name="drawer_folder_added">“%1$s” folder added to home</string>
+    <string name="settings_drawer_categories">Categories</string>
+    <string name="settings_drawer_categories_summary">Filter the drawer by type. Long-press a category to make it a home folder.</string>
 </resources>

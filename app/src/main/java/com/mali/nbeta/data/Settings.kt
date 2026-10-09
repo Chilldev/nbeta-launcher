@@ -114,6 +114,7 @@ data class LauncherSettings(
     val drawerLabels: Boolean = true,
     val autoKeyboard: Boolean = true,
     val showSuggestions: Boolean = true,
+    val drawerCategories: Boolean = true,
     val drawerSort: DrawerSort = DrawerSort.Alphabetical,
     val hiddenApps: Set<String> = emptySet(),
     /** Apps that need fingerprint/face/PIN to open from Nbeta. */

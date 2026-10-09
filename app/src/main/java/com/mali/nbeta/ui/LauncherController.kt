@@ -186,6 +186,18 @@ class LauncherController(
         graph.settings.update { Layout.normalize(Layout.remove(it, item)) }
     }
 
+    /** Adds a folder holding [apps] to the current home page and shows it there. */
+    fun addCategoryFolder(name: String, apps: List<AppEntry>) {
+        if (apps.isEmpty()) return
+        graph.settings.update { s ->
+            val page = currentHomePage.coerceIn(0, s.homePages.lastIndex)
+            val folder = HomeItem.Folder(java.util.UUID.randomUUID().toString().take(8), name, apps.map { HomeItem.App(it.key) })
+            Layout.insert(s, Container.Page(page), Int.MAX_VALUE, folder)
+        }
+        drawer.close()
+        Toast.makeText(activity, activity.getString(R.string.drawer_folder_added, name), Toast.LENGTH_SHORT).show()
+    }
+
     fun addPage() {
         graph.settings.update { Layout.addPage(it).first }
     }

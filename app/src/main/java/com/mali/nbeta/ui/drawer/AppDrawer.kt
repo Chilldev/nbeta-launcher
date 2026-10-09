@@ -2,7 +2,9 @@ package com.mali.nbeta.ui.drawer
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -89,7 +91,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mali.nbeta.data.DrawerSort
 import com.mali.nbeta.R
 import com.mali.nbeta.data.LauncherSettings
+import com.mali.nbeta.data.apps.AppCategory
 import com.mali.nbeta.data.apps.AppEntry
+import com.mali.nbeta.ui.common.label
 import com.mali.nbeta.data.apps.ProfileKind
 import com.mali.nbeta.data.search.SearchResults
 import com.mali.nbeta.data.search.TextFold
@@ -297,14 +301,27 @@ private fun DrawerApps(c: LauncherController, settings: LauncherSettings, gridSt
     val suggestions by produceState(emptyList<AppEntry>(), personal, stats, cols) {
         value = withContext(Dispatchers.Default) { graph.apps.suggestions(personal.filterNot { it.packageName == context.packageName }, cols) }
     }
-    val showSuggestions = settings.showSuggestions && tab == 0 && suggestions.size >= cols.coerceAtMost(3)
-    val list = if (tab == 0) personal else work
+    var category by remember { mutableStateOf<AppCategory?>(null) }
+    val tabApps = if (tab == 0) personal else work
+    val categories = remember(tabApps) {
+        tabApps.groupingBy { it.category }.eachCount().filter { it.value >= 2 }.keys.sortedBy { it.ordinal }
+    }
+    if (category != null && category !in categories) category = null
+    val showSuggestions = settings.showSuggestions && tab == 0 && category == null && suggestions.size >= cols.coerceAtMost(3)
+    val list = remember(tabApps, category) { category?.let { cat -> tabApps.filter { it.category == cat } } ?: tabApps }
 
     Column(Modifier.fillMaxSize()) {
         if (workProfile != null) {
             PrimaryTabRow(selectedTabIndex = tab, containerColor = androidx.compose.ui.graphics.Color.Transparent) {
                 Tab(tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.drawer_personal)) })
                 Tab(tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.drawer_work)) })
+            }
+        }
+        if (settings.drawerCategories && categories.size >= 2) {
+            CategoryChips(categories, category, onSelect = { category = it }) { cat ->
+                // Long-press: turn the category into a folder on the current home page.
+                val apps = tabApps.filter { it.category == cat }
+                c.addCategoryFolder(c.activity.getString(cat.label), apps)
             }
         }
         val onClick: (AppEntry, com.mali.nbeta.ui.common.BoundsHolder) -> Unit = { app, b -> c.launch(app, b) }
@@ -476,5 +493,55 @@ private fun FastScroller(
                 Text(letter, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryChips(
+    categories: List<AppCategory>,
+    selected: AppCategory?,
+    onSelect: (AppCategory?) -> Unit,
+    onMakeFolder: (AppCategory) -> Unit,
+) {
+    androidx.compose.foundation.lazy.LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        modifier = Modifier.padding(bottom = 6.dp),
+    ) {
+        item { CategoryChip(stringResource(R.string.drawer_all_apps), selected == null, onClick = { onSelect(null) }, onLongClick = null) }
+        items(categories.size) { i ->
+            val cat = categories[i]
+            CategoryChip(stringResource(cat.label), selected == cat, onClick = { onSelect(if (selected == cat) null else cat) }, onLongClick = { onMakeFolder(cat) })
+        }
+    }
+}
+
+/** Filter-chip look, but with long-press (Material's FilterChip consumes the whole gesture). */
+@Composable
+private fun CategoryChip(text: String, selected: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)?) {
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    Box(
+        Modifier
+            .height(32.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent)
+            .border(1.dp, if (selected) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick?.let { long ->
+                    {
+                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        long()
+                    }
+                },
+            )
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

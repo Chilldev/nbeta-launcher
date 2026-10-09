@@ -542,4 +542,20 @@
     <plurals name="settings_locked_count"><item quantity="zero">لا توجد تطبيقات مقفلة · اضغط مطولًا على تطبيق لقفله</item><item quantity="one">تطبيق واحد يتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="two">تطبيقان يتطلبان فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="few">%d تطبيقات تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="many">%d تطبيقًا تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item><item quantity="other">%d تطبيق تتطلب فتح القفل · اضغط مطولًا على تطبيق لقفله</item></plurals>
     <string name="settings_dot_counts">إظهار العدد</string>
     <string name="settings_dot_counts_summary">أرقام بدلًا من النقاط</string>
+    <string name="category_social">التواصل الاجتماعي</string>
+    <string name="category_communication">الاتصالات</string>
+    <string name="category_media">الموسيقى والفيديو</string>
+    <string name="category_photos">الصور</string>
+    <string name="category_games">الألعاب</string>
+    <string name="category_news">الأخبار</string>
+    <string name="category_travel">الخرائط والسفر</string>
+    <string name="category_productivity">الإنتاجية</string>
+    <string name="category_finance">المال</string>
+    <string name="category_shopping">التسوق والطعام</string>
+    <string name="category_health">الصحة</string>
+    <string name="category_tools">الأدوات</string>
+    <string name="drawer_all_apps">الكل</string>
+    <string name="drawer_folder_added">أُضيف مجلد «%1$s» إلى الشاشة الرئيسية</string>
+    <string name="settings_drawer_categories">الفئات</string>
+    <string name="settings_drawer_categories_summary">صفّ الدرج حسب النوع. اضغط مطولًا على فئة لتحويلها إلى مجلد في الشاشة الرئيسية.</string>
 </resources>
