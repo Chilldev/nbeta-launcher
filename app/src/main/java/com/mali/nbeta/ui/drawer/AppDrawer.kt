@@ -46,6 +46,8 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -195,6 +197,8 @@ fun AppDrawer(c: LauncherController, settings: LauncherSettings) {
                 onDragStopped = { c.drawer.settle(it) },
             ),
     ) {
+        // No Surface here (the wallpaper shows through), so set the default text/icon colour explicitly.
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
             SearchField(c, focus)
             val results by produceState<SearchResults?>(null, c.query) {
@@ -207,6 +211,7 @@ fun AppDrawer(c: LauncherController, settings: LauncherSettings) {
             } else {
                 SearchResultsList(c, r, settings)
             }
+        }
         }
     }
 }

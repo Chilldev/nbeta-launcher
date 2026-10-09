@@ -137,6 +137,7 @@ fun FeedPage(c: LauncherController, active: Boolean) {
     muteFor?.let { item -> MuteKeywordDialog(item, onDismiss = { muteFor = null }) { k -> graph.settings.update { it.copy(mutedKeywords = (it.mutedKeywords + k).distinct()) } } }
 
     val insets = WindowInsets.systemBars.asPaddingValues()
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))) {
         PullToRefreshBox(
             isRefreshing = refreshing,
@@ -201,6 +202,7 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                 .height(insets.calculateTopPadding())
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)),
         )
+    }
     }
 }
 

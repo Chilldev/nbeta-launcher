@@ -67,6 +67,9 @@ object Readability {
         val blocks = ArrayList<Block>()
         flatten(root, blocks, doc)
         if (lead != null) blocks.removeAll { it is Block.Image && it.url == lead }
+        // If the article opens with its own picture, that's the lead; showing the og:image too would duplicate it
+        // (sites often serve the same photo at different URLs/sizes).
+        val leadImage = if (blocks.take(3).any { it is Block.Image }) null else lead
         val words = blocks.sumOf { b ->
             when (b) {
                 is Block.Paragraph -> Jsoup.parse(b.html).text().split(' ').size
@@ -77,7 +80,7 @@ object Readability {
             }
         }
         if (words < 80) return null
-        return Article(title.ifBlank { site ?: url }, byline, site, lead, blocks, rtl, words)
+        return Article(title.ifBlank { site ?: url }, byline, site, leadImage, blocks, rtl, words)
     }
 
     private fun meta(doc: Document, name: String): String? =
@@ -136,7 +139,9 @@ object Readability {
                 "figure" -> {
                     val img = child.selectFirst("img")
                     val url = img?.let { imageUrl(it, doc) }
-                    if (url != null) out += Block.Image(url, child.selectFirst("figcaption")?.text()?.takeIf { it.isNotBlank() })
+                    // Drop screen-reader prefixes like BBC's visually hidden "Image caption,".
+                    val caption = child.selectFirst("figcaption")?.text()?.replace(Regex("^(Image caption|Caption|Image source),?\\s*", RegexOption.IGNORE_CASE), "")
+                    if (url != null) out += Block.Image(url, caption?.takeIf { it.isNotBlank() })
                 }
                 "img" -> imageUrl(child, doc)?.let { out += Block.Image(it, child.attr("alt").ifBlank { null }) }
                 "blockquote" -> child.text().trim().takeIf { it.isNotEmpty() }?.let { out += Block.Quote(clean(child)) }

@@ -72,6 +72,7 @@ fun FolderOverlay(c: LauncherController, settings: LauncherSettings) {
             .pointerInput(id) { detectTapGestures { c.openFolder = null } },
         contentAlignment = Alignment.Center,
     ) {
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         AnimatedVisibility(appear, enter = fadeIn(spring(stiffness = 1500f)) + scaleIn(spring(dampingRatio = 0.8f, stiffness = 1100f), 0.9f)) {
             Column(
                 Modifier
@@ -103,6 +104,7 @@ fun FolderOverlay(c: LauncherController, settings: LauncherSettings) {
                     acceptsDrops = false,
                 )
             }
+        }
         }
     }
 }
