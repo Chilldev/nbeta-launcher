@@ -249,7 +249,7 @@ class SearchEngine(
             SettingHit(R.string.search_setting_hotspot, "android.settings.TETHER_SETTINGS"),
             SettingHit(R.string.search_setting_airplane, Settings.ACTION_AIRPLANE_MODE_SETTINGS),
             SettingHit(R.string.search_setting_display, Settings.ACTION_DISPLAY_SETTINGS),
-            SettingHit(R.string.common_wallpaper, Intent.ACTION_SET_WALLPAPER),
+            SettingHit(R.string.common_wallpaper, "android.settings.WALLPAPER_SETTINGS"),
             SettingHit(R.string.search_setting_sound, Settings.ACTION_SOUND_SETTINGS),
             SettingHit(R.string.search_setting_battery, Intent.ACTION_POWER_USAGE_SUMMARY),
             SettingHit(R.string.search_setting_apps, Settings.ACTION_APPLICATION_SETTINGS),

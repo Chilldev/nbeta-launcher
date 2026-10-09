@@ -76,6 +76,7 @@ import com.mali.nbeta.data.FeedOrder
 import com.mali.nbeta.data.FeedSource
 import com.mali.nbeta.data.LinkOpener
 import com.mali.nbeta.data.WidgetPlacement
+import com.mali.nbeta.data.BuiltinWidget
 import com.mali.nbeta.data.feed.FeedCache
 import com.mali.nbeta.data.feed.FeedFilter
 import com.mali.nbeta.data.feed.FeedItem
@@ -174,7 +175,9 @@ fun FeedPage(c: LauncherController, active: Boolean) {
                 } else {
                 item(key = "header", contentType = "header") { FeedHeader(c, cache, refreshing, onSearch = { searching = true }) { scope.launch { feed.refresh() } } }
                 if (!settings.setupCardDismissed) item(key = "setup", contentType = "setup") { SetupCard(c) }
-                item(key = "media", contentType = "media") { com.mali.nbeta.ui.home.MediaCard() }
+                if (settings.widgets.none { it.placement == WidgetPlacement.Feed && it.builtin == BuiltinWidget.Media }) {
+                    item(key = "media", contentType = "media") { com.mali.nbeta.ui.home.MediaCard() }
+                }
                 item(key = "today", contentType = "today") { TodayCard(c) }
                 val feedWidgets = settings.widgets.filter { it.placement == WidgetPlacement.Feed }
                 items(feedWidgets, key = { "w${it.id}" }, contentType = { "widget" }) { slot ->

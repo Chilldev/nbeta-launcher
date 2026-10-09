@@ -265,10 +265,9 @@ fun MenuRow(icon: ImageVector, label: String, onClick: () -> Unit) {
 fun HomeMenuSheet(c: LauncherController) {
     ModalBottomSheet(onDismissRequest = { c.homeMenu = false }) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
-            val chooserTitle = stringResource(R.string.menu_set_wallpaper)
             MenuRow(Icons.Default.Create, stringResource(R.string.common_wallpaper)) {
                 c.homeMenu = false
-                c.start(Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                c.wallpaperSheet = true
             }
             MenuRow(Icons.Default.Add, stringResource(R.string.menu_widgets)) {
                 c.homeMenu = false

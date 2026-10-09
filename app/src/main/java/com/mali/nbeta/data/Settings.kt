@@ -36,6 +36,9 @@ enum class WebEngine(val label: String, val template: String) {
 enum class LinkOpener { Reader, CustomTab, Browser }
 enum class TempUnit { Celsius, Fahrenheit }
 enum class WidgetPlacement { Home, Feed }
+/** Widgets drawn by Nbeta itself; their slots use negative ids so they never collide with AppWidgetHost ids. */
+enum class BuiltinWidget { Media }
+enum class MediaStyle { Pill, Compact, Large, Artwork }
 
 /** Something placed on the home grid or dock. */
 @Immutable
@@ -70,6 +73,8 @@ data class WidgetSlot(
     val placement: WidgetPlacement = WidgetPlacement.Home,
     val heightDp: Int = 0, // 0 = provider's default height
     val page: Int = 0, // home page index when placement is Home
+    val builtin: BuiltinWidget? = null,
+    val mediaStyle: MediaStyle = MediaStyle.Compact,
 )
 
 @Immutable
@@ -162,7 +167,20 @@ data class LauncherSettings(
     val weatherLon: Double? = null,
     // Widgets
     val widgets: List<WidgetSlot> = emptyList(),
+    /** The media player used to be a fixed card under the glance; it became a widget once, at its old place. */
+    val mediaWidgetMigrated: Boolean = false,
 )
+
+/** Older layouts get the media player as a widget on the first home page, where the fixed card used to be. */
+internal fun LauncherSettings.migrated(): LauncherSettings {
+    var s = this
+    if (s.pages.isEmpty() && s.homeItems.isNotEmpty()) s = s.copy(pages = listOf(s.homeItems), homeItems = emptyList())
+    if (!s.mediaWidgetMigrated) {
+        val id = (s.widgets.minOfOrNull { it.id } ?: 0).coerceAtMost(0) - 1
+        s = s.copy(widgets = listOf(WidgetSlot(id, builtin = BuiltinWidget.Media)) + s.widgets, mediaWidgetMigrated = true)
+    }
+    return s
+}
 
 internal val AppJson = Json {
     ignoreUnknownKeys = true
@@ -227,8 +245,8 @@ class JsonStore<T>(
 
 class SettingsRepository(context: Context, scope: CoroutineScope) {
     private val store = JsonStore(File(context.filesDir, "settings.json"), LauncherSettings.serializer(), { LauncherSettings() }, scope).apply {
-        // v1 kept a single home page in homeItems.
-        if (value.pages.isEmpty() && value.homeItems.isNotEmpty()) update { it.copy(pages = listOf(it.homeItems), homeItems = emptyList()) }
+        // v1 kept a single home page in homeItems; v1.3 had a fixed media card.
+        if (value.migrated() != value) update { it.migrated() }
     }
     val flow: StateFlow<LauncherSettings> = store.flow
     val value: LauncherSettings get() = store.value
@@ -237,7 +255,7 @@ class SettingsRepository(context: Context, scope: CoroutineScope) {
     fun export(): String = AppJson.encodeToString(LauncherSettings.serializer(), value)
     fun import(json: String) {
         val s = AppJson.decodeFromString(LauncherSettings.serializer(), json)
-        store.replace(if (s.pages.isEmpty() && s.homeItems.isNotEmpty()) s.copy(pages = listOf(s.homeItems), homeItems = emptyList()) else s)
+        store.replace(s.migrated())
     }
 }
 

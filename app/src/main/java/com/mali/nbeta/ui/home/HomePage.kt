@@ -206,7 +206,6 @@ fun HomePageContent(c: LauncherController, settings: LauncherSettings, page: Int
         ) {
             if (page == 0) {
                 Glance(c, settings)
-                MediaCard(Modifier.padding(horizontal = 4.dp, vertical = 4.dp))
             } else {
                 Spacer(Modifier.height(24.dp))
             }

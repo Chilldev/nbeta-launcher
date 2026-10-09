@@ -17,6 +17,12 @@ Kotlin + Jetpack Compose, minSdk 29, targetSdk 36. The release APK is about 4 MB
 - App shortcuts pinned from the long-press menu or from other apps' "Add to home screen" requests.
 - App widgets on any home page or the feed page. In edit mode, drag a handle to resize. Reorder, reconfigure, and move widgets between home and feed.
 - Gestures: swipe up for the drawer, swipe down for notifications, quick settings or search, double-tap to lock.
+- Media player widget, built in, in four styles (pill, compact, large with a seek bar, full-cover artwork):
+  - shows which app is playing (icon and name) and opens that player on tap
+  - elapsed time and time left (tap to show total length); tap or drag the bar to seek, with the time shown while dragging
+  - album and genre when the player provides them, colours from the cover art
+  - the player's own buttons (like, shuffle, ±15 s…) and a switcher when two players have something loaded
+- Wallpaper: the phone's own Wallpaper & style screen, any gallery app (Samsung Gallery, Google Photos, Files…) with the system's crop-and-apply screen, live wallpapers and wallpaper apps.
 
 **App drawer and search**
 - Drawer: alphabetical grid with a letter fast-scroller, a "suggested" row ranked by frecency, and the keyboard opens immediately.

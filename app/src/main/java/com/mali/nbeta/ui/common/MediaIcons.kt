@@ -32,4 +32,10 @@ object MediaIcons {
             moveTo(6f, 6f); lineTo(8f, 6f); lineTo(8f, 18f); lineTo(6f, 18f); close()
         }
     }
+    val Swap by lazy {
+        icon("Swap") {
+            moveTo(7f, 11f); lineTo(3f, 15f); lineTo(7f, 19f); lineTo(7f, 16f); lineTo(14f, 16f); lineTo(14f, 14f); lineTo(7f, 14f); close()
+            moveTo(21f, 9f); lineTo(17f, 5f); lineTo(17f, 8f); lineTo(10f, 8f); lineTo(10f, 10f); lineTo(17f, 10f); lineTo(17f, 13f); close()
+        }
+    }
 }

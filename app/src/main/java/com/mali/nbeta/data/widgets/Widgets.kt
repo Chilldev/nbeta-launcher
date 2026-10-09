@@ -15,6 +15,8 @@ import androidx.compose.runtime.Immutable
 import com.mali.nbeta.data.SettingsRepository
 import com.mali.nbeta.data.WidgetPlacement
 import com.mali.nbeta.data.WidgetSlot
+import com.mali.nbeta.data.BuiltinWidget
+import com.mali.nbeta.data.MediaStyle
 
 /** Long-press on widgets is detected in Compose (WidgetFrame), so the host uses plain AppWidgetHostViews. */
 class LauncherWidgetHost(context: Context) : AppWidgetHost(context, HOST_ID) {
@@ -39,7 +41,7 @@ class WidgetRepository(private val context: Context, private val settings: Setti
     private val infoCache = HashMap<Int, AppWidgetProviderInfo?>()
 
     /** Memoised: getAppWidgetInfo is a binder call and composition asks for it often. */
-    fun info(id: Int): AppWidgetProviderInfo? = synchronized(infoCache) {
+    fun info(id: Int): AppWidgetProviderInfo? = if (id < 0) null else synchronized(infoCache) {
         infoCache.getOrPut(id) { runCatching { manager.getAppWidgetInfo(id) }.getOrNull() }
     }
 
@@ -94,7 +96,15 @@ class WidgetRepository(private val context: Context, private val settings: Setti
         settings.update { s -> if (s.widgets.any { it.id == id }) s else s.copy(widgets = s.widgets + WidgetSlot(id, placement, page = page)) }
     }
 
+    fun addBuiltin(kind: BuiltinWidget, style: MediaStyle, placement: WidgetPlacement, page: Int = 0) {
+        settings.update { s ->
+            val id = (s.widgets.minOfOrNull { it.id } ?: 0).coerceAtMost(0) - 1
+            s.copy(widgets = s.widgets + WidgetSlot(id, placement, page = page, builtin = kind, mediaStyle = style))
+        }
+    }
+
     fun discard(id: Int) {
+        if (id < 0) return
         runCatching { host.deleteAppWidgetId(id) }
         views.remove(id)
         synchronized(infoCache) { infoCache.remove(id) }

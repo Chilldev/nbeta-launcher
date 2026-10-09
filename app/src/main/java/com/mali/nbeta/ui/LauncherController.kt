@@ -57,6 +57,7 @@ class LauncherController(
     var query by mutableStateOf("")
     var menu by mutableStateOf<MenuRequest?>(null)
     var homeMenu by mutableStateOf(false)
+    var wallpaperSheet by mutableStateOf(false)
     var widgetPicker by mutableStateOf<WidgetPlacement?>(null)
     var widgetMenu by mutableStateOf<Int?>(null)
     var renameTarget by mutableStateOf<AppEntry?>(null)
@@ -133,6 +134,7 @@ class LauncherController(
     fun onHomePressed(animate: Boolean) {
         menu = null
         homeMenu = false
+        wallpaperSheet = false
         widgetMenu = null
         widgetPicker = null
         editingHome = false

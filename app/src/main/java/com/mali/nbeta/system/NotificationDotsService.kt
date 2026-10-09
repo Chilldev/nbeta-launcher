@@ -1,6 +1,5 @@
 package com.mali.nbeta.system
 
-import android.app.ActivityOptions
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
@@ -15,7 +14,6 @@ import android.os.UserManager
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -143,7 +141,6 @@ class NotificationDotsService : NotificationListenerService() {
     }
 
     companion object {
-        private const val TAG = "Notifications"
         private val dots = MutableStateFlow<Map<String, Int>>(emptyMap())
         private val items = MutableStateFlow<List<NotifItem>>(emptyList())
         private var instance: WeakReference<NotificationDotsService>? = null
@@ -160,20 +157,7 @@ class NotificationDotsService : NotificationListenerService() {
             return flat.split(':').any { ComponentName.unflattenFromString(it) == me }
         }
 
-        /** Sends a notification's PendingIntent from the (visible) launcher, allowed to start the target activity. */
-        private fun send(context: Context, pi: PendingIntent, fill: Intent? = null): Boolean = try {
-            val opts = if (Build.VERSION.SDK_INT >= 34) {
-                ActivityOptions.makeBasic().apply {
-                    @Suppress("DEPRECATION")
-                    setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
-                }.toBundle()
-            } else null
-            pi.send(context, 0, fill, null, null, null, opts)
-            true
-        } catch (e: Exception) {
-            Log.w(TAG, "PendingIntent failed", e)
-            false
-        }
+        private fun send(context: Context, pi: PendingIntent, fill: Intent? = null) = pi.sendFromLauncher(context, fill)
 
         /** Opens the notification's target (usually the exact chat) and clears it if the app asked for that. */
         fun open(context: Context, item: NotifItem): Boolean {

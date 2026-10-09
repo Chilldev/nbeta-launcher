@@ -215,6 +215,7 @@ fun LauncherRoot(c: LauncherController) {
 
             c.menu?.let { AppMenuPopup(c, it) }
             if (c.homeMenu) HomeMenuSheet(c)
+            if (c.wallpaperSheet) com.mali.nbeta.ui.wallpaper.WallpaperSheet(c)
             c.widgetPicker?.let { WidgetPickerSheet(c, it) }
             c.widgetMenu?.let { WidgetMenuSheet(c, it) }
             c.renameTarget?.let { RenameDialog(c, it) }

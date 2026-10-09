@@ -108,6 +108,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.wallpaper.WallpaperActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity="com.mali.nbeta.wallpaper"
+            android:theme="@style/Theme.Nbeta.Invisible" />
+
         <service
             android:name=".system.NotificationDotsService"
             android:exported="true"

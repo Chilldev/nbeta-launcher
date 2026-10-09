@@ -67,6 +67,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mali.nbeta.data.WidgetPlacement
+import com.mali.nbeta.data.BuiltinWidget
+import com.mali.nbeta.data.MediaStyle
+import com.mali.nbeta.ui.common.MediaIcons
+import com.mali.nbeta.ui.home.MediaStylePreview
+import com.mali.nbeta.ui.home.MediaWidget
+import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.HorizontalDivider
 import com.mali.nbeta.R
 import com.mali.nbeta.data.WidgetSlot
 import com.mali.nbeta.data.widgets.WidgetProviderGroup
@@ -87,8 +95,22 @@ fun WidgetColumn(c: LauncherController, slots: List<WidgetSlot>, editing: Boolea
 @Composable
 fun WidgetFrame(c: LauncherController, slot: WidgetSlot, modifier: Modifier = Modifier, editing: Boolean = false) {
     val repo = LocalGraph.current.widgets
-    val info = remember(slot.id) { repo.info(slot.id) }
     val openMenu = { c.widgetMenu = slot.id }
+    if (slot.builtin != null) {
+        // Drawn by Nbeta: sized by its style, so no resize handle.
+        Box(
+            modifier
+                .fillMaxWidth()
+                .then(if (editing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp)) else Modifier)
+                .widgetLongPress(openMenu),
+        ) {
+            when (slot.builtin) {
+                BuiltinWidget.Media -> MediaWidget(slot.mediaStyle, editing = editing)
+            }
+        }
+        return
+    }
+    val info = remember(slot.id) { repo.info(slot.id) }
     if (info == null) {
         // The provider is gone (uninstalled, restored from another device...). Keep it removable.
         Box(
@@ -182,6 +204,55 @@ fun WidgetPickerSheet(c: LauncherController, placement: WidgetPlacement) {
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
         )
         LazyColumn(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            item(key = "builtin-media") {
+                Column(Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = if (expanded == BUILTIN_MEDIA) null else BUILTIN_MEDIA }
+                            .padding(horizontal = 24.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+                            Icon(MediaIcons.Play, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.media_widget), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.media_widget_summary), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(stringResource(R.string.settings_number, MediaStyle.entries.size), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (expanded == BUILTIN_MEDIA) {
+                        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            MediaStyle.entries.forEach { style ->
+                                Column(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                                        .clickable {
+                                            c.widgetPicker = null
+                                            repo.addBuiltin(BuiltinWidget.Media, style, placement, c.currentHomePage.coerceAtLeast(0))
+                                        }
+                                        .padding(12.dp),
+                                ) {
+                                    // The preview's own taps are swallowed: tapping anywhere on the card adds it.
+                                    Box(Modifier.fillMaxWidth()) {
+                                        MediaStylePreview(style)
+                                        Box(Modifier.matchParentSize().clickable {
+                                            c.widgetPicker = null
+                                            repo.addBuiltin(BuiltinWidget.Media, style, placement, c.currentHomePage.coerceAtLeast(0))
+                                        })
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(style.label), fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             items(groups, key = { it.packageName }) { g ->
                 Column(Modifier.fillMaxWidth()) {
                     Row(
@@ -269,6 +340,7 @@ fun WidgetMenuSheet(c: LauncherController, id: Int) {
     val repo = graph.widgets
     val settings by graph.settings.flow.collectAsStateWithLifecycle()
     val slot = settings.widgets.firstOrNull { it.id == id }
+    if (slot?.builtin != null) return BuiltinWidgetMenu(c, slot)
     ModalBottomSheet(onDismissRequest = { c.widgetMenu = null }) {
         val fallback = stringResource(R.string.common_widget)
         val label by produceState(fallback, id) {
@@ -297,6 +369,59 @@ fun WidgetMenuSheet(c: LauncherController, id: Int) {
                     }
                 }
                 if (slot.heightDp > 0) MenuRow(Icons.Default.Refresh, stringResource(R.string.widget_reset_size)) { repo.update(id) { it.copy(heightDp = 0) } }
+            }
+            MenuRow(Icons.Default.Close, stringResource(R.string.common_remove)) {
+                repo.remove(id)
+                c.widgetMenu = null
+            }
+        }
+    }
+}
+
+private const val BUILTIN_MEDIA = "nbeta:media"
+
+val MediaStyle.label: Int
+    get() = when (this) {
+        MediaStyle.Pill -> R.string.media_style_pill
+        MediaStyle.Compact -> R.string.media_style_compact
+        MediaStyle.Large -> R.string.media_style_large
+        MediaStyle.Artwork -> R.string.media_style_artwork
+    }
+
+/** Style (= size), order, page and removal for Nbeta's own widgets. */
+@Composable
+private fun BuiltinWidgetMenu(c: LauncherController, slot: WidgetSlot) {
+    val repo = LocalGraph.current.widgets
+    val id = slot.id
+    ModalBottomSheet(onDismissRequest = { c.widgetMenu = null }) {
+        Text(stringResource(R.string.media_widget), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+        Column(Modifier.navigationBarsPadding().padding(bottom = 12.dp)) {
+            Text(
+                stringResource(R.string.media_style),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            MediaStyle.entries.forEach { style ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { repo.update(id) { it.copy(mediaStyle = style) } }
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = slot.mediaStyle == style, onClick = { repo.update(id) { it.copy(mediaStyle = style) } })
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(style.label), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            MenuRow(Icons.Default.KeyboardArrowUp, stringResource(R.string.widget_move_up)) { repo.move(id, -1) }
+            MenuRow(Icons.Default.KeyboardArrowDown, stringResource(R.string.widget_move_down)) { repo.move(id, +1) }
+            val other = if (slot.placement == WidgetPlacement.Home) WidgetPlacement.Feed else WidgetPlacement.Home
+            MenuRow(Icons.Default.Share, stringResource(if (other == WidgetPlacement.Feed) R.string.widget_move_to_feed else R.string.widget_move_to_home)) {
+                repo.update(id) { it.copy(placement = other) }
+                c.widgetMenu = null
             }
             MenuRow(Icons.Default.Close, stringResource(R.string.common_remove)) {
                 repo.remove(id)
